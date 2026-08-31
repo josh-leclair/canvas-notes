@@ -25,9 +25,13 @@ folder tree.
 - **Capture everywhere** — use the responsive mobile composer, REST API,
   browser extension, iOS Shortcut recipe, or Telegram bot. New items land in
   an inbox until they are placed.
-- **Search and synthesis** — full-text search works out of the box. Optional
-  OpenAI-compatible embedding and chat endpoints add semantic suggestions,
-  card splitting, and source-aware living documents.
+- **Search and optional AI synthesis** — full-text search works out of the box.
+  Connect a locally hosted OpenAI-compatible model or an AI provider for card
+  link suggestions, long-note splitting, and cited documents composed from
+  selected cards.
+- **Documents and portable exports** — write rich documents directly or draft
+  them from selected cards, then export Markdown, DOCX, or PDF with the option
+  to include the cited cards.
 - **Private collaboration and publishing** — share canvases with viewer or
   editor roles, or publish a reviewed, frozen public lens that can be updated
   or revoked without exposing later private edits.
@@ -38,11 +42,20 @@ folder tree.
 
 ### Turn one large note into organized cards
 
-Split a long card into focused notes while keeping the original beside the
-result. Card bodies support standard Markdown, including headings, emphasis,
-lists, and links.
+With an optional connection to a locally hosted model or AI provider, split a
+long card into focused notes while keeping the original beside the result.
+Card bodies support standard Markdown, including headings, emphasis, lists,
+and links.
 
 ![A large note split into organized recipe cards alongside a title card](assets/screenshots/card-splitting-and-markdown.png)
+
+### Combine cards into a cited document
+
+Select several cards and draft them into a living document. Generated blocks
+retain their source-card references, so changed sources remain visible and can
+be refreshed without overwriting hand-edited passages. Documents export to
+Markdown, DOCX, or PDF, with an option to append the referenced cards as a
+citation section.
 
 ### Follow the relationships
 
@@ -109,10 +122,10 @@ docker compose --profile worker up -d --build
 ```
 
 The default local transcription model is controlled by `WHISPER_MODEL`.
-OpenAI-compatible remote transcription, embedding, and chat endpoints can be
-configured through environment variables or by an administrator under
-**Settings → AI endpoints**. Saved API keys are encrypted with a key derived
-from `SESSION_SECRET`.
+OpenAI-compatible transcription, embedding, and chat endpoints can run on your
+own hardware or come from an AI provider. Configure them through environment
+variables or under **Settings → AI endpoints**. Saved API keys are encrypted
+with a key derived from `SESSION_SECRET`.
 
 Without an embedding endpoint, search remains lexical. Without a chat
 endpoint, generation controls stay hidden. Without a bot token, the bot stays
