@@ -10,11 +10,6 @@ A single canvas can combine structured cards, media, long-form notes, and
 containers without flattening them into one document or forcing them into a
 folder tree.
 
-Canvas Notes is source-available and freely self-hostable for noncommercial
-purposes under the [PolyForm Noncommercial License 1.0.0](LICENSE.md).
-[Separate commercial licensing](COMMERCIAL-LICENSE.md) is available from the
-copyright holder.
-
 ## What it does
 
 - **Spatial canvases** — arrange, resize, group, and reuse cards on an
@@ -260,8 +255,7 @@ to your hosting environment.
 ## License
 
 Copyright 2026 josh-leclair. Canvas Notes is distributed under the
-[PolyForm Noncommercial License 1.0.0](LICENSE.md). The license permits use,
-modification, and redistribution for permitted noncommercial purposes. Uses
-outside those terms require a [separate commercial license](COMMERCIAL-LICENSE.md).
+[PolyForm Noncommercial License 1.0.0](LICENSE.md). See the license for its
+terms and permitted uses.
 
 This is a source-available license, not an OSI-approved open-source license.
