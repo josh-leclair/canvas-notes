@@ -4,7 +4,11 @@ Canvas Notes is a self-hosted, canvas-first note app. Cards live freely in
 space, can appear on more than one canvas, and stay connected through typed,
 directional links.
 
-![A Canvas Notes workspace with notes, a checklist, zones, a column, a live portal, and a nested board](assets/screenshots/canvas-overview.png)
+![A Canvas Notes workspace combining tables, to-dos, rich text, images, videos, links, and a container](assets/screenshots/mixed-card-layout.png)
+
+A single canvas can combine structured cards, media, long-form notes, and
+containers without flattening them into one document or forcing them into a
+folder tree.
 
 Canvas Notes is source-available and freely self-hostable for noncommercial
 purposes under the [PolyForm Noncommercial License 1.0.0](LICENSE.md).
@@ -35,17 +39,44 @@ copyright holder.
 - **Personal presentation** — Studio, Pantry, and Night Garden canvas moods,
   cover images, adjustable card text, and named or custom card colours.
 
-## Documents and mobile capture
+## See it in action
 
-Rich documents open in a focused editor with headings, lists, quotes, links,
-inline card references, source chips, and Markdown, DOCX, or PDF export.
+### Turn one large note into organized cards
 
-![The focused rich document editor](assets/screenshots/document-editor.png)
+Split a long card into focused notes while keeping the original beside the
+result. Card bodies support standard Markdown, including headings, emphasis,
+lists, and links.
 
-On a phone, Canvas Notes becomes a fast capture surface and a compact view of
-each board's inbox and zones.
+![A large note split into organized recipe cards alongside a title card](assets/screenshots/card-splitting-and-markdown.png)
 
-<img src="assets/screenshots/mobile-capture.png" alt="The Canvas Notes mobile composer" width="430">
+### Follow the relationships
+
+Select a card to reveal its typed, directional links while unrelated cards
+fade into the background. Suggestions can be linked or dismissed from the
+same view.
+
+![A selected card revealing typed links to related cards and suggestions](assets/screenshots/linked-card-reveal.png)
+
+### Surface unfinished work with a portal
+
+Portal cards are live filtered views rather than copies. This one gathers
+incomplete to-dos from several canvases and keeps each result connected to its
+original card.
+
+![A portal card listing incomplete to-dos from several canvases](assets/screenshots/open-tasks-portal.png)
+
+### Publish a reviewed public lens
+
+Choose exactly which cards and internal links to expose, arrange their order,
+and publish either the original spatial canvas or guided card pages. The
+published revision stays frozen until it is deliberately updated.
+
+![The public lens review screen with canvas and guided-page presentation options](assets/screenshots/public-lens-settings.png)
+
+Guided pages present the selected cards as a numbered, slide-like sequence
+that readers can move through in order or revisit from the overview.
+
+![The published guided-pages overview for a public lens](assets/screenshots/public-lens-guided-pages.png)
 
 ## Quick start
 
