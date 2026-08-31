@@ -1,0 +1,100 @@
+.focus-shelf {
+  position: absolute;
+  z-index: 11;
+  left: 50%;
+  bottom: 18px;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  max-width: min(720px, calc(100vw - 260px));
+  padding: 5px 7px 5px 12px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--bg-panel) 90%, transparent);
+  backdrop-filter: blur(12px);
+  box-shadow: var(--shadow-lift);
+}
+
+.focus-shelf-label {
+  flex: none;
+  color: var(--text-muted);
+  font-size: 11px;
+  font-weight: 750;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+}
+
+.focus-shelf-items {
+  display: flex;
+  gap: 5px;
+  min-width: 0;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.focus-shelf-items::-webkit-scrollbar {
+  display: none;
+}
+
+.focus-shelf-item {
+  display: flex;
+  align-items: center;
+  flex: none;
+  max-width: 220px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--accent);
+  color: var(--accent-text);
+}
+
+.focus-shelf-open,
+.focus-shelf-remove {
+  border: 0;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+}
+
+.focus-shelf-open {
+  padding: 6px 5px 6px 10px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.focus-shelf-remove {
+  display: grid;
+  place-items: center;
+  width: 25px;
+  height: 25px;
+  padding: 0;
+  opacity: 0.65;
+}
+
+.focus-shelf-remove:hover {
+  opacity: 1;
+}
+
+/* The app-wide button hover paints a rectangular panel behind every button.
+ * These two buttons are already parts of one pill, so that rectangle covered
+ * the title instead of reading as hover feedback. */
+.focus-shelf-open:hover:not(:disabled),
+.focus-shelf-remove:hover:not(:disabled) {
+  background: transparent;
+  border-color: transparent;
+  transform: none;
+}
+
+@media (max-width: 720px) {
+  .focus-shelf {
+    max-width: calc(100vw - 28px);
+    bottom: 12px;
+  }
+}
+
+.canvas-page:has(.focus-shelf) .canvas-toast {
+  bottom: 76px;
+}

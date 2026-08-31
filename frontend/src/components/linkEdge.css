@@ -1,0 +1,95 @@
+/* ---- links draw themselves on ------------------------------------------- */
+
+/* Selecting a card is a question — what is this connected to? — and the
+   answer arrives by travelling out to the cards that answer it, rather than
+   appearing already finished.
+ *
+ * The line is one dash as long as the whole path, slid into place. `pathLength
+ * = 1` on the element normalises the units, so the offset runs 1 -> 0 whatever
+ * the real length is and every line finishes together.
+ *
+ * Out-specifies xyflow's own `.react-flow__edge-path`, which is one class and
+ * would otherwise tie and win on order. */
+@keyframes link-draw {
+  from {
+    stroke-dashoffset: 1;
+  }
+}
+
+.react-flow__edge-path.link-draw {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 0;
+  animation: link-draw var(--dur-draw) var(--ease-out) backwards;
+}
+
+/* Hop 2 is the second step outward, so it starts as hop 1 lands. */
+.react-flow__edge-path.link-draw.is-hop2 {
+  animation-delay: var(--dur-draw);
+}
+
+/* The badge belongs to its line: it fades in as the line passes under it
+   rather than hanging in open space waiting for one. Opacity only — the
+   transform is what positions it on the path. */
+@keyframes link-badge-arrive {
+  from {
+    opacity: 0;
+  }
+}
+
+.link-badge {
+  animation: link-badge-arrive var(--dur-quick) ease var(--dur-draw) backwards;
+}
+
+.link-badge.is-hop2 {
+  animation-delay: calc(var(--dur-draw) * 2);
+}
+
+.link-badge {
+  position: absolute;
+  pointer-events: all;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border-radius: 999px;
+  border: 2px solid var(--link-untyped);
+  background: var(--bg-card);
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: var(--shadow);
+  transition: transform 80ms ease;
+}
+
+.link-badge:hover {
+  background: var(--bg-hover);
+}
+
+.link-badge.is-active {
+  background: var(--accent);
+  color: var(--accent-text) !important;
+  border-color: var(--accent);
+}
+
+/* A typed link states its type on the line. The badge grows into a pill to
+   hold it; an untyped one stays the small dot it always was. */
+.link-badge.is-labelled {
+  width: auto;
+  height: 20px;
+  gap: 5px;
+  padding: 0 9px 0 7px;
+  font-size: 11px;
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+}
+
+.link-badge-label {
+  font-weight: 600;
+}
+
+.link-badge:not(.is-labelled) .link-badge-label {
+  display: none;
+}

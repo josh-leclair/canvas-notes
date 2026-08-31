@@ -1,0 +1,462 @@
+/* To-do lists and tables are structured cards. No markdown is shown: the
+   surface is the editor, and the server maintains the searchable mirror. */
+
+.todo-card {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  color: inherit;
+}
+
+.todo-header {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  min-width: 0;
+  padding-right: 28px;
+}
+
+.todo-mark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  color: var(--card-accent, var(--accent));
+}
+
+.todo-title,
+.todo-title-input {
+  flex: 1 1 auto;
+  min-width: 0;
+  color: inherit;
+  font: inherit;
+  font-weight: 680;
+  letter-spacing: -0.01em;
+}
+
+.todo-title-input {
+  width: 100%;
+  border: 0;
+  border-radius: var(--radius-sm);
+  outline: 0;
+  background: transparent;
+  padding: 3px 4px;
+}
+
+.todo-title-input::placeholder,
+.todo-title.is-empty {
+  color: var(--card-muted, var(--text-muted));
+  opacity: 0.72;
+}
+
+.todo-title-input:focus {
+  background: color-mix(in srgb, currentColor 8%, transparent);
+}
+
+.todo-count {
+  flex: 0 0 auto;
+  color: var(--card-muted, var(--text-muted));
+  font-size: 10.5px;
+  font-variant-numeric: tabular-nums;
+  font-weight: 650;
+}
+
+.todo-count.is-done {
+  color: var(--card-accent, var(--accent));
+}
+
+.todo-progress {
+  height: 2px;
+  margin: 7px 0 8px 22px;
+  overflow: hidden;
+  border-radius: var(--radius-sm);
+  background: color-mix(in srgb, var(--card-fg, var(--text)) 32%, transparent);
+}
+
+.todo-progress > span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--card-accent, var(--accent));
+  transition: width var(--dur-quick) ease;
+}
+
+.todo-items {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  gap: 1px;
+}
+
+.todo-row {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  min-width: 0;
+  min-height: 27px;
+  border-radius: var(--radius-sm);
+  transition: background var(--dur-quick) ease;
+}
+
+.todo-row:focus-within,
+.todo-row:hover {
+  background: color-mix(in srgb, currentColor 7%, transparent);
+}
+
+.todo-checkbox {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  width: 16px;
+  height: 16px;
+  padding: 0;
+  border: 1.5px solid var(--card-muted, var(--border-strong));
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--card-fill-ink, var(--bg-card));
+  cursor: pointer;
+  transition: background var(--dur-quick) ease, border-color var(--dur-quick) ease,
+    transform var(--dur-quick) ease;
+}
+
+.todo-checkbox:hover:not(:disabled) {
+  border-color: var(--card-accent, var(--accent));
+  transform: scale(1.06);
+}
+
+.todo-checkbox[aria-pressed="true"] {
+  border-color: var(--card-accent, var(--accent));
+  background: var(--card-accent, var(--accent));
+}
+
+.todo-checkbox:disabled {
+  cursor: default;
+}
+
+.todo-text,
+.todo-text-input {
+  flex: 1 1 auto;
+  min-width: 0;
+  color: inherit;
+  font: inherit;
+  font-size: var(--card-copy-size, 13px);
+  line-height: 1.35;
+}
+
+.todo-text-input {
+  width: 100%;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  padding: 4px 1px;
+}
+
+.todo-text-input::placeholder,
+.todo-text.is-empty,
+.todo-empty {
+  color: var(--card-muted, var(--text-muted));
+  opacity: 0.7;
+}
+
+.todo-row.is-done .todo-text,
+.todo-row.is-done .todo-text-input {
+  opacity: 0.52;
+  text-decoration: line-through;
+}
+
+.todo-remove {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--card-muted, var(--text-muted));
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity var(--dur-quick) ease, color var(--dur-quick) ease,
+    background var(--dur-quick) ease;
+}
+
+.todo-row:hover .todo-remove,
+.todo-row:focus-within .todo-remove,
+.todo-remove:focus-visible {
+  opacity: 1;
+}
+
+.todo-remove:hover {
+  color: var(--danger);
+  background: var(--danger-soft);
+}
+
+.todo-add {
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  width: 22px;
+  height: 22px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--card-muted, var(--text-muted));
+  cursor: pointer;
+  transition: color var(--dur-quick) ease, background var(--dur-quick) ease;
+}
+
+.todo-add > span {
+  display: block;
+  margin-top: -1px;
+  font-size: 17px;
+  font-weight: 450;
+  line-height: 1;
+}
+
+.todo-add:hover,
+.todo-add:focus-visible {
+  outline: 0;
+  color: var(--card-accent, var(--accent));
+  background: var(--accent-soft);
+}
+
+.todo-empty {
+  padding: 8px 0 2px 23px;
+  font-size: var(--card-copy-medium, 12px);
+}
+
+
+/* ---- tables ------------------------------------------------------------ */
+
+/* Unselected, a table card is the grid and nothing else. Every control lives
+   on the tab bars, which are drawn outside the card and only when it is
+   selected — see TableCardBody for why they are portalled rather than nested. */
+.table-card {
+  min-width: 0;
+}
+
+/* Flush to the card. A table already draws its own edges, so the usual card
+   padding just puts a moat around a box that does not need one — the grid's
+   outer border is the card's edge. */
+.card-node.type-table .card-content {
+  padding: 0;
+}
+
+/* The title is the only thing that still needs the margin, and it keeps the
+   right-hand gap for the menu button. */
+.card-node.type-table .card-title {
+  padding: 8px 34px 6px 10px;
+  margin-bottom: 0;
+}
+
+.table-grid {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+}
+
+.table-grid td {
+  border: 1px solid var(--border);
+  padding: 0;
+  vertical-align: middle;
+  transition: background var(--dur-quick) ease;
+}
+
+/* The header row takes its own colour, separate from the data below it —
+   that is the whole job of a header row. Untouched, it is the faint tint it
+   always was. */
+.table-grid tr.is-header td {
+  background: var(--card-header, var(--bg-hover));
+}
+
+.table-grid tr.is-header .table-cell {
+  color: var(--card-header-ink, var(--card-fg, var(--text)));
+}
+
+/* The column or row picked out by its tab, so it is obvious what the × will
+   take with it. */
+.table-grid td.is-armed {
+  background: var(--danger-soft);
+}
+
+.table-cell {
+  width: 100%;
+  border: none;
+  background: transparent;
+  padding: 5px 7px;
+  font: inherit;
+  font-size: var(--card-copy-table, 12.5px);
+  /* Inherit so a chosen text colour reaches the cells, which are where a
+     table's words actually live. */
+  color: inherit;
+  min-width: 0;
+}
+
+.table-grid tr.is-header .table-cell {
+  font-weight: 650;
+}
+
+.table-cell::placeholder {
+  color: var(--card-muted, var(--text-muted));
+  opacity: 0.55;
+}
+
+.table-cell:focus {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+  background: var(--bg-card);
+  position: relative;
+  z-index: 1;
+}
+
+/* ---- the tab bars ------------------------------------------------------ */
+
+.table-chrome {
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--dur-quick) ease;
+}
+
+.table-chrome.is-shown {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.table-bar {
+  position: absolute;
+  display: grid;
+}
+
+/* No gap on the grid itself: the track sizes are the table's own column
+   percentages, and a gap would push their total past 100% and slide every tab
+   out of line with the column it names. The breathing room is a margin on the
+   tab instead.
+
+   The offset clears the card's edge by more than the link anchors overhang it.
+   At 8px the bar sat right on the top edge, where the anchor swallowed every
+   click aimed at the middle tab. */
+.table-bar.is-columns {
+  height: 26px;
+  transform: translateY(calc(-100% - 12px));
+  grid-auto-flow: column;
+}
+
+.table-bar.is-rows {
+  width: 26px;
+  transform: translateX(calc(-100% - 12px));
+  grid-auto-flow: row;
+}
+
+.table-slot {
+  position: relative;
+  display: flex;
+  min-width: 0;
+  min-height: 0;
+}
+
+.table-tab {
+  flex: 1 1 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 0;
+  padding: 0;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: var(--bg-hover);
+  color: var(--text-muted);
+  font-size: 11.5px;
+  font-weight: 600;
+  line-height: 1;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  overflow: hidden;
+  transition: background var(--dur-quick) ease, color var(--dur-quick) ease;
+}
+
+.is-columns .table-tab {
+  margin: 0 2px;
+}
+
+.is-rows .table-tab {
+  margin: 2px 0;
+}
+
+.table-tab:hover {
+  background: var(--bg-card);
+  color: var(--text);
+}
+
+.table-tab.is-armed,
+.table-tab.is-armed:hover {
+  background: var(--danger);
+  color: #fff;
+  font-size: 14px;
+}
+
+/* Parked on the outer end of each axis, clear of the lettered tabs. */
+.table-tab.is-add {
+  position: absolute;
+  background: transparent;
+  border: 1px dashed var(--border-strong);
+  font-size: 13px;
+}
+
+.is-columns .table-tab.is-add {
+  left: 100%;
+  top: 0;
+  bottom: 0;
+  width: 22px;
+}
+
+.is-rows .table-tab.is-add {
+  top: 100%;
+  left: 0;
+  right: 0;
+  height: 22px;
+}
+
+.table-tab.is-add:hover:not(:disabled) {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.table-tab.is-add:disabled {
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* Straddles the join between two lettered tabs, which is where the column
+   boundary below it actually falls. */
+.table-seam {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  right: -4px;
+  width: 9px;
+  z-index: 1;
+  cursor: col-resize;
+  touch-action: none;
+}
+
+.table-seam::after {
+  content: "";
+  position: absolute;
+  top: 3px;
+  bottom: 3px;
+  left: 4px;
+  width: 1px;
+  background: var(--border-strong);
+  opacity: 0;
+  transition: opacity var(--dur-quick) ease;
+}
+
+.table-seam:hover::after {
+  opacity: 1;
+}

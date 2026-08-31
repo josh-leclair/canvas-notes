@@ -1,0 +1,57 @@
+.canvas-zone {
+  position: absolute;
+  box-sizing: border-box;
+  pointer-events: none;
+  border: 2px dashed var(--border-strong);
+  border-radius: var(--radius-lg);
+  background: color-mix(in srgb, var(--accent-soft) 42%, transparent);
+}
+
+.canvas-zone-title {
+  position: absolute;
+  top: -18px;
+  left: 14px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  max-width: calc(100% - 28px);
+  pointer-events: auto;
+  cursor: grab;
+  padding: 5px 9px;
+  border: 1px solid var(--border-strong);
+  border-radius: 999px;
+  background: var(--bg-panel);
+  color: var(--text);
+  box-shadow: var(--shadow);
+  font-size: 12px;
+  user-select: none;
+}
+
+.canvas-zone-title:active {
+  cursor: grabbing;
+}
+
+.canvas-zone-actions {
+  display: flex;
+}
+
+.canvas-zone-actions button {
+  border: 0;
+  background: transparent;
+  color: var(--text-muted);
+  padding: 2px 4px;
+}
+
+.canvas-zone-resize {
+  position: absolute;
+  right: -7px;
+  bottom: -7px;
+  width: 18px;
+  height: 18px;
+  pointer-events: auto;
+  cursor: nwse-resize;
+  border: 2px solid var(--bg);
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: var(--shadow);
+}

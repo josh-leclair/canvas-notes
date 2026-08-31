@@ -1,0 +1,18 @@
+body { width: 360px; min-height: 280px; }
+main { padding: 18px; }
+.brand-row { display: grid; grid-template-columns: auto 1fr auto; gap: 10px; align-items: center; margin-bottom: 18px; }
+.brand-row h1 { margin: 0; font-size: 17px; }
+.brand-row p { margin: 2px 0 0; color: var(--muted); font-size: 12px; }
+.icon-button { border: 0; background: transparent; padding: 8px; font-size: 17px; color: var(--muted); }
+.state-card { padding: 16px; border: 1px solid var(--border); border-radius: 12px; background: var(--panel); }
+.state-card h2 { font-size: 16px; margin: 0 0 6px; }
+.state-card p { margin: 0 0 14px; color: var(--muted); }
+#clip-form label { display: block; font-size: 12px; font-weight: 700; margin-bottom: 6px; }
+#clip-form label span { color: var(--muted); font-weight: 400; }
+#title { width: 100%; }
+#note { width: 100%; resize: vertical; min-height: 62px; max-height: 150px; margin-bottom: 14px; }
+.page-meta { display: flex; justify-content: space-between; gap: 12px; color: var(--muted); font-size: 12px; margin: 8px 2px 16px; }
+.actions { display: grid; gap: 8px; }
+.actions button { width: 100%; }
+.disclosure { color: var(--muted); font-size: 11px; line-height: 1.45; margin: 14px 2px 0; }
+.status { min-height: 20px; margin-top: 12px; font-size: 13px; }

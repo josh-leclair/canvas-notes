@@ -1,0 +1,121 @@
+.style-menu-wrap {
+  position: relative;
+}
+
+/* Fixed and on the body: it is portalled out of the rail, and the sheet it
+   opens over is itself a fixed overlay at z-index 7500. */
+.style-menu {
+  position: fixed;
+  z-index: 7600;
+  width: 260px;
+  padding: 6px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg-panel);
+  box-shadow: var(--shadow-lift);
+  animation: menu-drop var(--dur-quick) var(--ease-out) backwards;
+}
+
+.style-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  width: 100%;
+  padding: 7px 10px;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text);
+  text-align: left;
+  cursor: pointer;
+}
+
+.style-row:hover {
+  background: var(--bg-hover);
+}
+
+.style-row.is-current {
+  background: var(--bg-hover);
+}
+
+/* Each row is set in the style it applies, so the menu is a specimen sheet
+   rather than a list of names. */
+.style-row.is-h1 .style-name {
+  font-family: var(--font-display);
+  font-size: 21px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.style-row.is-h2 .style-name {
+  font-family: var(--font-display);
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.style-row.is-code .style-name {
+  font-family: ui-monospace, "Cascadia Mono", Consolas, monospace;
+  font-size: 12.5px;
+  padding: 2px 8px;
+  border-radius: 5px;
+  background: var(--bg-hover);
+}
+
+.style-row.is-quote .style-name {
+  font-style: italic;
+  padding-left: 9px;
+  border-left: 2px solid var(--border-strong);
+}
+
+.style-hint {
+  flex-shrink: 0;
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.style-group {
+  padding: 8px 10px 2px;
+  font-size: 10px;
+  font-weight: 650;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.style-swatches {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 5px;
+  padding: 3px 6px 6px;
+}
+
+.style-ink,
+.style-mark {
+  aspect-ratio: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background: transparent;
+  font-weight: 700;
+  font-size: 13px;
+  cursor: pointer;
+  transition: transform var(--dur-quick) var(--ease-spring);
+}
+
+.style-ink:hover,
+.style-mark:hover {
+  transform: scale(1.12);
+}
+
+.style-ink.is-current {
+  border-color: var(--text);
+}
+
+.style-mark.is-none {
+  border: 1px solid var(--border-strong);
+  color: var(--text-muted);
+}

@@ -1,0 +1,85 @@
+.card-reference-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 9000;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: min(18vh, 150px) 18px 18px;
+  background: transparent;
+}
+
+.card-reference-dialog {
+  width: min(390px, 100%);
+  max-height: min(460px, 70vh);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--bg-panel);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.24);
+}
+
+.card-reference-dialog header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.card-reference-dialog header strong {
+  font-size: 13px;
+}
+
+.card-reference-dialog header button {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  background: transparent;
+}
+
+.card-reference-dialog > input {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  background: var(--bg-input);
+  color: var(--text);
+}
+
+.card-reference-results {
+  min-height: 54px;
+  overflow-y: auto;
+  display: grid;
+  align-content: start;
+  gap: 4px;
+}
+
+.card-reference-results button {
+  display: grid;
+  gap: 2px;
+  width: 100%;
+  padding: 7px 8px;
+  text-align: left;
+  background: transparent;
+}
+
+.card-reference-results button:hover,
+.card-reference-results button:focus-visible {
+  background: var(--bg-hover);
+}
+
+.card-reference-results button span,
+.card-reference-results p {
+  color: var(--text-muted);
+  font-size: 12px;
+}
+
+.card-reference-results p {
+  padding: 14px 10px;
+  margin: 0;
+}

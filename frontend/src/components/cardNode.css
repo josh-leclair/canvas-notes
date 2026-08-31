@@ -1,0 +1,1916 @@
+/* No border in the resting state: the shadow separates a card from the canvas
+   and the coloured spine separates it from its neighbours, so a third line
+   around everything was just noise. It comes back on hover and selection,
+   where it carries meaning. */
+.card-node {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  background: var(--bg-card);
+  /* React Flow supplies its own inherited foreground. That happens to suit
+     the stock themes, but becomes pale-on-cream when a canvas mood replaces
+     the card surface. Unpainted cards belong to our semantic text pair;
+     deliberately painted cards override this below with their solved ink. */
+  --card-fg: var(--card-ink, var(--text));
+  --card-muted: color-mix(in srgb, var(--card-fg) 68%, transparent);
+  color: var(--card-fg);
+  border: 1px solid transparent;
+  /* Square. Rounded corners read as chrome, and a stack of them in a column
+     leaves a scalloped edge down both sides of the container. */
+  border-radius: 0;
+  box-shadow: var(--shadow);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  /* Slower coming down than going up, and springy, so a dropped card settles
+     instead of snapping flat. The lift itself is quick — see the .dragging
+     rule further down. */
+  transition: box-shadow var(--dur-settle) var(--ease-out),
+    border-color var(--dur-quick) ease,
+    transform var(--dur-settle) var(--ease-settle);
+  animation: card-pop var(--dur-slow) var(--ease-spring) backwards;
+}
+
+@keyframes card-pop {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+}
+
+/* A coloured spine on the left says what kind of card this is at a glance —
+   or, once painted, what the user decided it is. */
+/* The accent is a bar across the top, not a spine down the side. Only the
+   cards that actually carry one draw it: a note stays bare until you choose a
+   colour, while a link or an image gets its type's colour by default. */
+.card-node::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: 4px;
+  background: var(--card-accent);
+  z-index: 2;
+}
+
+.card-node:not(.has-accent)::before {
+  display: none;
+}
+
+/* A painted card is filled, not tinted, and the fill is the same colour in
+   both themes — so it brings its own text colour with it rather than
+   inheriting one that assumes the theme's surface. */
+.card-node.is-painted {
+  --card-fg: var(--card-ink, var(--card-fill-ink));
+  --card-muted: color-mix(in srgb, var(--card-fg) 72%, transparent);
+  background: var(--card-fill);
+  border-color: var(--card-fill-edge);
+  color: var(--card-fg);
+}
+
+.card-node.is-painted .card-meta,
+.card-node.is-painted .card-body a {
+  color: var(--card-muted);
+}
+
+.card-body a.card-reference,
+.doc-card a.card-reference {
+  display: inline;
+  padding: 0 1px;
+  border: none;
+  border-bottom: 1px dotted color-mix(in srgb, var(--accent) 65%, transparent);
+  border-radius: 0;
+  background: transparent;
+  color: var(--accent);
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.card-body a.card-reference:hover,
+.doc-card a.card-reference:hover {
+  background: var(--accent-soft);
+}
+
+/* A chosen text colour wins over both defaults, and it has to reach wherever
+   that kind of card actually keeps its words — a table's are in cells outside
+   `.card-body` entirely. Falling back to `inherit` is what lets the same rule
+   serve a painted card and a plain one: the card above has already set the
+   right default to inherit from. */
+.card-node .card-title,
+.card-node .card-body,
+.card-node .table-card,
+.card-node .todo-card {
+  color: var(--card-ink, inherit);
+}
+
+.card-node.type-checklist .card-content {
+  padding: 10px;
+}
+
+/* A table's title is chrome rather than data, so it keeps the theme's text
+   colour and leaves the chosen one to the cells. */
+.card-node.type-table .card-title {
+  color: inherit;
+}
+
+.card-node:hover {
+  box-shadow: var(--shadow-lift);
+  border-color: var(--border-strong);
+}
+
+/* Selection is a visible ring; the same store state the reveal hooks into. */
+.card-node.is-selected {
+  border-color: var(--accent);
+  box-shadow: var(--shadow-lift), 0 0 0 3px var(--accent-soft);
+}
+
+.card-content {
+  flex: 1;
+  min-height: 0;
+  padding: 10px 12px;
+  /* Scroll rather than clip: a card is a window onto its text, and resizing
+     the card reflows what fits. */
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+/* A hub card carries a second control beside the menu, so it needs the room
+   the rest of the cards do not. */
+.card-node.has-pip .card-title {
+  padding-right: 58px;
+}
+
+.card-title {
+  font-weight: 650;
+  letter-spacing: -0.01em;
+  margin-bottom: 4px;
+  /* Clear the menu button in the top-right corner. Kept as tight as it can
+     be: in a 300px column card every reserved pixel costs a word, and titles
+     were wrapping to two lines with room to spare on the right. */
+  padding-right: 34px;
+  overflow-wrap: anywhere;
+}
+
+.card-body {
+  font-size: var(--card-copy-size, 13px);
+  line-height: 1.45;
+  /* Long unbroken strings — pasted urls, hashes, keysmashes — must wrap
+     instead of running off the edge of the card. */
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.card-body > *:first-child {
+  margin-top: 0;
+}
+
+.card-body p {
+  margin: 0 0 8px;
+}
+
+.card-body p:last-child {
+  margin-bottom: 0;
+}
+
+/* Code and tables are the one thing that should scroll rather than wrap. */
+.card-body pre {
+  overflow-x: auto;
+  background: var(--bg-hover);
+  padding: 8px 10px;
+  border-radius: var(--radius-sm);
+}
+
+.card-body code {
+  overflow-wrap: anywhere;
+}
+
+.card-body img {
+  max-width: 100%;
+  height: auto;
+  border-radius: var(--radius-sm);
+}
+
+/* ---- tables ------------------------------------------------------------- */
+
+.card-body table {
+  display: block;
+  overflow-x: auto;
+  max-width: 100%;
+  border-collapse: collapse;
+  margin: 0 0 8px;
+  font-size: var(--card-copy-table, 12.5px);
+}
+
+.card-body th,
+.card-body td {
+  border: 1px solid var(--border);
+  padding: 5px 9px;
+  text-align: left;
+  vertical-align: top;
+}
+
+.card-body th {
+  background: var(--bg-hover);
+  font-weight: 650;
+  white-space: nowrap;
+}
+
+.card-body tbody tr:hover td {
+  background: color-mix(in srgb, var(--bg-hover) 55%, transparent);
+}
+
+/* ---- task lists --------------------------------------------------------- */
+
+.card-body ul.contains-task-list {
+  list-style: none;
+  padding-left: 2px;
+}
+
+.card-body li.task-list-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin-bottom: 3px;
+  line-height: 1.45;
+}
+
+.task-box {
+  appearance: none;
+  flex-shrink: 0;
+  width: 15px;
+  height: 15px;
+  margin: 2px 0 0;
+  border: 1.5px solid var(--border-strong);
+  border-radius: 4px;
+  background: var(--bg-input);
+  cursor: pointer;
+  position: relative;
+  transition: background var(--dur-quick) ease, border-color var(--dur-quick) ease,
+    transform var(--dur-quick) var(--ease-spring);
+}
+
+.task-box:hover {
+  border-color: var(--accent);
+}
+
+.task-box:checked {
+  background: var(--card-accent, var(--accent));
+  border-color: transparent;
+}
+
+.task-box:checked::after {
+  content: "";
+  position: absolute;
+  left: 4px;
+  top: 1px;
+  width: 4px;
+  height: 8px;
+  border: solid var(--bg-card);
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+}
+
+.task-box:active {
+  transform: scale(0.85);
+}
+
+.task-box:checked + span {
+  color: var(--text-muted);
+  text-decoration: line-through;
+  text-decoration-thickness: 1px;
+}
+
+.task-progress {
+  margin-left: 7px;
+  font-size: 10.5px;
+  font-weight: 700;
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: var(--bg-hover);
+  color: var(--text-muted);
+  vertical-align: middle;
+}
+
+.task-progress.is-done {
+  background: color-mix(in srgb, var(--hue-green) 22%, transparent);
+  color: var(--hue-green);
+}
+
+.card-body blockquote {
+  margin: 0 0 8px;
+  padding-left: 10px;
+  border-left: 2px solid var(--border-strong);
+  color: var(--text-muted);
+}
+
+.card-body ul,
+.card-body ol {
+  padding-left: 20px;
+  margin: 0 0 8px;
+}
+
+.card-editor {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 8px;
+}
+
+.card-editor input {
+  font-weight: 600;
+}
+
+.card-editor textarea {
+  flex: 1;
+  resize: none;
+  font-size: var(--card-copy-size, 13px);
+}
+
+/* Sits outside .card-node, which clips its overflow, so a dropdown on a small
+   card is not cut off at the card's edge. */
+/* Clear of the accent bar, which is 4px at the very top. The button used to
+   sit at 2px, so its hover background covered part of the accent — a grey
+   slab eating the one stripe of colour the card has. */
+.card-menu-anchor {
+  position: absolute;
+  top: 7px;
+  right: 7px;
+  z-index: 30;
+}
+
+/* Its own little surface, rather than a bare glyph.
+ *
+ * The anchor is a *sibling* of `.card-node`, not a child — it has to be, or
+ * `overflow: hidden` clips the dropdown — which means it cannot inherit a
+ * painted card's `--card-fill-ink` and cannot know what it is sitting on. A
+ * transparent button with muted text therefore vanished against a pale card
+ * and against a painted one alike. A chip that brings its own background
+ * reads on any of them, the same way the toolbar reads over the canvas. */
+.card-menu-button {
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  font-size: 15px;
+  line-height: 1;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  /* Mixed *towards the theme's own ink* rather than set to a surface token,
+     because no surface token separates from a card in both themes: in Paper
+     `--bg-card` and `--bg-panel` are the same colour, and in Ink `--bg-hover`
+     and `--bg-card` are a shade apart. Leaning on `--text` darkens the chip
+     on a light theme and lightens it on a dark one, so it stands off the card
+     either way — and off a painted card, which is a bold colour and no
+     surface token resembles. */
+  background: color-mix(in srgb, var(--bg-panel) 70%, var(--text));
+  backdrop-filter: blur(8px);
+  color: var(--text);
+  box-shadow: var(--shadow);
+  opacity: 0;
+  /* No size or position change on hover: the button held still and only its
+     background arrived, which is what made it feel like it grew. */
+  transition: opacity var(--dur-quick) ease, background var(--dur-quick) ease,
+    border-color var(--dur-quick) ease;
+}
+
+.react-flow__node:hover .card-menu-button,
+.react-flow__node.selected .card-menu-button {
+  opacity: 1;
+}
+
+.card-menu-button:hover {
+  background: color-mix(in srgb, var(--bg-panel) 55%, var(--text));
+  border-color: var(--text-muted);
+}
+
+.card-menu-button:focus-visible {
+  opacity: 1;
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+.card-menu {
+  position: absolute;
+  right: 0;
+  /* Clears the button, which is 26px tall, with a gap under it. */
+  top: 30px;
+  min-width: 184px;
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-lift);
+  display: flex;
+  flex-direction: column;
+  padding: 5px;
+  animation: menu-drop var(--dur-quick) var(--ease-out) backwards;
+}
+
+/* Menus leave the zoomed node tree so their coordinates are screen pixels.
+   FloatingCardMenu measures and clamps them to the viewport; these limits
+   also keep an unusually tall expanded colour picker entirely reachable. */
+.card-menu.is-floating {
+  position: fixed;
+  right: auto;
+  max-width: calc(100vw - 16px);
+  max-height: calc(100vh - 16px);
+  overflow: auto;
+  /* A body-level portal inherits the app theme's already-computed foreground,
+     not the canvas appearance's `--text` value. Resolve it again here so a
+     Pantry menu gets chocolate ink on cream instead of the outer dark
+     theme's pale ink. The same boundary applies to the canvas typeface. */
+  color: var(--text);
+  font-family: var(--canvas-font, Candara, "Trebuchet MS", sans-serif);
+  z-index: 6000;
+}
+
+@keyframes menu-drop {
+  from {
+    opacity: 0;
+    transform: translateY(-6px) scale(0.97);
+  }
+}
+
+.card-menu button {
+  border: none;
+  background: transparent;
+  text-align: left;
+  padding: 6px 10px;
+  border-radius: 5px;
+}
+
+.card-menu button:hover {
+  background: var(--bg-hover);
+}
+
+.card-menu .menu-danger {
+  color: var(--danger);
+}
+
+.card-menu-sep {
+  height: 1px;
+  background: var(--border);
+  margin: 4px 6px;
+}
+
+/* ---- colour swatches ---------------------------------------------------- */
+
+/* One row per axis the card offers, each labelled, because a swatch on its
+   own cannot say whether it is about to colour the bar, the card or the
+   words. */
+.paint-picker {
+  padding: 2px 0 4px;
+  /* Eight swatches to a row, and the row is the widest thing in the menu. The
+     width is asked for here rather than on `.card-menu`, so a menu without a
+     picker in it stays as narrow as its text. */
+  min-width: 214px;
+}
+
+.paint-axis-label {
+  display: block;
+  padding: 4px 8px 0;
+  font-size: 10px;
+  font-weight: 650;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.paint-row {
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+  gap: 4px;
+  padding: 4px 6px 5px;
+}
+
+.paint-ink-options {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 4px;
+  padding: 4px 6px 6px;
+}
+
+.paint-ink-options button {
+  padding: 5px 7px;
+  border-color: var(--border);
+  background: var(--bg-card);
+  color: var(--text);
+  font-size: 11px;
+}
+
+.paint-ink-options button.is-active {
+  border-color: var(--accent);
+  box-shadow: inset 0 0 0 1px var(--accent);
+}
+
+.paint-ink-options button:disabled {
+  cursor: not-allowed;
+  opacity: 0.34;
+}
+
+/* Each swatch previews its own axis: a bar for the accent, a filled card for
+   the fill, a coloured letter for the text. */
+.paint-swatch.is-accent {
+  border-radius: 3px;
+  aspect-ratio: auto;
+  height: 16px;
+  align-self: center;
+}
+
+.paint-swatch.is-fill {
+  border-width: 1px;
+  border-style: solid;
+}
+
+.paint-swatch.is-ink {
+  background: var(--bg-hover);
+  font-weight: 700;
+  font-size: 11px;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.paint-swatch {
+  width: 100%;
+  aspect-ratio: 1;
+  min-width: 0;
+  padding: 0;
+  border: 2px solid transparent;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: transform var(--dur-quick) var(--ease-out),
+    border-color var(--dur-quick) ease;
+}
+
+.paint-swatch:hover {
+  transform: scale(1.15);
+  border-color: var(--text-muted);
+}
+
+.paint-swatch.is-active {
+  border-color: var(--text);
+  outline: 1px solid var(--text);
+  outline-offset: 1px;
+}
+
+/* `.card-menu button` sets a transparent background at one class and one
+   type, which out-specifies a bare `.paint-*` class — the coloured swatches
+   only escape it by carrying their colour inline. Any swatch rule that paints
+   a background has to name `.paint-swatch` as well to win. */
+.paint-swatch.paint-none {
+  background: var(--bg-hover);
+  color: var(--text-muted);
+  font-size: 10px;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ---- the custom colour wheel -------------------------------------------- */
+
+/* The last swatch in every row. Unpainted it is the spectrum itself, which
+   says "anything" in a way no single colour can; once a custom colour is
+   chosen it wears that colour like the six before it, and the ring is what
+   still marks it as the slot you can change. */
+.paint-swatch.paint-wheel {
+  position: relative;
+  background: conic-gradient(
+    from 90deg,
+    var(--hue-avocado),
+    var(--hue-plum),
+    var(--hue-linen),
+    var(--hue-cement),
+    var(--hue-maple),
+    var(--hue-rust),
+    var(--hue-avocado)
+  );
+}
+
+.paint-swatch.paint-wheel.is-custom::after,
+.paint-swatch.paint-wheel.is-open::after {
+  content: "";
+  position: absolute;
+  inset: 2px;
+  border-radius: inherit;
+  border: 1px solid var(--bg-panel);
+}
+
+.paint-swatch.paint-wheel.is-open {
+  border-color: var(--text);
+}
+
+/* Saturation left to right over brightness top to bottom, both laid over the
+   hue the strip below is sitting on. */
+.paint-custom {
+  padding: 2px 6px 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+/* The white and the black below are the colour space, not the theme: a
+   saturation-by-brightness square runs to both by definition, and tinting
+   either would misreport what the chosen colour is. */
+.paint-sv {
+  position: relative;
+  height: 74px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  cursor: crosshair;
+  touch-action: none;
+  background-image: linear-gradient(to top, #000, transparent),
+    linear-gradient(to right, #fff, transparent);
+  background-color: var(--paint-wheel);
+}
+
+.paint-sv:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.paint-sv-thumb {
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  margin: -6px 0 0 -6px;
+  border-radius: 50%;
+  border: 2px solid #fff;
+  box-shadow: 0 0 0 1px rgb(0 0 0 / 0.45);
+  pointer-events: none;
+}
+
+.paint-hue {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 12px;
+  margin: 0;
+  padding: 0;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  cursor: pointer;
+  touch-action: none;
+  background: linear-gradient(
+    to right,
+    hsl(0 100% 50%),
+    hsl(60 100% 50%),
+    hsl(120 100% 50%),
+    hsl(180 100% 50%),
+    hsl(240 100% 50%),
+    hsl(300 100% 50%),
+    hsl(360 100% 50%)
+  );
+}
+
+.paint-hue::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: transparent;
+  border: 2px solid #fff;
+  box-shadow: 0 0 0 1px rgb(0 0 0 / 0.45);
+}
+
+.paint-hue::-moz-range-thumb {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: transparent;
+  border: 2px solid #fff;
+  box-shadow: 0 0 0 1px rgb(0 0 0 / 0.45);
+}
+
+.paint-hex {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* The preview carries letters rather than being a plain chip: on a fill axis
+   the ink is derived from the colour, and this is where you find out which
+   one you are about to get. */
+.paint-hex-preview {
+  flex: none;
+  width: 34px;
+  height: 24px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 650;
+}
+
+.paint-hex input {
+  flex: 1;
+  min-width: 0;
+  height: 24px;
+  padding: 0 7px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: var(--bg-input);
+  color: var(--text);
+  font: inherit;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  text-transform: lowercase;
+}
+
+.paint-hex input:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -1px;
+}
+
+/* Link anchors, one per side. Visible on hover or selection, with a hit area
+   larger than the dot so they are easy to grab. */
+/* Qualified with xyflow's own class on purpose. Its stylesheet sets
+   `.react-flow__handle { width: 6px }` and loads after this one, so a bare
+   `.card-handle` rule lost the cascade at equal specificity — every size here
+   was silently ignored and the anchors rendered at 6px for their whole life.
+   The extra class buys the specificity to actually win. */
+.react-flow__handle.card-handle {
+  width: 15px;
+  height: 15px;
+  background: var(--accent);
+  border: 2px solid var(--bg-card);
+  opacity: 0;
+  transition: opacity 100ms ease, transform 80ms ease;
+  z-index: 4;
+}
+
+/* The target twin sits under the source dot: same spot, invisible, slightly
+   larger so a dropped connection lands on it easily. */
+.react-flow__handle.card-handle-target {
+  width: 26px;
+  height: 26px;
+  background: transparent;
+  border: none;
+  z-index: 3;
+}
+
+/* Handles sit outside .card-node now, so hover is tracked on the node
+   wrapper that contains both. */
+.react-flow__node:hover .card-handle,
+.react-flow__node.selected .card-handle {
+  opacity: 1;
+}
+
+.react-flow__node:hover .card-handle-target,
+.react-flow__node.selected .card-handle-target {
+  opacity: 0;
+}
+
+/* No hover scale. An anchor that grows as the pointer nears it moves its own
+   centre away from where you aimed, which is the opposite of helpful when the
+   thing you are doing is aiming at it. The invisible target handle behind it
+   is already 26px, so it is easier to hit than it looks. */
+.react-flow__handle.card-handle:hover {
+  background: var(--accent-hover);
+}
+
+/* Still in the DOM so revealed edges have something to attach to, but
+   neither seen nor grabbable: a card in a column is linked by aiming at the
+   column, not at eight dots stacked over its four. */
+.react-flow__handle.card-handle.is-silent {
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* The card a drag would link to, highlighted while it is hovered. */
+.card-node.is-link-target {
+  outline: 2px dashed var(--accent);
+  outline-offset: 3px;
+}
+
+/* ---- hubs and folded children ------------------------------------------ */
+
+/* Beside the menu button, not over the title. */
+.hub-pip {
+  position: absolute;
+  top: 7px;
+  right: 36px;
+  z-index: 6;
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  padding: 1px 8px;
+  border-radius: 999px;
+  border: none;
+  font-size: 10.5px;
+  font-weight: 700;
+  line-height: 1.6;
+  background: var(--bg-hover);
+  color: var(--text-muted);
+  opacity: 0;
+  transition: opacity var(--dur-quick) ease, background var(--dur-quick) ease;
+}
+
+.react-flow__node:hover .hub-pip,
+.card-node.is-selected .hub-pip,
+.hub-pip.is-hub {
+  opacity: 1;
+}
+
+.hub-pip.is-hub {
+  background: var(--accent-gradient);
+  color: var(--accent-text);
+}
+
+.hub-pip:hover {
+  transform: none;
+}
+
+.card-collapsed {
+  flex-direction: row;
+  align-items: center;
+  gap: 9px;
+  padding: 0 13px 0 15px;
+  border-radius: 999px;
+  background: var(--bg-card);
+  animation: fold-in var(--dur-slow) var(--ease-spring);
+}
+
+@keyframes fold-in {
+  from {
+    transform: scaleY(0.4);
+    opacity: 0.4;
+  }
+}
+
+.card-collapsed::before {
+  border-radius: 999px 0 0 999px;
+  width: 4px;
+}
+
+/* Ghost of the room a folded card will want back. Only while dragging, so it
+   is guidance during the one moment it matters and silence otherwise. */
+.collapsed-reserve {
+  position: absolute;
+  left: 0;
+  top: 0;
+  right: 0;
+  border: 1.5px dashed var(--border-strong);
+  border-radius: var(--radius);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--dur-quick) ease;
+}
+
+.canvas-page.is-dragging .collapsed-reserve {
+  opacity: 0.65;
+}
+
+.collapsed-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  background: var(--card-accent, var(--cardtype-text));
+}
+
+.collapsed-title {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Low-zoom degrade: a coloured slab with a title, tinted by card type. */
+.card-degraded {
+  align-items: center;
+  justify-content: center;
+  padding: 10px;
+  border-color: transparent;
+  background: color-mix(in srgb, var(--card-accent, var(--cardtype-text)) 22%, var(--bg-card));
+  animation: none;
+}
+
+.card-degraded span {
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: var(--text);
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+
+/* Link cards */
+/* Sized by its contents rather than stretched to the card. Stretching made
+   the card's natural height unmeasurable — the body always reported whatever
+   the box already was — so a link card could never be fitted to its text. */
+.link-card {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  overflow: hidden;
+}
+
+/* A fixed cap rather than a share of the card: a percentage needs a definite
+   height on the parent, which is exactly what was removed above, and a
+   preview that changes size with the card reads as inconsistent anyway. */
+.link-card-image {
+  width: 100%;
+  max-height: 130px;
+  object-fit: cover;
+  border-radius: 5px;
+  flex-shrink: 0;
+}
+
+.link-card-text {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  overflow: hidden;
+}
+
+/* Two lines before the ellipsis: shopping titles are long and the useful
+   half is rarely in the first forty characters. */
+.link-card-title {
+  font-weight: 600;
+  color: var(--accent);
+  text-decoration: none;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+  line-height: 1.3;
+}
+
+.link-card-title:hover {
+  text-decoration: underline;
+}
+
+.link-card-description {
+  font-size: var(--card-copy-medium, 12px);
+  color: var(--text-muted);
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+}
+
+.link-card-host {
+  font-size: var(--card-copy-small, 11px);
+  color: var(--text-muted);
+}
+
+/* YouTube cards: always a thumbnail, so the whole card stays draggable. */
+/* Sized by its contents, never stretched to the card — the same rule the
+   link card learned. Stretching made the natural height unmeasurable, so a
+   video in a column kept whatever height it had and the thumbnail grew to
+   fill it, swallowing the stack. */
+.youtube-card {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.youtube-thumb {
+  position: relative;
+  /* The shape a video actually is, rather than whatever is left over. */
+  aspect-ratio: 16 / 9;
+  flex: none;
+  overflow: hidden;
+}
+
+.youtube-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  pointer-events: none;
+}
+
+/* The only interactive target on the card. Everything else is drag surface. */
+.youtube-play {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 52px;
+  height: 38px;
+  padding: 0;
+  border: none;
+  border-radius: 10px;
+  background: rgba(20, 18, 16, 0.68);
+  color: #fff;
+  font-size: 17px;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 100ms ease;
+}
+
+/* The global button hover also writes `transform`. On an absolutely-centred
+   control that replaces translate(-50%, -50%), making the badge jump away
+   from the pointer. Keep its centring invariant in every pointer state and
+   use colour—not movement—as the feedback. */
+button.youtube-play:hover:not(:disabled) {
+  background: #cc0000;
+  transform: translate(-50%, -50%);
+}
+
+button.youtube-play:active:not(:disabled) {
+  transform: translate(-50%, -50%);
+}
+
+/* Title and body under any media card. */
+.card-caption {
+  padding: 6px 10px;
+  border-top: 1px solid var(--border);
+  background: var(--bg-card);
+  max-height: 45%;
+  overflow-y: auto;
+  flex-shrink: 0;
+}
+
+.card-caption .card-title {
+  margin-bottom: 2px;
+  font-size: 13px;
+  padding-right: 0;
+}
+
+.card-caption .card-body {
+  font-size: var(--card-copy-medium, 12px);
+  color: var(--text-muted);
+}
+
+/* ---- board cards -------------------------------------------------------- */
+
+.board-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  height: 100%;
+  padding: 12px 14px;
+  transition: background var(--dur-quick) ease;
+}
+
+.board-icon {
+  flex-shrink: 0;
+  width: 52px;
+  height: 52px;
+  border-radius: 13px;
+  background-size: cover;
+  background-position: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: var(--shadow);
+  transition: transform var(--dur-quick) var(--ease-spring);
+}
+
+.board-card:hover .board-icon {
+  transform: scale(1.06) rotate(-3deg);
+}
+
+.board-glyph {
+  font-size: 22px;
+  line-height: 1;
+  color: #fff;
+  opacity: 0.92;
+}
+
+.board-icon-missing {
+  background: var(--bg-hover);
+  color: var(--text-muted);
+  font-size: 20px;
+  box-shadow: none;
+}
+
+.board-text {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.board-name {
+  font-weight: 650;
+  font-size: 15px;
+  letter-spacing: -0.01em;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.board-count {
+  font-size: var(--card-copy-medium, 12px);
+  color: var(--text-muted);
+}
+
+.board-chevron {
+  flex-shrink: 0;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: var(--bg-hover);
+  font-size: 20px;
+  line-height: 1;
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform var(--dur-quick) var(--ease-spring),
+    background var(--dur-quick) ease, color var(--dur-quick) ease;
+}
+
+.board-chevron:hover {
+  background: var(--accent);
+  color: var(--accent-text);
+  transform: translateX(2px) scale(1.1);
+}
+
+.board-card.is-missing {
+  cursor: default;
+}
+
+.board-card.is-missing:hover {
+  background: transparent;
+}
+
+/* Image cards */
+.card-content-flush {
+  padding: 0;
+}
+
+.image-card {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+.image-card-frame {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  border-radius: 0;
+}
+
+/* A cropped image is scaled up so the chosen rectangle fills the frame; the
+   rest hangs outside and is clipped. The blurred backdrop is pointless here,
+   since the crop leaves no bars to fill. */
+.image-card-frame.is-cropped::before {
+  display: none;
+}
+
+/* The whole picture stays visible, but the bars either side of it are
+   filled with a blurred copy of the image rather than a flat slab, so a
+   portrait photo in a landscape card stops looking like a mistake. */
+.image-card-frame::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: var(--image-src);
+  background-size: cover;
+  background-position: center;
+  filter: blur(18px) saturate(1.2);
+  transform: scale(1.15);
+  opacity: 0.55;
+}
+
+.image-card img {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+  pointer-events: none;
+}
+
+/* Top-left, deliberately: the bottom-right corner belongs to the resize
+   handle, and a control sitting on it makes the card unresizable. */
+.image-expand {
+  position: absolute;
+  left: 7px;
+  top: 7px;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: none;
+  border-radius: 6px;
+  background: rgba(20, 18, 16, 0.6);
+  color: #fff;
+  font-size: 14px;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 100ms ease;
+}
+
+.react-flow__node:hover .image-expand,
+.card-node.is-selected .image-expand {
+  opacity: 1;
+}
+
+.image-expand:hover {
+  background: rgba(20, 18, 16, 0.85);
+}
+
+/* ---- a cut-out sits on the canvas, not on a card ------------------------ */
+
+/* An image with real transparency in it loses everything behind it, so the
+   picture reads as an object on the board rather than as a photograph in a
+   frame with its own see-through bits.
+ *
+ * `:not(.is-painted)` is the way back. Painting the card is a deliberate act
+ * and says you want a surface there, so a chosen fill puts the frame back
+ * rather than being silently ignored. */
+.card-node.is-cutout:not(.is-painted) {
+  background: none;
+  border-color: transparent;
+  box-shadow: none;
+}
+
+/* The accent bar would be a coloured stripe hanging in mid-air above a
+   floating object. */
+.card-node.is-cutout:not(.is-painted)::before {
+  display: none;
+}
+
+/* The blurred copy exists to fill the bars either side of a photo that does
+   not match its card's shape. There is no card to fill any more, and a
+   smear of the picture showing through its own transparent parts is exactly
+   what this is meant to get rid of. */
+.card-node.is-cutout:not(.is-painted) .image-card-frame::before {
+  display: none;
+}
+
+/* Selection still has to be visible with nothing to draw a border on. An
+   outline sits outside the box rather than in it, so it reads as a marquee
+   around the object instead of a frame reappearing. */
+.card-node.is-cutout:not(.is-painted).is-selected {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+  border-color: transparent;
+}
+
+.image-card-missing {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: var(--text-muted);
+  font-size: 12px;
+}
+
+/* Audio cards */
+.audio-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  height: 100%;
+  overflow: hidden;
+}
+
+/* Inside a column the height is derived from the content, so a block that
+   claims 100% of the card feeds its own measurement back in and the card
+   grows every pass until it hits the ceiling. Adding a title was enough to
+   start it off. In a column the audio block is content-sized instead. */
+.card-node.is-member .audio-card,
+.card-node.is-member .audio-row {
+  height: auto;
+}
+
+.card-node.is-member .audio-play {
+  height: 56px;
+  max-height: 56px;
+}
+
+/* And clamped, because a column is a list. Content-sizing alone stopped the
+   runaway growth but still handed a stack a member as tall as the whole
+   transcript; three lines says what the clip is without becoming the page. */
+.card-node.is-member .audio-transcript {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  max-height: none;
+  overflow: hidden;
+}
+
+.audio-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.audio-upload {
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 6px 12px;
+  cursor: pointer;
+  background: var(--bg-panel);
+}
+
+.audio-upload:hover {
+  background: var(--bg-hover);
+}
+
+/* The preview is the card's content, not a caption under it, so it is set in
+   the card's own text colour and a little heavier. Muted grey made the one
+   part of the card carrying meaning the faintest thing on it. */
+/* The transcript is the card's text, so it is set exactly like a card body —
+   same size, same weight, same colour. It was a size down and muted grey,
+   which made the only part of the card carrying meaning the faintest thing
+   on it. */
+.audio-transcript {
+  font-size: var(--card-copy-size, 13px);
+  line-height: 1.45;
+  color: var(--card-ink, inherit);
+  overflow-y: auto;
+  overflow-wrap: anywhere;
+}
+
+.audio-transcript.pending {
+  font-style: italic;
+}
+
+/* Audio: one square control beside the transcript, rather than the browser's
+   full-width player stacked on top of it. */
+.audio-row {
+  display: flex;
+  align-items: stretch;
+  gap: 10px;
+  min-height: 0;
+  height: 100%;
+}
+
+/* Sized off the card rather than fixed. At 56px square it left a band of dead
+   space under itself on a card at its minimum height; now it takes the height
+   it is given, stays square, and stops growing before it turns into a
+   billboard on a tall card. */
+.audio-play {
+  flex: 0 0 auto;
+  align-self: flex-start;
+  height: 100%;
+  min-height: 56px;
+  max-height: 84px;
+  aspect-ratio: 1;
+  width: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg-panel);
+  cursor: pointer;
+  transition: background var(--dur-quick) ease, border-color var(--dur-quick) ease;
+}
+
+.audio-play:hover {
+  background: var(--bg-hover);
+  border-color: var(--border-strong);
+}
+
+.audio-play-glyph {
+  font-size: 15px;
+  flex: 0 0 auto;
+  line-height: 1;
+  color: var(--card-accent, var(--accent));
+}
+
+.audio-play-time {
+  font-size: 11px;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-muted);
+}
+
+.audio-row .audio-transcript {
+  flex: 1 1 auto;
+  min-width: 0;
+  max-height: 100%;
+  padding: 8px 10px;
+  border: 1px solid color-mix(in srgb, var(--card-fg, var(--text)) 14%, transparent);
+  border-radius: var(--radius-sm);
+  background: color-mix(in srgb, var(--card-fg, var(--text)) 7%, var(--card-fill, var(--bg-sunk)));
+}
+
+/* A favicon stands in when a page has no og:image, which is most of them. */
+.link-card-host {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  min-width: 0;
+}
+
+.link-card-favicon {
+  width: 13px;
+  height: 13px;
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+
+.link-card-host > span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* A caption that is only a link shows where it goes, not the raw address. */
+.card-caption-link {
+  font-size: var(--card-copy-small, 11px);
+  color: var(--accent);
+  text-decoration: none;
+  align-self: flex-start;
+}
+
+.card-caption-link:hover {
+  text-decoration: underline;
+}
+
+/* Price, rating and stock, when the page published structured data for them.
+   One compact line: the point is a glanceable fact, not a spec sheet. */
+.link-card-facts {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 8px;
+  font-size: var(--card-copy-medium, 12px);
+}
+
+.link-card-price {
+  font-weight: 700;
+  color: var(--text);
+}
+
+.link-card-rating,
+.link-card-brand {
+  color: var(--text-muted);
+}
+
+.link-card-oos {
+  color: var(--danger);
+  font-size: var(--card-copy-small, 11px);
+}
+
+/* A heading card is a label, not a note: a title set large enough to read
+   when the board is zoomed out far past the point where ordinary card text
+   has turned to grey mush. It is the only place a serif appears, so that a
+   heading reads as a different kind of object rather than a louder note. */
+/* A heading is a slab of colour, and the slab is the *card* — so it follows
+   the fill like every other painted card, not the accent. It read as the
+   accent for as long as a card had only one colour to give; once they split,
+   picking a card colour on a heading did nothing at all. */
+.card-node.is-heading {
+  background: var(--card-fill, var(--accent));
+  border-color: transparent;
+  justify-content: center;
+  /* Lets the type below size itself against the card rather than a fixed
+     pixel value, so a big heading card actually looks big. */
+  container-type: size;
+}
+
+.card-node.is-heading .card-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 14px 18px;
+  gap: 6px;
+  overflow: hidden;
+}
+
+.card-node.is-heading .card-title {
+  /* The base rule reserves 58px on the right to clear the menu button. On a
+     centred heading that asymmetry drags every line half of it off centre,
+     which is the whole reason headings looked wrong. The menu only appears on
+     hover, and a heading is short, so it can have the full width back. */
+  padding-right: 0;
+  width: 100%;
+  margin-bottom: 0;
+  font-family: var(--font-display);
+  /* Scales with the card's width, floored and capped so a tiny card stays
+     readable and a huge one does not become a billboard — and multiplied by
+     how much title there is, so a long one steps down instead of wrapping
+     into a wall. */
+  font-size: clamp(18px, calc(13cqi * var(--heading-fit, 1)), 56px);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.08;
+  /* White was hardcoded here, which is the other half of why a heading
+     ignored the colours you gave it. The fill knows what reads on it. */
+  color: var(--card-ink, var(--card-fill-ink, #fff));
+  /* The drop shadow went with the white: it propped up light text on a
+     mid-tone slab, and under dark text on a yellow one it just looked
+     smudged. Every fill now clears 4.6:1 with its own ink unaided. */
+  white-space: normal;
+  overflow: visible;
+  text-overflow: clip;
+  max-width: 100%;
+}
+
+.card-node.is-heading .card-body {
+  width: 100%;
+  font-size: clamp(11px, 4cqi, 15px);
+  line-height: 1.35;
+  color: rgba(255, 255, 255, 0.88);
+}
+
+/* A hairline under the title, the way a printed heading sits over its rule. */
+.card-node.is-heading .card-title::after {
+  content: "";
+  display: block;
+  width: 34%;
+  min-width: 28px;
+  height: 2px;
+  margin: 0.42em auto 0;
+  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.5);
+}
+
+/* Both of the rules that used to live here hid the accent on everything but
+   a text card, back when it was a spine down the left-hand side and a
+   photograph did not need one. As a bar across the top the reasoning
+   inverts: the media cards are the ones that wear it by default, and a note
+   is the one that stays bare until you choose. `has-accent` decides now. */
+
+/* Collapsed preview for a text card sitting in a column. Clicking it clears
+   the class, the height measurement re-runs, and the stack opens up. */
+.card-node.is-preview .card-body {
+  display: -webkit-box;
+  -webkit-line-clamp: 1;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.card-node.is-preview .card-title {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-bottom: 2px;
+}
+
+/* Tasks and images in a preview would each add a line of their own. */
+.card-node.is-preview .card-progress,
+.card-node.is-preview .card-body img,
+.card-node.is-preview .card-body pre,
+.card-node.is-preview .card-body table {
+  display: none;
+}
+
+/* A file card: a type badge beside the name and size. No preview, because
+   the point of this card is everything that has none. */
+/* Never `height: 100%`. Stretching the row to the card would make its
+   natural height unmeasurable — it would always report whatever the box
+   already was — and the card could never be fitted to it. The centring that
+   keeps the slack even is done by the content box below instead. */
+/* A glyph with its name under it, like a document icon — the file card used
+   to be a small badge beside a strip of text and a download arrow, which read
+   as a row in a list rather than an object on a canvas. */
+.file-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-width: 0;
+  width: 100%;
+  height: 100%;
+  text-align: center;
+}
+
+.card-node.type-file .card-content {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 10px;
+}
+
+/* The extension is written across the glyph, the way a real file icon carries
+   it, rather than queued up as a fourth stacked line. */
+.file-card-badge {
+  position: relative;
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--card-accent, var(--cardtype-link));
+}
+
+.file-card-glyph {
+  width: 54px;
+  height: 54px;
+}
+
+.file-card-ext {
+  position: absolute;
+  bottom: 13%;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 1px 5px;
+  border-radius: 3px;
+  background: var(--bg-card);
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  line-height: 1.35;
+  color: var(--card-accent, var(--cardtype-link));
+}
+
+.file-card-text {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+}
+
+.file-card-name {
+  font-size: 13.5px;
+  font-weight: 650;
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.file-card-meta {
+  font-size: var(--card-copy-small, 11px);
+  color: var(--text-muted);
+}
+
+/* Out of the way until wanted: the card is a name and a glyph, and a
+   permanent arrow was competing with both. */
+.file-card-download {
+  position: absolute;
+  right: 6px;
+  bottom: 6px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radius-sm);
+  color: var(--accent);
+  background: transparent;
+  text-decoration: none;
+  opacity: 0;
+  transition: opacity var(--dur-quick) ease, background var(--dur-quick) ease;
+}
+
+.card-node:hover .file-card-download,
+.card-node.is-selected .file-card-download {
+  opacity: 1;
+}
+
+.file-card-download:hover {
+  background: var(--accent-soft);
+}
+
+
+/* A stack opens and closes rather than redrawing: the cards slide into their
+   new positions when one is expanded, added or pulled out. The card being
+   dragged is exempt — it has to track the pointer exactly.
+   
+   Position only, never height. A node's height is set from a measurement of
+   its own content, and animating it left the element reporting its starting
+   height for as long as the transition was pending — so the card was drawn at
+   one size while the layout and the drag hit-testing used another. That is
+   what made links fire against cards the cursor was nowhere near. */
+.react-flow__node.is-column-member,
+.react-flow__node-column {
+  transition: transform var(--dur-quick) var(--ease-out);
+}
+
+.react-flow__node.dragging,
+.react-flow__node.dragging.is-column-member {
+  transition: none;
+}
+
+/* A stack is one rigid object while its container moves. Member transitions
+   are useful after a reorder, but during the gesture they made every card
+   chase the container on its own easing curve. They come back as soon as the
+   pointer is released, so the actual reflow still settles smoothly. */
+.canvas-page.is-dragging .react-flow__node.is-column-member:not(.dragging) {
+  transition: none;
+}
+
+/* Picking a card up and setting it down.
+   
+   Lifting is instant — the shadow spreads and the card grows a hair the
+   moment the drag starts. Setting down is not: the class comes off on drop
+   and both ease back, so the card settles rather than snapping flat. The
+   spring easing gives it the tiny overshoot a real object has when it lands.
+   
+   This is on `.card-node`, never on the node wrapper: the wrapper's transform
+   is the card's position on the canvas, and animating that would make the
+   card lag the pointer. */
+.react-flow__node.dragging .card-node {
+  box-shadow: var(--shadow-pop);
+  /* Lift as a rigid plane. The cursor moves the wrapper; this small, constant
+     offset supplies depth without bending the card or lagging behind it. */
+  transform: translateY(var(--lift-card-y)) scale(var(--lift-card-scale));
+  transition: box-shadow var(--dur-lift) var(--ease-out),
+    transform var(--dur-lift) var(--ease-out);
+  /* Only for the length of the drag, and only on the cards in it. */
+  will-change: transform;
+}
+
+/* A column being dragged gets the same lift, so a stack feels as solid as
+   the cards in it. */
+.react-flow__node.dragging .column-node {
+  box-shadow: var(--shadow-pop);
+  transform: translateY(var(--lift-column-y)) scale(var(--lift-column-scale));
+  transition: box-shadow var(--dur-lift) var(--ease-out),
+    transform var(--dur-lift) var(--ease-out);
+  will-change: transform;
+}
+
+/* A document on the canvas is a page, not a note: a ruled edge down the left
+   and the body faded out at the bottom, so it reads as something with more
+   inside it than the card is showing. Opening it is a double-click. */
+.card-node.is-document {
+  background: var(--bg-card);
+}
+
+.card-node.is-document .card-title {
+  font-family: var(--font-display);
+  font-size: 16px;
+  letter-spacing: -0.01em;
+}
+
+.card-node.is-document .card-content {
+  position: relative;
+}
+
+/* ---- document cards ----------------------------------------------------- */
+
+/* Two modes out of one piece of markup, chosen by how big the card is: a
+   page-sized preview, or — once there is no longer room to preview anything
+   honestly — a file icon with its name under it. The card queries its own
+   size, so resizing switches modes with no measurement in JS. */
+.doc-card {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  padding: 0;
+  /* No scrolling, deliberately. A preview that scrolls invites you to read a
+     document through a letterbox; this one shows what fits, fades out, and
+     leaves the rest to the editor. */
+  overflow: hidden;
+}
+
+.doc-card-page {
+  flex: 1;
+  min-height: 0;
+  padding: 14px 16px 0;
+  font-size: var(--card-copy-medium, 12px);
+  line-height: 1.55;
+  color: var(--text-muted);
+  overflow: hidden;
+  /* Aggressive on purpose: the last couple of lines dissolve rather than
+     being cut, which reads as "there is more" instead of "this is broken". */
+  -webkit-mask-image: linear-gradient(to bottom, #000 62%, transparent 97%);
+  mask-image: linear-gradient(to bottom, #000 62%, transparent 97%);
+}
+
+.doc-card-page > *:first-child {
+  margin-top: 0;
+}
+
+.doc-card-foot {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  padding: 11px 14px;
+  background: var(--bg-hover);
+  border-top: 1px solid var(--border);
+}
+
+.doc-card-icon {
+  flex: 0 0 auto;
+  width: 26px;
+  height: 26px;
+  color: var(--text-muted);
+}
+
+.doc-card-meta {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  gap: 1px;
+}
+
+.doc-card-name {
+  font-weight: 650;
+  font-size: 13px;
+  color: var(--text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.doc-card-words {
+  font-size: var(--card-copy-small, 11px);
+  color: var(--text-muted);
+}
+
+/* Small enough that a preview would be a few clipped words, and it stops
+   pretending to be a card at all: no surface, no border, no accent, no
+   shadow — a file glyph on the canvas with its name underneath, which is what
+   an icon is. Keeping the card chrome around it just wrapped a small picture
+   in a big empty box. */
+.card-node.is-icon {
+  background: transparent;
+  border-color: transparent;
+  box-shadow: none;
+}
+
+.card-node.is-icon:hover {
+  box-shadow: none;
+}
+
+/* Selection still has to show, but as a ring on the glyph rather than the
+   lift of a card that is no longer there. Written after `.is-selected` on
+   purpose: they are the same specificity, so order is what decides. */
+.card-node.is-icon.is-selected {
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+
+.card-node.is-icon .doc-card-page {
+  display: none;
+}
+
+/* A file card is already a glyph and a name, so shedding the card chrome is
+   all it needs — the layout is the same at either size. */
+.card-node.is-icon .file-card-glyph {
+  width: 62px;
+  height: 62px;
+}
+
+.card-node.is-icon .file-card-ext {
+  background: var(--bg);
+}
+
+.card-node.is-icon .doc-card-foot {
+  flex: 1;
+  flex-direction: column;
+  justify-content: center;
+  gap: 7px;
+  padding: 4px;
+  border-top: none;
+  background: transparent;
+  text-align: center;
+}
+
+.card-node.is-icon .doc-card-icon {
+  width: 62px;
+  height: 62px;
+  /* The accent colours the glyph, since there is no bar to put it on. Plain
+     grey until one is chosen. */
+  color: var(--card-accent, var(--text-muted));
+}
+
+.card-node.is-icon .doc-card-meta {
+  align-items: center;
+  gap: 2px;
+}
+
+.card-node.is-icon .doc-card-name {
+  white-space: normal;
+  text-align: center;
+  font-size: 14px;
+}
+
+/* The menu would otherwise float over open canvas with no card under it. */
+.card-node.is-icon .card-menu-button {
+  opacity: 0;
+}
+
+.card-node.is-icon:hover .card-menu-button,
+.card-node.is-icon.is-selected .card-menu-button {
+  opacity: 1;
+}

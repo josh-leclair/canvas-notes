@@ -1,0 +1,546 @@
+.canvas-page {
+  position: relative;
+  height: 100%;
+  background: var(--bg);
+  color: var(--text);
+}
+
+/* A canvas appearance owns the whole workspace: board, cards, toolbar,
+   inbox, controls and menus all consume the same semantic palette. */
+.canvas-page .react-flow {
+  font-family: var(--canvas-font, Candara, "Trebuchet MS", sans-serif);
+}
+
+.canvas-appearance-studio {
+  --canvas-font: Candara, "Trebuchet MS", sans-serif;
+  --font-display: Constantia, "Palatino Linotype", serif;
+  --canvas-dots: var(--study-canvas-dots);
+  --xy-background-color: var(--study-bg);
+}
+
+.canvas-appearance-pantry {
+  --canvas-font: "Bookman Old Style", Bookman, Georgia, serif;
+  --font-display: "Bookman Old Style", Bookman, Georgia, serif;
+  /* Pantry's cream belongs on the objects, not across the entire workspace.
+     The dark plum field is what gives the paper cards and warm dot grid room
+     to read without turning a large canvas into a light source. */
+  --bg: var(--palette-plum);
+  --bg-sunk: #292329;
+  --bg-panel: var(--pantry-bg-panel);
+  --bg-card: var(--pantry-bg-card);
+  --bg-hover: var(--pantry-bg-hover);
+  --bg-input: var(--pantry-bg-panel);
+  --text: var(--palette-chocolate);
+  --text-muted: var(--pantry-text-muted);
+  --border: var(--pantry-border);
+  --border-strong: var(--palette-strawberry);
+  --accent: var(--pantry-accent);
+  --accent-hover: var(--pantry-accent-hover);
+  --accent-text: var(--pantry-bg-card);
+  --accent-soft: var(--pantry-accent-soft);
+  --canvas-dots: var(--pantry-canvas-dots);
+  --xy-background-color: var(--palette-plum);
+  --minimap-bg: var(--pantry-minimap-bg);
+  --minimap-mask: var(--pantry-minimap-mask);
+  --minimap-node: var(--pantry-minimap-node);
+  --minimap-node-stroke: var(--pantry-minimap-node-stroke);
+  --container-accent: var(--palette-strawberry);
+  --container-accent-hover: var(--pantry-accent);
+  --container-accent-soft: var(--pantry-container-soft);
+  --container-divider: var(--pantry-border);
+  --cardtype-link: var(--palette-blueberry);
+  --cardtype-youtube: var(--palette-strawberry);
+  --cardtype-audio: var(--palette-ferment);
+  --cardtype-image: var(--palette-floral);
+  --cardtype-board: var(--palette-herb);
+  --cardtype-portal: var(--palette-vanilla);
+  --cardtype-document: var(--palette-chocolate);
+  --cardtype-file: var(--palette-wine);
+  --cardtype-checklist: var(--palette-citrus);
+  --cardtype-table: var(--palette-blueberry);
+  --cardtype-column: var(--palette-strawberry);
+}
+
+.canvas-appearance-night_garden {
+  --canvas-font: "Palatino Linotype", "Book Antiqua", Palatino, serif;
+  --font-display: Constantia, "Palatino Linotype", serif;
+  --bg: var(--night-bg);
+  --bg-sunk: var(--night-bg-sunk);
+  --bg-panel: var(--night-bg-panel);
+  --bg-card: var(--night-bg-card);
+  --bg-hover: var(--night-bg-hover);
+  --bg-input: var(--night-bg-input);
+  --text: var(--night-text);
+  --text-muted: var(--night-text-muted);
+  --border: var(--night-border);
+  --border-strong: var(--palette-aqua);
+  --accent: var(--palette-coral);
+  --accent-hover: var(--night-accent-hover);
+  --accent-text: var(--night-bg-sunk);
+  --accent-soft: var(--night-accent-soft);
+  --canvas-dots: var(--night-canvas-dots);
+  --xy-background-color: var(--night-bg);
+  --minimap-bg: var(--night-minimap-bg);
+  --minimap-mask: var(--night-minimap-mask);
+  --minimap-node: var(--night-minimap-node);
+  --minimap-node-stroke: var(--night-minimap-node-stroke);
+  --container-accent: var(--palette-aqua);
+  --container-accent-hover: var(--night-container-hover);
+  --container-accent-soft: var(--night-container-soft);
+  --container-divider: var(--night-border);
+  --cardtype-link: var(--palette-sky);
+  --cardtype-youtube: var(--palette-flare);
+  --cardtype-audio: var(--palette-coral);
+  --cardtype-image: var(--palette-orchid);
+  --cardtype-board: var(--palette-sprout);
+  --cardtype-portal: var(--palette-aqua);
+  --cardtype-document: var(--palette-mint);
+  --cardtype-file: var(--palette-navy);
+  --cardtype-checklist: var(--palette-flare);
+  --cardtype-table: var(--palette-sky);
+  --cardtype-column: var(--palette-orchid);
+}
+
+/* ---- toolbar: floating pills, not a chrome bar -------------------------- */
+
+.canvas-toolbar {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  right: 10px;
+  z-index: 60;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  pointer-events: none;
+  flex-wrap: wrap;
+}
+
+.toolbar-group {
+  pointer-events: auto;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 3px;
+  background: color-mix(in srgb, var(--bg-panel) 88%, transparent);
+  backdrop-filter: blur(12px);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  box-shadow: var(--shadow);
+}
+
+.toolbar-group:nth-of-type(2) {
+  margin-right: auto;
+}
+
+.toolbar-group :is(.tool, summary) > .icon {
+  color: var(--accent);
+}
+
+.canvas-back {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  text-decoration: none;
+  transition: background var(--dur-quick) ease,
+    transform var(--dur-quick) var(--ease-out);
+}
+
+.canvas-back:hover {
+  background: var(--bg-hover);
+  transform: scale(1.08) rotate(-6deg);
+}
+
+.crumb {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 0 2px 0 6px;
+  font-size: 13px;
+  font-weight: 550;
+  color: var(--text-muted);
+  text-decoration: none;
+  white-space: nowrap;
+  max-width: 15vw;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.crumb:hover {
+  color: var(--accent);
+}
+
+.crumb-sep {
+  color: var(--border-strong);
+  font-size: 15px;
+}
+
+.canvas-title {
+  font-weight: 650;
+  letter-spacing: -0.01em;
+  padding: 0 10px 0 2px;
+  max-width: 34vw;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+button.tool,
+.toolbar-file,
+.toolbar-more > summary {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  border: none;
+  background: transparent;
+  border-radius: 999px;
+  padding: 5px 10px;
+  font-size: 13px;
+  font-weight: 550;
+  cursor: pointer;
+  color: var(--text);
+  transition: background var(--dur-quick) ease,
+    transform var(--dur-quick) var(--ease-out);
+}
+
+button.tool:hover,
+.toolbar-file:hover,
+.toolbar-more > summary:hover,
+.toolbar-more[open] > summary {
+  background: var(--bg-hover);
+  transform: translateY(-1px);
+}
+
+button.tool:active,
+.toolbar-file:active,
+.toolbar-more > summary:active {
+  transform: scale(0.95);
+}
+
+button.tool.icon-only {
+  width: 28px;
+  padding: 0;
+  height: 28px;
+  justify-content: center;
+  font-size: 15px;
+}
+
+.toolbar-file.icon-only {
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  justify-content: center;
+}
+
+.tool-glyph {
+  font-size: 13px;
+  color: var(--accent);
+  line-height: 1;
+}
+
+.toolbar-file input {
+  display: none;
+}
+
+.toolbar-more {
+  position: relative;
+}
+
+.appearance-picker-menu {
+  min-width: 174px;
+}
+
+.appearance-picker-menu button {
+  align-items: center;
+}
+
+.appearance-picker-menu button.is-active {
+  background: var(--bg-hover);
+  color: var(--accent);
+}
+
+.toolbar-text-stepper {
+  display: inline-grid;
+  grid-template-columns: 18px 24px 24px 24px;
+  align-items: center;
+  gap: 1px;
+  padding: 0 3px;
+  color: var(--text);
+}
+
+.toolbar-text-stepper > svg {
+  color: var(--accent);
+}
+
+.toolbar-text-stepper button {
+  width: 24px;
+  height: 26px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  font-size: 16px;
+}
+
+.toolbar-text-stepper button:hover:not(:disabled) {
+  background: var(--bg-hover);
+  transform: none;
+}
+
+.toolbar-text-stepper output {
+  text-align: center;
+  color: var(--text);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+}
+
+.mood-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: conic-gradient(
+    var(--mood-1) 0 25%,
+    var(--mood-2) 0 50%,
+    var(--mood-3) 0 75%,
+    var(--mood-4) 0
+  );
+  box-shadow: 0 0 0 1px var(--border);
+}
+
+.mood-dot.appearance-studio {
+  --mood-1: var(--palette-linen);
+  --mood-2: var(--palette-plum);
+  --mood-3: var(--palette-avocado);
+  --mood-4: var(--palette-maple);
+}
+
+.mood-dot.appearance-pantry {
+  --mood-1: var(--palette-citrus);
+  --mood-2: var(--palette-strawberry);
+  --mood-3: var(--palette-floral);
+  --mood-4: var(--palette-blueberry);
+}
+
+.mood-dot.appearance-night_garden {
+  --mood-1: var(--palette-flare);
+  --mood-2: var(--palette-sky);
+  --mood-3: var(--palette-sprout);
+  --mood-4: var(--palette-orchid);
+}
+
+.toolbar-more > summary {
+  list-style: none;
+  user-select: none;
+}
+
+.toolbar-more > summary::-webkit-details-marker {
+  display: none;
+}
+
+.toolbar-more-menu {
+  position: absolute;
+  top: calc(100% + 7px);
+  right: 0;
+  min-width: 184px;
+  padding: 5px;
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-lift);
+  z-index: 40;
+}
+
+.toolbar-more-item {
+  width: 100%;
+  min-height: 34px;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 7px 9px;
+  border: 0;
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  font-size: 13px;
+  text-align: left;
+  cursor: pointer;
+  transition: background var(--dur-quick) var(--ease-out),
+    color var(--dur-quick) var(--ease-out);
+}
+
+.toolbar-more-item:hover {
+  background: var(--bg-hover);
+  color: var(--accent);
+}
+
+.toolbar-more-file input {
+  display: none;
+}
+
+/* ---- toast -------------------------------------------------------------- */
+
+.canvas-toast {
+  position: absolute;
+  bottom: 22px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 20;
+  background: var(--danger);
+  color: var(--danger-text);
+  padding: 9px 18px;
+  border-radius: 999px;
+  box-shadow: var(--shadow-lift);
+  font-size: 13px;
+  font-weight: 550;
+  animation: toast-rise var(--dur-slow) var(--ease-spring);
+}
+
+@keyframes toast-rise {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(14px);
+  }
+}
+
+/* ---- xyflow chrome, themed ---------------------------------------------- */
+
+.react-flow {
+  background: var(--xy-background-color, var(--bg));
+  /* xyflow ships its own inherited foreground. Canvas moods replace both
+     light and dark surfaces, so every unpainted piece of board UI needs to
+     begin from the matching semantic ink instead of that library default. */
+  color: var(--text);
+}
+
+.react-flow .react-flow__minimap {
+  width: 190px;
+  height: 120px;
+  background: var(--minimap-bg) !important;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+  opacity: 0.82;
+  transition: opacity var(--dur-quick) ease, border-color var(--dur-quick) ease;
+}
+
+.react-flow .react-flow__minimap:hover {
+  opacity: 1;
+  border-color: var(--border-strong);
+}
+
+.react-flow .react-flow__minimap-mask {
+  fill: var(--minimap-mask);
+}
+
+.react-flow__controls {
+  border-radius: var(--radius);
+  overflow: hidden;
+  box-shadow: var(--shadow);
+  border: 1px solid var(--border);
+}
+
+/* Both controls occupy the bottom-right panel slot. Give each its own patch
+   of canvas instead of drawing the buttons over the map. */
+.react-flow .react-flow__controls.bottom.right {
+  right: 204px;
+}
+
+.react-flow__controls button {
+  background: var(--bg-panel);
+  border: none;
+  border-bottom: 1px solid var(--border);
+  color: var(--text);
+  fill: var(--text);
+  width: 28px;
+  height: 28px;
+  border-radius: 0;
+}
+
+.react-flow__controls button:hover {
+  background: var(--bg-hover);
+  transform: none;
+}
+
+.react-flow__controls button:last-child {
+  border-bottom: none;
+}
+
+/* The line you drag out to make a link. */
+.react-flow__connectionline path {
+  stroke: var(--accent);
+  stroke-width: 2.4;
+  stroke-dasharray: 6 5;
+  animation: dash-run 500ms linear infinite;
+}
+
+@keyframes dash-run {
+  to {
+    stroke-dashoffset: -22;
+  }
+}
+
+/* ---- link lines pass behind the cards ----------------------------------- */
+
+/* xyflow lays edges, edge labels and nodes out as three sibling layers inside
+   the viewport, all at `z-index: auto`, and then puts a z-index on each edge
+   and each node individually. So an edge and a card compete directly, and at
+   a tie the cards win only because the edges layer comes first in the DOM.
+   The tie does not always hold: `getElevatedEdgeZIndex` raises an edge to its
+   endpoint's own z whenever that endpoint has a `parentId` — which every card
+   inside a column has — and those lines then drew straight over other cards.
+
+   Giving the layer a z-index of its own makes it a stacking context, so every
+   per-edge z-index is settled *inside* it and the whole layer sits below the
+   nodes whatever xyflow computes. Verified up to an edge z-index of 99999.
+
+   Negative is scoped to the viewport, which is a stacking context of its own
+   (it carries the pan/zoom transform), so the lines still paint above the dot
+   grid — `.react-flow__background` is a sibling of the whole renderer, not of
+   these layers. */
+.react-flow .react-flow__edges {
+  z-index: -1;
+}
+
+.react-flow__edge.selected .react-flow__edge-path,
+.react-flow__edge:hover .react-flow__edge-path {
+  filter: drop-shadow(0 0 5px var(--accent-soft));
+}
+
+.react-flow__attribution {
+  display: none;
+}
+
+/* Alignment feedback is drawn in flow coordinates, so it stays attached to
+   the objects while the canvas pans or zooms. Behind nodes, above the dots. */
+.canvas-alignment-guide {
+  position: absolute;
+  z-index: -1;
+  pointer-events: none;
+  background: var(--accent);
+  box-shadow: 0 0 0 2px var(--accent-soft);
+  opacity: 0.82;
+}
+
+.canvas-alignment-guide.is-vertical {
+  top: -100000px;
+  height: 200000px;
+}
+
+.canvas-alignment-guide.is-horizontal {
+  left: -100000px;
+  width: 200000px;
+}
+.canvas-boundary {
+  position: absolute;
+  left: 0;
+  top: 0;
+  box-sizing: border-box;
+  border: 3px solid color-mix(in srgb, var(--accent) 58%, var(--border-strong));
+  box-shadow:
+    0 0 0 100000px color-mix(in srgb, var(--bg) 38%, transparent),
+    inset 0 0 0 1px color-mix(in srgb, var(--xy-background-color) 70%, transparent);
+  pointer-events: none;
+}

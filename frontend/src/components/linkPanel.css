@@ -1,0 +1,120 @@
+.link-panel {
+  position: absolute;
+  bottom: 18px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 20;
+  width: 430px;
+  max-width: calc(100vw - 32px);
+  background: color-mix(in srgb, var(--bg-panel) 92%, transparent);
+  backdrop-filter: blur(14px);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lift);
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  animation: link-panel-rise var(--dur-slow) var(--ease-spring) backwards;
+}
+
+@keyframes link-panel-rise {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(16px);
+  }
+}
+
+.link-panel-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.link-endpoints {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-weight: 600;
+  font-size: 13px;
+}
+
+/* Both titles give way equally, so a long one cannot squeeze the other out
+   and leave the arrow reading as pointing at nothing. */
+.link-end {
+  flex: 1 1 0;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Out-specifies `.link-panel-header button`, which is one class and one type
+   and would otherwise win. */
+.link-panel-header .link-flip {
+  flex: none;
+  padding: 0 5px;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 14px;
+  line-height: 1.4;
+  cursor: pointer;
+  transition: transform var(--dur-slow) var(--ease-spring),
+    color var(--dur-quick) ease, background var(--dur-quick) ease;
+}
+
+/* Turning on hover says what the click will do before it is made. */
+.link-panel-header .link-flip:hover {
+  background: var(--bg-hover);
+  color: var(--text);
+  transform: rotate(180deg);
+}
+
+.link-panel-header button {
+  border: none;
+  background: transparent;
+  padding: 2px 6px;
+  color: var(--text-muted);
+}
+
+.link-panel-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.link-type-chip {
+  font-size: 11px;
+  padding: 3px 11px;
+  border-radius: 999px;
+  border-width: 1.5px;
+  background: transparent;
+  text-transform: capitalize;
+}
+
+.link-type-chip:hover {
+  transform: translateY(-2px) scale(1.04);
+}
+
+.link-type-chip.is-active {
+  background: var(--bg-hover);
+  font-weight: 700;
+  box-shadow: inset 0 0 0 1px currentColor;
+}
+
+.link-panel textarea {
+  width: 100%;
+  resize: none;
+  font-size: 13px;
+}
+
+.link-meta {
+  flex: 1;
+  font-size: 11px;
+  color: var(--text-muted);
+}

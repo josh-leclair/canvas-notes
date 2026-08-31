@@ -1,0 +1,17 @@
+# Use this override when PostgreSQL is managed outside this Compose project.
+# Docker Compose 2.24+ is required for the !reset tag.
+services:
+  db:
+    # The service remains defined by the base file but is not started unless
+    # somebody explicitly enables this otherwise-unused profile.
+    profiles: ["bundled-database"]
+
+  backend:
+    environment:
+      DATABASE_URL: ${DATABASE_URL:?set DATABASE_URL in .env}
+    depends_on: !reset {}
+
+  worker:
+    environment:
+      DATABASE_URL: ${DATABASE_URL:?set DATABASE_URL in .env}
+    depends_on: !reset {}

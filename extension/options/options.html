@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Canvas Notes Web Clipper setup</title>
+    <link rel="stylesheet" href="../styles/common.css">
+    <link rel="stylesheet" href="options.css">
+  </head>
+  <body>
+    <main>
+      <header>
+        <img src="../icons/icon.svg" width="48" height="48" alt="">
+        <div>
+          <h1>Canvas Notes Web Clipper</h1>
+          <p>Connect this browser to your Canvas Notes server.</p>
+        </div>
+      </header>
+
+      <section class="notice">
+        <h2>What gets sent</h2>
+        <p>The extension transmits information only after you choose a clip command. Depending on that command, it sends the chosen page URL, title, selected text, simplified article text, link, or image to the Canvas Notes server you configure below. Your API token is sent only to that server for authentication.</p>
+        <p>There is no analytics, advertising, browsing-history collection, background page monitoring, or third-party service.</p>
+      </section>
+
+      <form id="connection-form">
+        <label for="server-url">Canvas Notes server URL</label>
+        <input id="server-url" type="url" placeholder="https://notes.example.com" required spellcheck="false" autocomplete="url">
+        <p class="hint">HTTPS is required except for localhost development.</p>
+
+        <label for="api-token">API token</label>
+        <div class="token-row">
+          <input id="api-token" type="password" placeholder="cnv_…" required spellcheck="false" autocomplete="off">
+          <button id="show-token" type="button">Show</button>
+        </div>
+        <p class="hint">Create one under Canvas Notes → Settings → API tokens. It is stored locally in Firefox and is never exposed to web pages.</p>
+
+        <div class="form-actions">
+          <button id="save" class="primary" type="submit">Save and test connection</button>
+          <button id="disconnect" class="danger" type="button">Remove connection</button>
+        </div>
+        <div id="status" class="status" role="status" aria-live="polite"></div>
+      </form>
+
+      <section>
+        <h2>How to clip</h2>
+        <ul>
+          <li>Select the toolbar icon to clip the page, selected text, or a simplified article.</li>
+          <li>Right-click a page, selection, link, or image and choose <strong>Canvas Notes</strong>.</li>
+          <li>Press <kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>Y</kbd> to clip the current page.</li>
+        </ul>
+        <p>Every clip lands unplaced in the Canvas Notes inbox. Supported YouTube URLs become video cards through Canvas Notes’ existing URL handling.</p>
+      </section>
+
+      <section id="privacy">
+        <h2>Privacy</h2>
+        <p>The complete privacy policy is included with the source code and available here: <a href="../privacy.html">Canvas Notes Web Clipper Privacy Policy</a>.</p>
+      </section>
+    </main>
+    <script src="../lib/config.js"></script>
+    <script src="../lib/api.js"></script>
+    <script src="options.js"></script>
+  </body>
+</html>

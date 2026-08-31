@@ -1,0 +1,329 @@
+/* A column is a container, so it reads as a surface rather than a card:
+   flatter, sunken, and quiet enough that its members are the content. */
+.column-node {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  background: color-mix(in srgb, var(--bg-panel) 70%, transparent);
+  border: 1px solid var(--border);
+  /* Square at the bottom: the cards run flush to the edges, so a rounded
+     corner there would just show card corners poking through it. */
+  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+  display: flex;
+  flex-direction: column;
+  transition: background var(--dur-quick) ease,
+    border-color var(--dur-quick) ease,
+    box-shadow var(--dur-settle) var(--ease-out),
+    transform var(--dur-settle) var(--ease-settle);
+  animation: card-pop var(--dur-slow) var(--ease-spring) backwards;
+}
+
+/* The container colour is an accent, not a second slab competing with the
+   cards. A narrow top rule keeps it visible even when the stack is full. */
+.column-node::before {
+  content: "";
+  position: absolute;
+  top: -1px;
+  left: -1px;
+  right: -1px;
+  height: 3px;
+  background: var(--card-fill, var(--accent));
+  pointer-events: none;
+  z-index: 2;
+}
+
+.react-flow__node-column:hover .column-node {
+  border-color: var(--card-fill-edge, var(--accent));
+  background: color-mix(
+    in srgb,
+    var(--card-fill, var(--accent)) 8%,
+    var(--bg-panel)
+  );
+}
+
+.column-node.is-selected {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+
+/* Highlighted while a card is dragged over it. */
+.react-flow__node.is-column-target .column-node {
+  border-color: var(--accent);
+  border-style: dashed;
+  background: color-mix(in srgb, var(--accent) 8%, var(--bg-panel));
+}
+
+.column-header {
+  position: relative;
+  /* 49 + the 1px rule below it = COLUMN_HEADER in columnLayout.ts, which is
+     what the drop-slot maths reserve. Keep the two in step. */
+  height: 49px;
+  flex-shrink: 0;
+  padding: 0 14px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  text-align: center;
+  align-items: center;
+}
+
+.column-title {
+  font-weight: 700;
+  font-size: 18px;
+  letter-spacing: -0.02em;
+  line-height: 1.15;
+  max-width: calc(100% - 44px);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.column-header input {
+  width: 100%;
+  text-align: center;
+  font-weight: 700;
+  padding: 4px 8px;
+}
+
+.column-menu-anchor {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+}
+
+.column-menu-button {
+  width: 26px;
+  height: 24px;
+  padding: 0;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 15px;
+  line-height: 1;
+  opacity: 0;
+  transition: opacity var(--dur-quick) ease, background var(--dur-quick) ease;
+}
+
+.react-flow__node:hover .column-menu-button,
+.column-node.is-selected .column-menu-button {
+  opacity: 1;
+}
+
+.column-menu-button:hover {
+  background: var(--bg-hover);
+  color: var(--text);
+}
+
+.column-empty {
+  flex: 1;
+  margin: 0 10px 10px;
+  border: 1.5px dashed var(--border);
+  border-radius: var(--radius);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  color: var(--text-muted);
+  text-align: center;
+  padding: 0 12px;
+}
+
+/* Members lose their drop shadow: the column supplies the depth. */
+.react-flow__node.is-column-member .card-node {
+  box-shadow: none;
+  transition: background var(--dur-quick) ease,
+    border-color var(--dur-quick) ease,
+    box-shadow var(--dur-settle) var(--ease-out),
+    transform var(--dur-settle) var(--ease-settle);
+}
+
+/* Members are content-sized by the column layout. Keep wheel scrolling as a
+   fallback for an unusually tall expanded member, but do not draw a row of
+   tiny permanent scrollbar tracks down the container's right edge. */
+.react-flow__node.is-column-member .card-content {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.react-flow__node.is-column-member .card-content::-webkit-scrollbar {
+  display: none;
+}
+
+.react-flow__node.is-column-member:hover .card-node {
+  box-shadow: var(--shadow);
+}
+
+.react-flow__node.is-column-member:hover .card-node:not(.is-cutout) {
+  background: color-mix(
+    in srgb,
+    var(--card-accent, var(--accent)) 8%,
+    var(--card-fill, var(--bg-card))
+  );
+}
+
+/* A painted container keeps a quiet wash behind its cards. Its full-strength
+   colour is reserved for the top accent above. */
+.column-node.is-painted {
+  border-color: var(--card-fill-edge);
+  background: color-mix(in srgb, var(--card-fill) 12%, var(--bg-panel));
+}
+
+.react-flow__node-column:hover .column-node.is-painted {
+  background: color-mix(in srgb, var(--card-fill) 20%, var(--bg-panel));
+}
+
+/* A hairline under the header so the label band reads as separate from the
+   contents, painted or not. */
+.column-header {
+  border-bottom: 1px solid var(--border);
+}
+
+/* The insertion point, drawn only while a card is over the column. */
+.column-drop-line {
+  position: absolute;
+  left: 4px;
+  right: 4px;
+  height: 3px;
+  margin-top: -1.5px;
+  border-radius: 999px;
+  background: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+  pointer-events: none;
+  z-index: 3;
+  animation: drop-line-in var(--dur-quick) var(--ease-out);
+}
+
+@keyframes drop-line-in {
+  from {
+    opacity: 0;
+    transform: scaleX(0.7);
+  }
+}
+
+/* A column's link anchors sit outside its body, not on its edge.
+   
+   Its members are xyflow child nodes, and a child always renders above its
+   parent — so an anchor drawn on the column's own edge is covered by whatever
+   card is stacked there, and the bottom one was unreachable entirely. No
+   z-index fixes that from inside the parent, so the anchors move out to where
+   no member can reach. */
+.react-flow__handle.column-handle.react-flow__handle-top {
+  top: -12px;
+}
+.react-flow__handle.column-handle.react-flow__handle-bottom {
+  bottom: -12px;
+}
+.react-flow__handle.column-handle.react-flow__handle-left {
+  left: -12px;
+}
+.react-flow__handle.column-handle.react-flow__handle-right {
+  right: -12px;
+}
+
+/* -------------------------------------------------------------------------
+   Reversible container layout study
+
+   CanvasPage owns the single on/off switch (`CONTAINER_LAYOUT_STUDY`). The
+   experiment stays scoped beneath that class so removing it restores the
+   established presentation without touching card data or structural layout.
+   ------------------------------------------------------------------------- */
+.container-layout-study .react-flow__node-column .column-node {
+  background: var(--bg-panel);
+  border-color: var(--container-divider);
+  box-shadow: var(--shadow);
+  animation: none;
+  font-family: var(--canvas-font, Candara, "Trebuchet MS", sans-serif);
+  transition: background var(--dur-quick) var(--ease-out),
+    border-color var(--dur-quick) var(--ease-out),
+    box-shadow var(--dur-quick) var(--ease-out),
+    transform var(--dur-quick) var(--ease-out);
+}
+
+.container-layout-study .react-flow__node-column .column-node::before {
+  height: 4px;
+  background: var(--card-fill, var(--container-accent));
+}
+
+.container-layout-study .react-flow__node-column:hover .column-node {
+  border-color: var(--card-fill-edge, var(--container-accent));
+  background: color-mix(
+    in srgb,
+    var(--card-fill, var(--container-accent)) 7%,
+    var(--bg-panel)
+  );
+}
+
+.container-layout-study .react-flow__node-column .column-node.is-selected {
+  border-color: var(--card-fill-edge, var(--container-accent));
+  box-shadow: var(--shadow-lift),
+    0 0 0 3px color-mix(
+      in srgb,
+      var(--card-fill, var(--container-accent)) 18%,
+      transparent
+    );
+}
+
+.container-layout-study .react-flow__node.is-column-target .column-node {
+  border-color: var(--container-accent);
+  background: color-mix(
+    in srgb,
+    var(--container-accent) 10%,
+    var(--bg-panel)
+  );
+}
+
+.container-layout-study .column-title {
+  font-family: var(--font-display, Constantia, "Palatino Linotype", serif);
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.container-layout-study .column-header input {
+  font-family: var(--canvas-font, Candara, "Trebuchet MS", sans-serif);
+  font-size: 16px;
+}
+
+/* Members read as rows in one collection: no nested card outline or resting
+   shadow. The container and fine dividers provide the grouping instead. */
+.container-layout-study .react-flow__node.is-column-member .card-node {
+  background: var(--bg-panel);
+  border-color: transparent;
+  border-top-color: var(--container-divider);
+  box-shadow: none;
+  font-family: var(--canvas-font, Candara, "Trebuchet MS", sans-serif);
+  animation: none;
+  transition: background var(--dur-quick) var(--ease-out),
+    border-color var(--dur-quick) var(--ease-out),
+    box-shadow var(--dur-quick) var(--ease-out),
+    transform var(--dur-quick) var(--ease-out);
+}
+
+.container-layout-study
+  .react-flow__node.is-column-member:hover
+  .card-node:not(.is-cutout):not(.is-painted) {
+  border-top-color: var(--container-accent);
+  background: color-mix(
+    in srgb,
+    var(--container-accent) 9%,
+    var(--bg-panel)
+  );
+  box-shadow: none;
+  transform: translateX(3px);
+}
+
+/* The hover surface is colored, so copy uses the full theme ink rather than
+   generic grey-on-colour. Hierarchy comes from weight and spacing. */
+.container-layout-study
+  .react-flow__node.is-column-member:hover
+  .card-node:not(.is-painted)
+  :is(.card-title, .card-body, .card-meta) {
+  color: var(--text);
+}
+
+.container-layout-study .column-drop-line {
+  background: var(--container-accent);
+  box-shadow: 0 0 0 3px var(--container-accent-soft);
+  animation-timing-function: var(--ease-out);
+}

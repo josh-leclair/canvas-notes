@@ -1,0 +1,47 @@
+.suggestions-panel {
+  position: absolute;
+  top: 56px;
+  right: 8px;
+  z-index: 15;
+  width: 230px;
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  box-shadow: var(--shadow);
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.suggestions-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.suggestion {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding-top: 8px;
+  border-top: 1px solid var(--border);
+}
+
+.suggestion-name {
+  font-size: 13px;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.suggestion-actions {
+  display: flex;
+  gap: 6px;
+}
+
+.suggestion-actions button {
+  font-size: 11px;
+  padding: 2px 8px;
+}

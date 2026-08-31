@@ -1,0 +1,92 @@
+.lens-dialog-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: var(--overlay);
+}
+
+.lens-dialog {
+  width: min(680px, 100%);
+  max-height: min(820px, calc(100vh - 48px));
+  overflow: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  padding: 20px;
+  color: var(--text);
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-pop);
+}
+
+.lens-dialog-header,
+.lens-dialog-actions,
+.lens-review-heading,
+.lens-existing-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.lens-dialog-header > div { flex: 1; }
+.lens-dialog-header p,
+.lens-boundary-note,
+.lens-review-empty { margin: 4px 0 0; color: var(--text-muted); font-size: 12px; line-height: 1.45; }
+.lens-dialog-header button { padding: 5px; }
+.lens-dialog-header svg { width: 20px; height: 20px; }
+
+.lens-dialog-form { display: flex; flex-direction: column; gap: 12px; }
+.lens-dialog-form label { display: flex; flex-direction: column; gap: 6px; font-size: 12px; font-weight: 650; }
+.lens-dialog-form label > span { color: var(--text-muted); font-weight: 450; }
+.lens-dialog-form textarea { resize: vertical; }
+
+.lens-mode-choices {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+.lens-mode-choices legend { grid-column: 1 / -1; margin: 0 0 -1px; padding: 0; font-size: 12px; font-weight: 650; }
+.lens-mode-choices > button { display: grid; gap: 2px; padding: 10px 11px; text-align: left; background: var(--bg-card); }
+.lens-mode-choices > button:hover,
+.lens-mode-choices > button.is-selected { transform: none; border-color: var(--accent); background: var(--bg-hover); }
+.lens-mode-choices > button.is-selected { box-shadow: inset 0 0 0 1px var(--accent); }
+.lens-mode-choices small { color: var(--text-muted); font-size: 11px; font-weight: 450; }
+
+.lens-review { overflow: hidden; border: 1px solid var(--border); border-radius: var(--radius); background: var(--bg-card); }
+.lens-review-heading { justify-content: space-between; padding: 11px 12px; border-bottom: 1px solid var(--border); }
+.lens-review-heading span { color: var(--text-muted); font-size: 11px; }
+.lens-review ul { max-height: 220px; overflow: auto; list-style: none; margin: 0; padding: 4px; }
+.lens-review li { display: flex; align-items: center; gap: 8px; padding: 7px 8px; border-radius: var(--radius-sm); font-size: 12px; }
+.lens-review li:hover { background: var(--bg-hover); }
+.lens-review li svg { width: 15px; height: 15px; color: var(--text-muted); }
+.lens-review li span { min-width: 0; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.lens-review li small { color: var(--text-muted); }
+.lens-slide-order { display: flex; flex: 0 0 auto !important; gap: 3px; overflow: visible !important; }
+.lens-slide-order button { width: 24px; height: 24px; padding: 0; }
+.lens-boundary-note, .lens-review-empty { padding: 9px 12px; border-top: 1px solid var(--border); }
+.lens-dialog-error { margin: 0; color: var(--danger); font-size: 12px; }
+.lens-dialog-actions { justify-content: flex-end; }
+
+.lens-existing { display: flex; flex-direction: column; gap: 7px; padding-top: 16px; border-top: 1px solid var(--border); }
+.lens-existing > strong { font-size: 12px; }
+.lens-existing-row { padding: 7px; background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); }
+.lens-existing-name { min-width: 0; flex: 1; display: flex; flex-direction: column; align-items: flex-start; border: 0; background: transparent; }
+.lens-existing-name span { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.lens-existing-name small { color: var(--text-muted); font-weight: 450; }
+.lens-existing-row a { padding: 6px 9px; font-size: 12px; }
+.lens-existing-row .lens-remove { color: var(--danger); }
+
+@media (max-width: 620px) {
+  .lens-dialog-overlay { padding: 0; place-items: end stretch; }
+  .lens-dialog { width: 100%; max-height: 92vh; border-radius: var(--radius-lg) var(--radius-lg) 0 0; }
+  .lens-existing-row { flex-wrap: wrap; }
+  .lens-existing-name { flex-basis: 100%; }
+  .lens-mode-choices { grid-template-columns: 1fr; }
+}

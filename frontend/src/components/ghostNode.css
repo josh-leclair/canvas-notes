@@ -1,0 +1,164 @@
+/* Portals: doors to cards on other canvases. Dashes are reserved for these
+   and used for nothing else. */
+.portal-chip {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 6px 12px 6px 8px;
+  border-radius: 999px;
+  border: 1.5px dashed var(--accent);
+  background: var(--bg-panel);
+  color: var(--text);
+  text-align: left;
+  cursor: pointer;
+  box-shadow: var(--shadow);
+  transition: transform var(--dur-quick) var(--ease-spring),
+    box-shadow var(--dur-quick) ease, border-color var(--dur-quick) ease;
+  animation: portal-pop var(--dur-slow) var(--ease-spring) backwards;
+}
+
+.portal-chip:hover {
+  transform: scale(1.045);
+  border-style: solid;
+  box-shadow: var(--shadow-lift), 0 0 0 4px var(--accent-soft);
+}
+
+.portal-chip:active {
+  transform: scale(0.97);
+}
+
+@keyframes portal-pop {
+  from {
+    opacity: 0;
+    transform: scale(0.6);
+  }
+}
+
+.portal-swirl {
+  flex-shrink: 0;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--accent-text);
+  background: var(--accent-gradient);
+}
+
+.portal-chip:hover .portal-swirl svg {
+  animation: portal-spin 900ms ease-in-out;
+}
+
+@keyframes portal-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.portal-text {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.portal-title {
+  font-weight: 650;
+  font-size: 12.5px;
+  line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.portal-where {
+  font-size: 10.5px;
+  color: var(--text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.portal-actions {
+  flex-shrink: 0;
+  display: none;
+  gap: 3px;
+}
+
+.portal-chip:hover .portal-actions {
+  display: flex;
+}
+
+.portal-act {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1;
+  background: var(--bg-hover);
+  color: var(--text-muted);
+  transition: background var(--dur-quick) ease, color var(--dur-quick) ease,
+    transform var(--dur-quick) var(--ease-spring);
+}
+
+.portal-act:hover {
+  background: var(--accent);
+  color: var(--accent-text);
+  transform: scale(1.15);
+}
+
+.portal-act.danger-act:hover {
+  background: var(--danger);
+  color: var(--danger-text);
+}
+
+/* Echoes: links whose endpoint is gone. Faded, no gradient — a memory. */
+.echo-chip {
+  border-color: var(--border-strong);
+  opacity: 0.85;
+}
+
+.echo-chip:hover {
+  border-color: var(--text-muted);
+  box-shadow: var(--shadow-lift);
+}
+
+.echo-chip .portal-title {
+  color: var(--text-muted);
+  text-decoration: line-through;
+  text-decoration-thickness: 1px;
+}
+
+.echo-swirl {
+  background: var(--bg-hover);
+  color: var(--text-muted);
+}
+
+.reveal-handle {
+  opacity: 0 !important;
+  pointer-events: none;
+}
+
+/* Everything unrelated dims while a reveal is active. */
+/* Dimmed, not erased. The point is to push the rest of the board back so the
+   reveal reads first — but these cards are still the context you are reading
+   the reveal against, so their text has to stay legible. Draining the colour
+   does most of the work; the opacity only has to do the rest. */
+.react-flow__node.reveal-dimmed {
+  opacity: var(--dim-opacity);
+  filter: saturate(0.15);
+  transition: opacity var(--dur-quick) ease, filter var(--dur-quick) ease;
+}
+
+.react-flow__node.reveal-dimmed .card-node,
+.react-flow__node.reveal-dimmed .column-node {
+  box-shadow: none;
+}

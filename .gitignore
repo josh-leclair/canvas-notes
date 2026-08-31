@@ -1,0 +1,25 @@
+__pycache__/
+*.pyc
+.venv/
+venv/
+.env
+.env.*
+!.env.example
+node_modules/
+dist/
+.pytest_cache/
+.ruff_cache/
+*.tsbuildinfo
+bin/
+obj/
+*.user
+*.suo
+
+# Local companion utility and its build outputs are not part of Canvas Notes.
+WindowPull/
+
+# Browser-extension release archives are produced by the release process.
+extension/artifacts/
+
+# Uploaded files live beside the app; they are instance data, not source.
+backend/data/

@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, interactive-widget=resizes-content" />
+    <title>Canvas</title>
+    <link
+      rel="icon"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='32' y2='32'%3E%3Cstop offset='0%25' stop-color='%236d5ce0'/%3E%3Cstop offset='100%25' stop-color='%23a855c4'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='32' height='32' fill='%2316151a'/%3E%3Cpath d='M9.5 9.5 L22 6.5 M9.5 9.5 L20.5 23' stroke='url(%23g)' stroke-width='1.8' stroke-linecap='round' opacity='.55'/%3E%3Crect x='3' y='4' width='13' height='10' fill='url(%23g)'/%3E%3Crect x='19' y='3' width='10' height='8' fill='none' stroke='url(%23g)' stroke-width='2'/%3E%3Crect x='16' y='19' width='13' height='10' fill='none' stroke='url(%23g)' stroke-width='2'/%3E%3C/svg%3E"
+    />
+    <script>
+      // Apply the theme before first paint to avoid an unstyled flash.
+      (function () {
+        var bg = { light: "#f4f1ea", dark: "#16151a" };
+        var stored = localStorage.getItem("theme");
+        // Dusk is gone; anyone still holding it lands on dark.
+        if (stored === "dusk") stored = "dark";
+        var theme = bg[stored]
+          ? stored
+          : window.matchMedia("(prefers-color-scheme: dark)").matches
+            ? "dark"
+            : "light";
+        document.documentElement.classList.add("theme-" + theme);
+        var meta = document.createElement("meta");
+        meta.name = "theme-color";
+        meta.content = bg[theme];
+        document.head.appendChild(meta);
+      })();
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

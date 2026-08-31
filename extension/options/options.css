@@ -1,0 +1,17 @@
+body { min-height: 100vh; }
+main { max-width: 720px; margin: 0 auto; padding: 44px 24px 72px; }
+header { display: flex; align-items: center; gap: 16px; margin-bottom: 30px; }
+header h1 { font-size: 28px; margin: 0; }
+header p { margin: 4px 0 0; color: var(--muted); }
+section, form { margin-top: 20px; padding: 24px; border: 1px solid var(--border); border-radius: 16px; background: var(--panel); }
+.notice { border-color: color-mix(in srgb, var(--accent) 45%, var(--border)); }
+h2 { font-size: 18px; margin: 0 0 10px; }
+p { line-height: 1.55; }
+label { display: block; font-weight: 700; margin: 18px 0 7px; }
+label:first-child { margin-top: 0; }
+input { width: 100%; }
+.token-row { display: grid; grid-template-columns: 1fr auto; gap: 8px; }
+.hint { color: var(--muted); font-size: 12px; margin: 6px 2px 0; }
+.form-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 24px; }
+ul { padding-left: 22px; line-height: 1.6; }
+kbd { border: 1px solid var(--border); border-bottom-width: 2px; border-radius: 5px; padding: 1px 5px; background: var(--bg); font: inherit; font-size: 12px; }

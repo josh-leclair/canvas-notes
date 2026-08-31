@@ -1,0 +1,102 @@
+.media-attachment {
+  display: flex;
+  align-items: center;
+  flex: 0 0 auto;
+  gap: 10px;
+  min-width: 0;
+  margin: 10px -12px -10px;
+  padding: 9px 12px;
+  border-top: 1px solid color-mix(in srgb, var(--card-fg, var(--text)) 22%, transparent);
+  background: color-mix(in srgb, var(--card-fg, var(--text)) 7%, transparent);
+  color: var(--card-fg, var(--text));
+  text-decoration: none;
+  cursor: grab;
+  transition: background var(--dur-quick) ease;
+}
+
+.media-attachment:active {
+  cursor: grabbing;
+}
+
+.media-attachment.is-standalone {
+  flex: 1 1 auto;
+  align-self: stretch;
+  margin: -10px -12px;
+  border-top: 0;
+}
+
+.media-card-content {
+  display: flex;
+  flex-direction: column;
+}
+
+.media-attachment:hover {
+  background: color-mix(in srgb, var(--card-fg, var(--text)) 12%, transparent);
+}
+
+.media-attachment > img,
+.media-attachment-mark {
+  width: 42px;
+  height: 42px;
+  flex: 0 0 42px;
+}
+
+.media-attachment > img {
+  display: block;
+  object-fit: cover;
+  border-radius: 3px;
+}
+
+.media-attachment-mark {
+  display: grid;
+  place-items: center;
+  border: 1px solid color-mix(in srgb, var(--card-fg, var(--text)) 25%, transparent);
+  color: var(--card-muted, var(--text-muted));
+}
+
+.media-attachment-copy {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-width: 0;
+  gap: 2px;
+}
+
+.media-attachment-copy strong,
+.media-attachment-copy small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.media-attachment-copy strong {
+  font-size: 12.5px;
+  font-weight: 680;
+}
+
+.media-attachment-copy small {
+  color: var(--card-muted, var(--text-muted));
+  font-size: var(--card-copy-tiny, 10.5px);
+}
+
+.media-attachment-open {
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  width: 26px;
+  height: 26px;
+  color: var(--card-muted, var(--text-muted));
+  font-size: 15px;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.media-attachment-open:hover {
+  color: var(--card-fg, var(--text));
+  background: color-mix(in srgb, var(--card-fg, var(--text)) 10%, transparent);
+}
+
+.mobile-card .media-attachment,
+.public-lens-card .media-attachment {
+  margin: 10px 0 0;
+}

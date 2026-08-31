@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Canvas Notes Web Clipper</title>
+    <link rel="stylesheet" href="../styles/common.css">
+    <link rel="stylesheet" href="popup.css">
+  </head>
+  <body>
+    <main>
+      <header class="brand-row">
+        <img src="../icons/icon.svg" width="28" height="28" alt="">
+        <div>
+          <h1>Canvas Notes</h1>
+          <p id="destination">Web Clipper</p>
+        </div>
+        <button id="settings" class="icon-button" type="button" title="Settings" aria-label="Open settings">⚙</button>
+      </header>
+
+      <section id="loading" class="state-card">Reading this page…</section>
+      <section id="unsupported" class="state-card" hidden>
+        <h2>This page cannot be clipped</h2>
+        <p>Firefox protects internal pages and some add-on pages from extensions.</p>
+      </section>
+      <section id="setup" class="state-card" hidden>
+        <h2>Connect Canvas Notes</h2>
+        <p>Add your self-hosted server URL and an API token before clipping.</p>
+        <button id="setup-button" class="primary" type="button">Open setup</button>
+      </section>
+
+      <form id="clip-form" hidden>
+        <label for="title">Title <span>(edit to override site metadata)</span></label>
+        <input id="title" maxlength="500" autocomplete="off">
+        <div class="page-meta">
+          <span id="host"></span>
+          <span id="kind"></span>
+        </div>
+        <label for="note">Add a note <span>(optional)</span></label>
+        <textarea id="note" maxlength="10000" rows="3" placeholder="Why are you saving this?"></textarea>
+        <div class="actions">
+          <button id="clip-page" class="primary" type="button">Clip page</button>
+          <button id="clip-selection" type="button" hidden>Clip selection</button>
+          <button id="clip-article" type="button" hidden>Clip simplified article</button>
+        </div>
+        <p class="disclosure">The chosen URL and content are sent only to your configured Canvas Notes server.</p>
+      </form>
+      <div id="status" class="status" role="status" aria-live="polite"></div>
+    </main>
+    <script src="../lib/config.js"></script>
+    <script src="../lib/api.js"></script>
+    <script src="../lib/extract-page.js"></script>
+    <script src="popup.js"></script>
+  </body>
+</html>

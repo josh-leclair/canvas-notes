@@ -1,0 +1,218 @@
+.inbox-panel {
+  position: absolute;
+  top: 54px;
+  left: 10px;
+  bottom: 10px;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  width: auto;
+  pointer-events: none;
+}
+
+.inbox-panel.is-open {
+  width: 216px;
+}
+
+.inbox-toggle {
+  pointer-events: auto;
+  align-self: flex-start;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  border-radius: 999px;
+  padding: 6px 14px;
+  background: color-mix(in srgb, var(--bg-panel) 88%, transparent);
+  backdrop-filter: blur(12px);
+  box-shadow: var(--shadow);
+}
+
+.inbox-badge {
+  background: var(--accent-gradient);
+  color: var(--accent-text);
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 1px 7px;
+  animation: card-pop var(--dur-slow) var(--ease-spring);
+}
+
+.inbox-list {
+  pointer-events: auto;
+  margin-top: 8px;
+  flex: 1;
+  overflow-y: auto;
+  background: color-mix(in srgb, var(--bg-panel) 92%, transparent);
+  backdrop-filter: blur(12px);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lift);
+  padding: 9px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  animation: panel-slide var(--dur-slow) var(--ease-out) backwards;
+}
+
+.inbox-section-label {
+  display: flex;
+  justify-content: space-between;
+  margin: 12px 2px 6px;
+  padding-top: 10px;
+  border-top: 1px solid var(--border);
+  color: var(--text-muted);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+}
+
+@keyframes panel-slide {
+  from {
+    opacity: 0;
+    transform: translateX(-12px);
+  }
+}
+
+.inbox-empty {
+  color: var(--text-muted);
+  font-size: 13px;
+  padding: 4px 6px;
+  margin: 0;
+}
+
+.inbox-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 9px 11px;
+  cursor: grab;
+  touch-action: pan-y;
+  user-select: none;
+  -webkit-touch-callout: none;
+  transition: transform var(--dur-quick) var(--ease-spring),
+    box-shadow var(--dur-quick) ease, border-color var(--dur-quick) ease;
+}
+
+.inbox-touch-preview {
+  position: fixed;
+  z-index: 1000;
+  width: 196px;
+  max-height: 112px;
+  overflow: hidden;
+  padding: 9px 11px;
+  border: 1px solid var(--accent);
+  border-radius: var(--radius-sm);
+  background: var(--bg-card);
+  box-shadow: var(--shadow-lift);
+  pointer-events: none;
+  transform: translate(16px, -50%);
+  opacity: 0.94;
+}
+
+.inbox-card:hover {
+  transform: translateX(3px) rotate(-0.6deg);
+  border-color: var(--accent);
+  box-shadow: var(--shadow-lift);
+}
+
+.inbox-card:active {
+  cursor: grabbing;
+  transform: scale(0.97);
+}
+
+.inbox-card-title {
+  font-weight: 600;
+  font-size: 13px;
+  margin-bottom: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.inbox-hint {
+  margin-top: 4px;
+  font-size: 11px;
+  color: var(--accent);
+}
+
+.inbox-card-body {
+  font-size: 12px;
+  color: var(--text-muted);
+  line-height: 1.4;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* A split's output stays visibly one thing until it is broken up by hand:
+   grouped, labelled, and discardable in a single action. */
+.inbox-batch {
+  pointer-events: auto;
+  border: 1px dashed var(--border-strong);
+  border-radius: var(--radius);
+  padding: 6px;
+  margin-bottom: 8px;
+  background: var(--accent-soft);
+}
+
+.inbox-batch-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 0 2px 6px;
+}
+
+.inbox-batch-label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.inbox-batch-discard {
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: var(--radius-sm);
+  color: var(--danger);
+  background: transparent;
+  transition: background var(--dur-quick) ease;
+}
+
+.inbox-batch-discard:hover {
+  background: var(--danger-soft);
+}
+
+/* Emptying the inbox is a real action, so it gets a real header rather than
+   hiding in a menu — but it stays quiet until there is something to clear. */
+.inbox-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 0 2px 2px;
+}
+
+.inbox-head-count {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.inbox-clear {
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: var(--radius-sm);
+  color: var(--danger);
+  background: transparent;
+  transition: background var(--dur-quick) ease;
+}
+
+.inbox-clear:hover {
+  background: var(--danger-soft);
+}

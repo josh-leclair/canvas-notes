@@ -1,0 +1,135 @@
+.cropper-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 7000;
+  background: rgba(0, 0, 0, 0.62);
+  backdrop-filter: blur(3px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px;
+}
+
+.cropper-stage {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-width: 90vw;
+  max-height: 88vh;
+}
+
+.cropper-frame {
+  position: relative;
+  line-height: 0;
+  user-select: none;
+  touch-action: none;
+  box-shadow: var(--shadow-pop);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+}
+
+.cropper-frame img {
+  display: block;
+  max-width: 88vw;
+  max-height: 74vh;
+  pointer-events: none;
+}
+
+.cropper-shade {
+  position: absolute;
+  background: rgba(0, 0, 0, 0.55);
+  pointer-events: none;
+}
+
+.cropper-box {
+  position: absolute;
+  cursor: move;
+  outline: 1px solid rgba(255, 255, 255, 0.9);
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.35);
+}
+
+/* Thirds, the way every camera draws them. */
+.cropper-box::before,
+.cropper-box::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.35;
+}
+
+.cropper-box::before {
+  background: linear-gradient(
+      to right,
+      transparent 33.3%,
+      #fff 33.3%,
+      #fff calc(33.3% + 1px),
+      transparent calc(33.3% + 1px),
+      transparent 66.6%,
+      #fff 66.6%,
+      #fff calc(66.6% + 1px),
+      transparent calc(66.6% + 1px)
+    );
+}
+
+.cropper-box::after {
+  background: linear-gradient(
+      to bottom,
+      transparent 33.3%,
+      #fff 33.3%,
+      #fff calc(33.3% + 1px),
+      transparent calc(33.3% + 1px),
+      transparent 66.6%,
+      #fff 66.6%,
+      #fff calc(66.6% + 1px),
+      transparent calc(66.6% + 1px)
+    );
+}
+
+.cropper-handle {
+  position: absolute;
+  width: 16px;
+  height: 16px;
+  background: #fff;
+  border-radius: 3px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+}
+
+.cropper-handle.is-nw {
+  left: -8px;
+  top: -8px;
+  cursor: nwse-resize;
+}
+.cropper-handle.is-ne {
+  right: -8px;
+  top: -8px;
+  cursor: nesw-resize;
+}
+.cropper-handle.is-sw {
+  left: -8px;
+  bottom: -8px;
+  cursor: nesw-resize;
+}
+.cropper-handle.is-se {
+  right: -8px;
+  bottom: -8px;
+  cursor: nwse-resize;
+}
+
+.cropper-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.cropper-hint {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.75);
+}
+
+.cropper-actions {
+  display: flex;
+  gap: 8px;
+}

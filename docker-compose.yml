@@ -1,0 +1,88 @@
+services:
+  db:
+    # pgvector build of postgres 16: data-compatible with the plain image,
+    # and required by the embedding column added in milestone 7.
+    image: pgvector/pgvector:pg16
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: canvas
+      POSTGRES_PASSWORD: canvas
+      POSTGRES_DB: canvas
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U canvas"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  backend:
+    build: ./backend
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgresql+psycopg://canvas:canvas@db:5432/canvas
+      SESSION_SECRET: ${SESSION_SECRET:?set SESSION_SECRET in .env}
+      COOKIE_SECURE: ${COOKIE_SECURE:-true}
+      INSTANCE_NAME: ${INSTANCE_NAME:-Canvas}
+      FILES_DIR: /data/files
+      WHISPER_MODEL: ${WHISPER_MODEL:-small}
+      WHISPER_BASE_URL: ${WHISPER_BASE_URL:-}
+      WHISPER_API_KEY: ${WHISPER_API_KEY:-}
+      EMBEDDING_BASE_URL: ${EMBEDDING_BASE_URL:-}
+      EMBEDDING_MODEL: ${EMBEDDING_MODEL:-}
+      EMBEDDING_API_KEY: ${EMBEDDING_API_KEY:-}
+      EMBEDDING_DIM: ${EMBEDDING_DIM:-768}
+      CHAT_BASE_URL: ${CHAT_BASE_URL:-}
+      CHAT_MODEL: ${CHAT_MODEL:-}
+      CHAT_API_KEY: ${CHAT_API_KEY:-}
+    volumes:
+      - files:/data/files
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/api/bootstrap')"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+  # Optional: audio transcription, embeddings, and the capture bots. Without
+  # it the app still works; those jobs wait in the queue and the bots are off.
+  worker:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.worker
+    restart: unless-stopped
+    profiles: ["worker"]
+    environment:
+      DATABASE_URL: postgresql+psycopg://canvas:canvas@db:5432/canvas
+      SESSION_SECRET: ${SESSION_SECRET:?set SESSION_SECRET in .env}
+      FILES_DIR: /data/files
+      WHISPER_MODEL: ${WHISPER_MODEL:-small}
+      WHISPER_BASE_URL: ${WHISPER_BASE_URL:-}
+      WHISPER_API_KEY: ${WHISPER_API_KEY:-}
+      TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN:-}
+      EMBEDDING_BASE_URL: ${EMBEDDING_BASE_URL:-}
+      EMBEDDING_MODEL: ${EMBEDDING_MODEL:-}
+      EMBEDDING_API_KEY: ${EMBEDDING_API_KEY:-}
+      EMBEDDING_DIM: ${EMBEDDING_DIM:-768}
+      CHAT_BASE_URL: ${CHAT_BASE_URL:-}
+      CHAT_MODEL: ${CHAT_MODEL:-}
+      CHAT_API_KEY: ${CHAT_API_KEY:-}
+    volumes:
+      - files:/data/files
+    depends_on:
+      db:
+        condition: service_healthy
+
+  frontend:
+    build: ./frontend
+    restart: unless-stopped
+    depends_on:
+      backend:
+        condition: service_healthy
+    ports:
+      - "${BIND_ADDRESS:-127.0.0.1}:${APP_PORT:-8080}:80"
+
+volumes:
+  pgdata:
+  files:

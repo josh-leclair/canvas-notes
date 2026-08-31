@@ -1,0 +1,724 @@
+/* ============================================================================
+   Design tokens. Every colour, radius, shadow and duration in the app comes
+   from here — no literal values anywhere else.
+
+   Light is warm paper rather than clinical white; dark is deep ink rather
+   than pure black. Both keep the same accent so the app feels like one thing
+   in either mode.
+   ========================================================================= */
+
+:root {
+  --palette-avocado: #c0c26b;
+  --palette-plum: #372f36;
+  --palette-linen: #f2ece5;
+  --palette-cement: #8d8c7d;
+  --palette-maple: #b29762;
+  --palette-rust: #9f553c;
+  --palette-citrus: #fec844;
+  --palette-strawberry: #ff5b38;
+  --palette-chocolate: #743d1e;
+  --palette-floral: #c2808e;
+  --palette-blueberry: #2659b1;
+  --palette-ferment: #ccaf29;
+  --palette-wine: #692729;
+  --palette-vanilla: #f99d5e;
+  --palette-herb: #30622d;
+  --palette-bay: #143d37;
+  --palette-flare: #f32d62;
+  --palette-sky: #727bfc;
+  --palette-orchid: #d68ef7;
+  --palette-coral: #ff8584;
+  --palette-sprout: #61db90;
+  --palette-navy: #1b65b9;
+  --palette-mint: #8fdfc8;
+  --palette-aqua: #85daff;
+
+  --pantry-bg: #fff4df;
+  --pantry-bg-sunk: #f3dfbd;
+  --pantry-bg-panel: #fff9eb;
+  --pantry-bg-card: #fffaf0;
+  --pantry-bg-hover: #ffe4b6;
+  --pantry-text-muted: #6f533b;
+  --pantry-border: #d7b882;
+  --pantry-accent: #b93d22;
+  --pantry-accent-hover: #942d18;
+  --pantry-accent-soft: rgba(255, 91, 56, 0.18);
+  --pantry-container-soft: rgba(255, 91, 56, 0.14);
+  --pantry-canvas-dots: #d5b276;
+  --pantry-minimap-bg: #f3dfbd;
+  --pantry-minimap-mask: rgba(255, 244, 223, 0.68);
+  --pantry-minimap-node: #b29762;
+  --pantry-minimap-node-stroke: #743d1e;
+
+  --night-bg: #10192e;
+  --night-bg-sunk: #0b1222;
+  --night-bg-panel: #172844;
+  --night-bg-card: #1b3152;
+  --night-bg-hover: #23446d;
+  --night-bg-input: #101f38;
+  --night-text: #fff8ee;
+  --night-text-muted: #bdc9df;
+  --night-border: #385b83;
+  --night-accent-hover: #ffadac;
+  --night-accent-soft: rgba(255, 133, 132, 0.2);
+  --night-canvas-dots: #5f8bbd;
+  --night-minimap-bg: #0b1222;
+  --night-minimap-mask: rgba(16, 25, 46, 0.7);
+  --night-minimap-node: #727bfc;
+  --night-minimap-node-stroke: #8fdfc8;
+  --night-container-hover: #a6e8ff;
+  --night-container-soft: rgba(133, 218, 255, 0.18);
+
+  --hue-citrus: var(--palette-citrus);
+  --hue-strawberry: var(--palette-strawberry);
+  --hue-chocolate: var(--palette-chocolate);
+  --hue-floral: var(--palette-floral);
+  --hue-blueberry: var(--palette-blueberry);
+  --hue-ferment: var(--palette-ferment);
+  --hue-wine: var(--palette-wine);
+  --hue-vanilla: var(--palette-vanilla);
+  --hue-herb: var(--palette-herb);
+  --hue-bay: var(--palette-bay);
+  --hue-flare: var(--palette-flare);
+  --hue-sky: var(--palette-sky);
+  --hue-orchid: var(--palette-orchid);
+  --hue-coral: var(--palette-coral);
+  --hue-sprout: var(--palette-sprout);
+  --hue-navy: var(--palette-navy);
+  --hue-mint: var(--palette-mint);
+  --hue-aqua: var(--palette-aqua);
+
+  --fill-citrus: var(--palette-citrus);
+  --fill-strawberry: var(--palette-strawberry);
+  --fill-chocolate: var(--palette-chocolate);
+  --fill-floral: var(--palette-floral);
+  --fill-blueberry: var(--palette-blueberry);
+  --fill-ferment: var(--palette-ferment);
+  --fill-wine: var(--palette-wine);
+  --fill-vanilla: var(--palette-vanilla);
+  --fill-herb: var(--palette-herb);
+  --fill-bay: var(--palette-bay);
+  --fill-flare: var(--palette-flare);
+  --fill-sky: var(--palette-sky);
+  --fill-orchid: var(--palette-orchid);
+  --fill-coral: var(--palette-coral);
+  --fill-sprout: var(--palette-sprout);
+  --fill-navy: var(--palette-navy);
+  --fill-mint: var(--palette-mint);
+  --fill-aqua: var(--palette-aqua);
+
+  --fill-edge-citrus: #b87c00;
+  --fill-edge-strawberry: #b9361e;
+  --fill-edge-chocolate: #49230f;
+  --fill-edge-floral: #895360;
+  --fill-edge-blueberry: #173b79;
+  --fill-edge-ferment: #8e7514;
+  --fill-edge-wine: #411619;
+  --fill-edge-vanilla: #b9602d;
+  --fill-edge-herb: #1c401b;
+  --fill-edge-bay: #092925;
+  --fill-edge-flare: #a80f3b;
+  --fill-edge-sky: #3f48b5;
+  --fill-edge-orchid: #9251b1;
+  --fill-edge-coral: #b84e52;
+  --fill-edge-sprout: #258a52;
+  --fill-edge-navy: #0d3e78;
+  --fill-edge-mint: #3d947e;
+  --fill-edge-aqua: #327fa4;
+
+  --fill-ink-citrus: var(--palette-chocolate);
+  --fill-ink-strawberry: var(--fill-edge-plum);
+  --fill-ink-chocolate: var(--palette-linen);
+  --fill-ink-floral: var(--fill-edge-plum);
+  --fill-ink-blueberry: var(--palette-linen);
+  --fill-ink-ferment: var(--palette-plum);
+  --fill-ink-wine: var(--palette-linen);
+  --fill-ink-vanilla: var(--palette-plum);
+  --fill-ink-herb: var(--palette-linen);
+  --fill-ink-bay: var(--palette-linen);
+  --fill-ink-flare: #1b1118;
+  --fill-ink-sky: #161b2f;
+  --fill-ink-orchid: #25172a;
+  --fill-ink-coral: #2b171a;
+  --fill-ink-sprout: #10261c;
+  --fill-ink-navy: #fff8ee;
+  --fill-ink-mint: #10241e;
+  --fill-ink-aqua: #10232c;
+}
+
+.theme-light {
+  --bg: #f4f1ea;
+  --bg-sunk: #eae5db;
+  --bg-panel: #fffdf9;
+  --bg-card: #fffdf9;
+  --bg-hover: #ece7dc;
+  --bg-input: #fffdf9;
+
+  --text: #23201b;
+  --text-muted: #736c5e;
+
+  --border: #ddd6c7;
+  --border-strong: #bdb4a1;
+
+  --accent: #5b4bd6;
+  --accent-hover: #4b3cc4;
+  --accent-text: #ffffff;
+  --accent-soft: rgba(91, 75, 214, 0.16);
+  --accent-gradient: linear-gradient(135deg, #6d5ce0 0%, #a855c4 100%);
+  --ring: #5b4bd6;
+
+  /* Reversible canvas study, derived from the editorial palette. The raw
+     avocado remains the filled accent; a darker leaf variant carries small
+     text and strokes against Linen at 4.67:1. */
+  --study-bg: #f2ece5;
+  --study-bg-sunk: #e7ded3;
+  --study-bg-panel: #faf6f0;
+  --study-bg-card: #fff9f2;
+  --study-bg-hover: #e7e1d6;
+  --study-bg-input: #faf6f0;
+  --study-text: #372f36;
+  --study-text-muted: #665b63;
+  --study-border: #c8bdae;
+  --study-border-strong: #8d8c7d;
+  --study-accent: #6b6d1d;
+  --study-accent-hover: #555713;
+  --study-accent-fill: #c0c26b;
+  --study-accent-ink: #372f36;
+  --study-accent-soft: rgba(107, 109, 29, 0.14);
+  --study-canvas-dots: #b8aa9a;
+  --study-minimap-bg: #eee6dc;
+  --study-minimap-mask: rgba(231, 222, 211, 0.66);
+  --study-minimap-node: #8d8c7d;
+  --study-minimap-node-stroke: #665b63;
+  --study-danger: #9f553c;
+  --study-danger-text: #f2ece5;
+  --study-danger-soft: rgba(159, 85, 60, 0.14);
+
+  --container-accent: var(--study-accent);
+  --container-accent-hover: var(--study-accent-hover);
+  --container-accent-soft: var(--study-accent-soft);
+  --container-divider: var(--study-border);
+
+  --danger: #c0392f;
+  --danger-text: #ffffff;
+  --danger-soft: rgba(192, 57, 47, 0.14);
+  --overlay: rgba(35, 32, 27, 0.34);
+
+  --shadow: 0 1px 2px rgba(40, 33, 20, 0.07), 0 2px 8px rgba(40, 33, 20, 0.06);
+  --shadow-lift: 0 4px 10px rgba(40, 33, 20, 0.1), 0 12px 28px rgba(40, 33, 20, 0.12);
+  --shadow-pop: 0 0 0 1px rgba(40, 33, 20, 0.08),
+    0 10px 24px rgba(40, 33, 20, 0.16),
+    0 26px 62px rgba(40, 33, 20, 0.24);
+
+  --canvas-dots: #cfc7b6;
+  --minimap-bg: #f8f5ee;
+  --minimap-mask: rgba(234, 229, 219, 0.62);
+  --minimap-node: #9e9584;
+  --minimap-node-stroke: #6f675a;
+
+  /* Hue encodes link_type; geometry encodes direction. */
+  --link-supports: #2f8f5b;
+  --link-contradicts: #cf4436;
+  --link-source_for: #2f6fed;
+  --link-follows_from: #8a4fd0;
+  --link-related: #8d8474;
+  --link-touched: #d17a22;
+  --link-references: #5b4bd6;
+  --link-untyped: #a89e8c;
+
+
+  /* Card colours. Named rather than free hex, so a card looks deliberate in
+     every theme instead of unreadable in one of them. */
+  --dim-opacity: 0.44;
+
+  color-scheme: light;
+}
+
+.theme-dark {
+  --bg: #100f14;
+  --bg-sunk: #0b0a0e;
+  --bg-panel: #242230;
+  --bg-card: #302d3c;
+  --bg-hover: #2f2d39;
+  --bg-input: #1a1920;
+
+  --text: #ece9f2;
+  --text-muted: #9d97ab;
+
+  --border: #37343f;
+  --border-strong: #4e4a5c;
+
+  --accent: #8b7bf5;
+  --accent-hover: #9d8ff7;
+  --accent-text: #16151a;
+  --accent-soft: rgba(139, 123, 245, 0.22);
+  --accent-gradient: linear-gradient(135deg, #8b7bf5 0%, #d17fe0 100%);
+  --ring: #8b7bf5;
+
+  --study-bg: #372f36;
+  --study-bg-sunk: #292329;
+  --study-bg-panel: #433a42;
+  --study-bg-card: #4a4048;
+  --study-bg-hover: #574b54;
+  --study-bg-input: #30292f;
+  --study-text: #f2ece5;
+  --study-text-muted: #d0c4ba;
+  --study-border: #675c64;
+  --study-border-strong: #8d8c7d;
+  --study-accent: #c0c26b;
+  --study-accent-hover: #d0d27a;
+  --study-accent-fill: #c0c26b;
+  --study-accent-ink: #372f36;
+  --study-accent-soft: rgba(192, 194, 107, 0.18);
+  --study-canvas-dots: #877985;
+  --study-minimap-bg: #30292f;
+  --study-minimap-mask: rgba(41, 35, 41, 0.7);
+  --study-minimap-node: #8d8c7d;
+  --study-minimap-node-stroke: #d0c4ba;
+  --study-danger: #b9684d;
+  --study-danger-text: #f2ece5;
+  --study-danger-soft: rgba(185, 104, 77, 0.2);
+
+  --container-accent: var(--study-accent);
+  --container-accent-hover: var(--study-accent-hover);
+  --container-accent-soft: var(--study-accent-soft);
+  --container-divider: var(--study-border);
+
+  --danger: #e8695c;
+  --danger-text: #16151a;
+  --danger-soft: rgba(232, 105, 92, 0.2);
+  --overlay: rgba(0, 0, 0, 0.62);
+
+  --shadow: 0 1px 2px rgba(0, 0, 0, 0.4), 0 2px 10px rgba(0, 0, 0, 0.3);
+  --shadow-lift: 0 6px 14px rgba(0, 0, 0, 0.45), 0 16px 34px rgba(0, 0, 0, 0.4);
+  /* A black cast shadow alone disappears into the ink canvas. The pale rim
+     catches the lifted edge; the two shadows below it still supply weight. */
+  --shadow-pop: 0 0 0 1px rgba(236, 233, 242, 0.14),
+    0 10px 26px rgba(0, 0, 0, 0.56),
+    0 28px 72px rgba(0, 0, 0, 0.72);
+
+  --canvas-dots: #33303c;
+  --minimap-bg: #1a1822;
+  --minimap-mask: rgba(11, 10, 14, 0.66);
+  --minimap-node: #777185;
+  --minimap-node-stroke: #aaa3ba;
+
+  --link-supports: #4fc98a;
+  --link-contradicts: #f0776a;
+  --link-source_for: #6d9cf8;
+  --link-follows_from: #b78cf0;
+  --link-related: #9b93a8;
+  --link-touched: #e6a252;
+  --link-references: #8b7bf5;
+  --link-untyped: #6f6a7c;
+
+
+  --dim-opacity: 0.5;
+
+  color-scheme: dark;
+}
+
+/* Shape and motion are shared by every theme. */
+:root {
+  /* Cards establish the product's shape language. Surfaces, controls and
+     chrome use the same hard edge; round is reserved for point geometry such
+     as link handles and picker cursors, never as container decoration. */
+  --radius-sm: 0;
+  --radius-md: 0;
+  --radius: 0;
+  --radius-lg: 0;
+  --radius-round: 50%;
+
+  --dur-quick: 140ms;
+  --dur-slow: 320ms;
+  --dur-lift: 90ms;
+  --dur-settle: 290ms;
+  --lift-card-y: -4px;
+  --lift-card-scale: 1.02;
+  --lift-column-y: -3px;
+  --lift-column-scale: 1.01;
+  /* How long a revealed link takes to reach the card it points at. Slower
+     than --dur-slow on purpose: this one is meant to be watched travelling,
+     not merely to avoid a jump cut. Hop 2 waits exactly this long before it
+     starts, so the reveal reads as spreading outward one step at a time. */
+  --dur-draw: 420ms;
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  /* A restrained overshoot takes the object a fraction past flat, producing
+     the impression of contact without turning the landing into a bounce. */
+  --ease-settle: cubic-bezier(0.22, 1.32, 0.36, 1);
+
+
+  /* One palette, two themes, and the same colour in both.
+   *
+   * A colour is part of what a card *is*, not a property of the theme, so it
+   * resolves to one fixed value everywhere. The previous system mixed each
+   * paint into the surface by a per-theme percentage, which meant the same
+   * red card was a different red depending on where you looked at it.
+   *
+   * Three roles per hue, and every value below was solved for rather than
+   * picked by eye:
+   *
+   *   --hue-*        the accent bar, the swatch, and coloured text. Holds at
+   *                  least 3.4:1 against both card surfaces. AA on both is
+   *                  arithmetically impossible for a single fixed colour —
+   *                  it would need a near-black card — so default text stays
+   *                  the theme's own high-contrast ink and these are for
+   *                  deliberate accents.
+   *   --fill-*       a painted card's background. Bold and fixed, so a
+   *                  painted card looks identical in both themes — but deep
+   *                  rather than bright. The first pass sat at half lightness
+   *                  and near-full saturation, which on a dark canvas glared;
+   *                  a colour can be bold without being a lamp.
+   *   --fill-edge-*  its border, one step deeper than the fill.
+   *   --fill-ink-*   the text that sits on that fill.
+   */
+  --hue-red: #f4443e;
+  --hue-orange: #cf670c;
+  --hue-yellow: #a5870d;
+  --hue-green: #159e42;
+  --hue-blue: #3584f3;
+  --hue-purple: #ab60f6;
+  --hue-pink: #f33091;
+  --hue-slate: #7685b2;
+
+  /* Current card palette. These are the six supplied anchors; legacy hue
+     tokens above remain so paint already stored on existing cards survives. */
+  --hue-avocado: #c0c26b;
+  --hue-plum: #372f36;
+  --hue-linen: #f2ece5;
+  --hue-cement: #8d8c7d;
+  --hue-maple: #b29762;
+  --hue-rust: #9f553c;
+
+  --fill-red: #ac3d39;
+  --fill-orange: #b4743c;
+  --fill-yellow: #ac9539;
+  --fill-green: #39ac60;
+  --fill-blue: #3969ac;
+  --fill-purple: #7339ac;
+  --fill-pink: #ac3973;
+  --fill-slate: #57658e;
+
+  --fill-avocado: #c0c26b;
+  --fill-plum: #372f36;
+  --fill-linen: #f2ece5;
+  --fill-cement: #8d8c7d;
+  --fill-maple: #b29762;
+  --fill-rust: #9f553c;
+
+  --fill-edge-red: #872926;
+  --fill-edge-orange: #8f5828;
+  --fill-edge-yellow: #877426;
+  --fill-edge-green: #268747;
+  --fill-edge-blue: #264f87;
+  --fill-edge-purple: #572687;
+  --fill-edge-pink: #872657;
+  --fill-edge-slate: #3d4a71;
+
+  --fill-edge-avocado: #85873d;
+  --fill-edge-plum: #241e23;
+  --fill-edge-linen: #c9beb1;
+  --fill-edge-cement: #656457;
+  --fill-edge-maple: #806c43;
+  --fill-edge-rust: #733a28;
+
+  /* A bold fill needs its own text colour, and which one depends on the hue —
+     white over red, near-black over yellow. Every pair below clears 4.6:1.
+
+     There are only ever these two. A custom colour has no pre-solved pair, so
+     `lib/colour.ts` picks between them by contrast at paint time; naming them
+     here keeps that choice pointing at the palette rather than at a literal
+     in a TypeScript file. */
+  --fill-ink-light: #ffffff;
+  --fill-ink-dark: #1a1814;
+
+  --fill-ink-red: #ffffff;
+  --fill-ink-orange: #1a1814;
+  --fill-ink-yellow: #1a1814;
+  --fill-ink-green: #1a1814;
+  --fill-ink-blue: #ffffff;
+  --fill-ink-purple: #ffffff;
+  --fill-ink-pink: #ffffff;
+  --fill-ink-slate: #ffffff;
+
+  --fill-ink-avocado: #372f36;
+  --fill-ink-plum: #f2ece5;
+  --fill-ink-linen: #372f36;
+  --fill-ink-cement: #1f1a1f;
+  --fill-ink-maple: #1f1a1f;
+  --fill-ink-rust: #f2ece5;
+
+  /* Card-type accents: the default bar for the kinds of card that wear one.
+     Drawn from the same hues, so a blue link card and a blue note are the
+     same blue. Notes and tables have no default — they stay bare until you
+     give them a colour. */
+  --cardtype-link: var(--hue-maple);
+  --cardtype-youtube: var(--hue-rust);
+  --cardtype-audio: var(--hue-avocado);
+  --cardtype-image: var(--hue-maple);
+  --cardtype-board: var(--hue-cement);
+  --cardtype-portal: var(--hue-rust);
+  --cardtype-document: var(--hue-cement);
+  --cardtype-file: var(--hue-cement);
+  --cardtype-text: var(--hue-cement);
+  --cardtype-checklist: var(--hue-avocado);
+  --cardtype-table: var(--hue-maple);
+  --cardtype-column: var(--hue-avocado);
+
+
+
+  /* System stack only: a self-hosted instance may have no internet at all. */
+  --font: ui-sans-serif, system-ui, -apple-system, "Segoe UI Variable Text",
+    "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+  /* Headings get a serif for contrast against the body sans, so a heading
+     card reads as a different kind of thing rather than a bigger note.
+     Still system-only, for the same reason. */
+  --font-display: ui-serif, Georgia, "Iowan Old Style", "Palatino Linotype",
+    "Book Antiqua", "Times New Roman", serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+/* Older components predate the square shape system and carried literal
+   radii. Keep the identity centralized instead of relying on every new panel
+   or button author to remember a cleanup list. */
+*,
+*::before,
+*::after {
+  border-radius: 0 !important;
+}
+
+/* These are points, not rounded containers. Their circle communicates a
+   location or status and remains useful interaction geometry. */
+.react-flow__handle,
+.paint-sv-thumb,
+.paint-hue::-webkit-slider-thumb,
+.paint-hue::-moz-range-thumb,
+.collapsed-dot,
+.doc-stale-dot,
+.portal-item-dot {
+  border-radius: var(--radius-round) !important;
+}
+
+html,
+body,
+#root {
+  margin: 0;
+  height: 100%;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font);
+  font-size: 14px;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/* Reversible app-wide palette study. App.tsx owns the single switch; all
+   existing components continue consuming their semantic theme variables. */
+.app-palette-study {
+  height: 100%;
+  min-height: 100%;
+  background: var(--study-bg);
+  color: var(--study-text);
+  font-family: Candara, "Trebuchet MS", sans-serif;
+
+  --bg: var(--study-bg);
+  --bg-sunk: var(--study-bg-sunk);
+  --bg-panel: var(--study-bg-panel);
+  --bg-card: var(--study-bg-card);
+  --bg-hover: var(--study-bg-hover);
+  --bg-input: var(--study-bg-input);
+  --text: var(--study-text);
+  --text-muted: var(--study-text-muted);
+  --border: var(--study-border);
+  --border-strong: var(--study-border-strong);
+  --accent: var(--study-accent);
+  --accent-hover: var(--study-accent-hover);
+  --accent-text: var(--study-accent-ink);
+  --accent-soft: var(--study-accent-soft);
+  --accent-gradient: var(--study-accent-fill);
+  --ring: var(--study-accent);
+  --danger: var(--study-danger);
+  --danger-text: var(--study-danger-text);
+  --danger-soft: var(--study-danger-soft);
+  --canvas-dots: var(--study-canvas-dots);
+  --minimap-bg: var(--study-minimap-bg);
+  --minimap-mask: var(--study-minimap-mask);
+  --minimap-node: var(--study-minimap-node);
+  --minimap-node-stroke: var(--study-minimap-node-stroke);
+}
+
+.app-palette-study :is(h1, h2, h3, .brand-word) {
+  font-family: Constantia, "Palatino Linotype", serif;
+}
+
+::selection {
+  background: var(--accent-soft);
+}
+
+/* ---- buttons ------------------------------------------------------------ */
+
+button {
+  font: inherit;
+  font-weight: 550;
+  color: inherit;
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 6px 13px;
+  cursor: pointer;
+  transition: transform var(--dur-quick) var(--ease-spring),
+    background var(--dur-quick) ease, border-color var(--dur-quick) ease,
+    box-shadow var(--dur-quick) ease;
+}
+
+button:hover:not(:disabled) {
+  background: var(--bg-hover);
+  border-color: var(--border-strong);
+  transform: translateY(-1px);
+}
+
+button:active:not(:disabled) {
+  transform: translateY(0) scale(0.97);
+}
+
+button:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px var(--accent-soft);
+  border-color: var(--accent);
+}
+
+button.primary {
+  background: var(--accent-gradient);
+  color: var(--accent-text);
+  border-color: transparent;
+  box-shadow: var(--shadow);
+}
+
+button.primary:hover:not(:disabled) {
+  background: var(--accent-gradient);
+  filter: brightness(1.08);
+  box-shadow: var(--shadow-lift);
+}
+
+button.danger {
+  background: var(--danger);
+  color: var(--danger-text);
+  border-color: transparent;
+}
+
+button.danger:hover:not(:disabled) {
+  background: var(--danger);
+  filter: brightness(1.1);
+}
+
+button.ghost {
+  background: transparent;
+  border-color: transparent;
+}
+
+button.ghost:hover:not(:disabled) {
+  background: var(--bg-hover);
+  border-color: transparent;
+}
+
+/* ---- fields ------------------------------------------------------------- */
+
+input,
+textarea,
+select {
+  font: inherit;
+  color: var(--text);
+  background: var(--bg-input);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 8px 11px;
+  transition: border-color var(--dur-quick) ease, box-shadow var(--dur-quick) ease;
+}
+
+input:focus,
+textarea:focus,
+select:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: var(--text-muted);
+  opacity: 0.7;
+}
+
+a {
+  color: var(--accent);
+  text-decoration-color: var(--accent-soft);
+  text-underline-offset: 2px;
+}
+
+code {
+  font-family: ui-monospace, "SF Mono", "Cascadia Mono", Menlo, monospace;
+  font-size: 0.92em;
+}
+
+/* ---- shared bits -------------------------------------------------------- */
+
+.role-badge {
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--text-muted);
+  background: var(--bg-hover);
+  border-radius: 999px;
+  padding: 2px 9px;
+  white-space: nowrap;
+}
+
+.brand-mark {
+  flex-shrink: 0;
+}
+
+.brand-word {
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+/* Thin, unobtrusive scrollbars everywhere. */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-strong) transparent;
+}
+
+*::-webkit-scrollbar {
+  width: 9px;
+  height: 9px;
+}
+
+*::-webkit-scrollbar-thumb {
+  background: var(--border-strong);
+  border-radius: 999px;
+  border: 2px solid transparent;
+  background-clip: content-box;
+}
+
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+/* Respect people who would rather things held still. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+
+}
