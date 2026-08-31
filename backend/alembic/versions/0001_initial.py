@@ -1,4 +1,4 @@
-"""Initial schema: milestone 1, verbatim from the spec.
+"""Initial Canvas Notes schema.
 
 Revision ID: 0001
 Revises:

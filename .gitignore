@@ -23,3 +23,9 @@ extension/artifacts/
 
 # Uploaded files live beside the app; they are instance data, not source.
 backend/data/
+
+# Internal design and planning notes are intentionally not published.
+docs/canvas-notes-design.md
+docs/invariants.md
+docs/*milestone*.md
+docs/build-the-discord-bot.md

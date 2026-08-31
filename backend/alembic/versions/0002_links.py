@@ -1,4 +1,4 @@
-"""Links: milestone 3.
+"""Typed directional links.
 
 Endpoints are nullable and set-null on card delete: a link survives the loss
 of its endpoints and renders as a tombstone from its snapshot.

@@ -1,4 +1,4 @@
-"""Capture: milestone 5.
+"""API and bot capture.
 
 Revision ID: 0004
 Revises: 0003

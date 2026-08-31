@@ -1,4 +1,4 @@
-"""Sharing: milestone 6.
+"""Canvas sharing and membership.
 
 Revision ID: 0005
 Revises: 0004

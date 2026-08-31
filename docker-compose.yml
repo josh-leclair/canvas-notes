@@ -1,7 +1,6 @@
 services:
   db:
-    # pgvector build of postgres 16: data-compatible with the plain image,
-    # and required by the embedding column added in milestone 7.
+    # pgvector build of PostgreSQL 16, required by semantic embeddings.
     image: pgvector/pgvector:pg16
     restart: unless-stopped
     environment:

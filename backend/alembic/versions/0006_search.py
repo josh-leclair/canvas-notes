@@ -1,4 +1,4 @@
-"""Embeddings and full text search: milestone 7.
+"""Embeddings and full-text search.
 
 Full text search works on every instance. The embedding column requires
 pgvector; compose ships `pgvector/pgvector:pg16`, which is data-compatible

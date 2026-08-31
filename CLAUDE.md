@@ -1,18 +1,12 @@
 # Canvas Notes — working notes for agents
 
-Read [docs/invariants.md](docs/invariants.md) before touching the canvas. It
-lists the rules this code depends on and the mistakes already made against
-them; most bugs found in this project so far were repeats of something in it.
-
 ## Orientation
 
-- `docs/canvas-notes-design.md` — intent. Wins on *why*.
-- `docs/milestone-1-2-spec.md`, `milestone-3-4-decisions.md`,
-  `milestone-5-8-decisions.md`, `beyond-milestones-decisions.md` — the calls
-  already made, in build order. Check these before re-deciding something.
-- `docs/invariants.md` — the traps.
-- `docs/build-the-discord-bot.md` — the one deliberately unbuilt feature.
 - `README.md` — how to run, test, and configure it.
+- `backend/app/access.py` — the shared permission boundary.
+- `backend/app/models/tables.py` — persisted application state.
+- `frontend/src/store/canvasStore.ts` — canvas state and interactions.
+- `frontend/src/theme.css` — shared appearance and motion tokens.
 
 ## Rules with teeth
 

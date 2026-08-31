@@ -1,4 +1,4 @@
-"""Files and jobs: milestone 4.
+"""Files and background jobs.
 
 Revision ID: 0003
 Revises: 0002
