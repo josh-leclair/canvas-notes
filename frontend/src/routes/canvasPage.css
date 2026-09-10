@@ -381,6 +381,36 @@ button.tool.icon-only {
   display: none;
 }
 
+/* The blank-canvas context menu mirrors every creation route in the toolbar,
+   but keeps the destination under the pointer instead of using the viewport
+   centre. It is rendered through FloatingCardMenu, so these are only the
+   content-specific details. */
+.canvas-create-menu-title {
+  padding: 5px 10px 4px;
+  color: var(--text-muted);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.card-menu .canvas-create-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  min-height: 32px;
+}
+
+.canvas-create-menu-item svg,
+.canvas-create-menu-item .tool-glyph {
+  flex: 0 0 16px;
+  color: var(--accent);
+}
+
+.canvas-context-file-input {
+  display: none;
+}
+
 /* ---- toast -------------------------------------------------------------- */
 
 .canvas-toast {

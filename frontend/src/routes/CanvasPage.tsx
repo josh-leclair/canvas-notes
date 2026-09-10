@@ -44,6 +44,7 @@ import ColumnNode from "../components/ColumnNode";
 import GhostNode from "../components/GhostNode";
 import InboxPanel from "../components/InboxPanel";
 import FocusShelf from "../components/FocusShelf";
+import FloatingCardMenu from "../components/FloatingCardMenu";
 import LinkPanel from "../components/LinkPanel";
 import Lightbox from "../components/Lightbox";
 import LinkEdge from "../components/LinkEdge";
@@ -111,6 +112,7 @@ const MORE_TOOLS: { kind: CardType; label: string; icon: IconName }[] = [
   { kind: "board", label: "Board", icon: "board" },
   { kind: "portal", label: "Portal", icon: "portal" },
 ];
+const ALL_CARD_TOOLS = [...PRIMARY_TOOLS, ...MORE_TOOLS];
 
 /** How far two cards must genuinely overlap, on both axes, before offering
  * the link radar. A corner graze is just someone arranging a board. */
@@ -241,6 +243,15 @@ function CanvasInner({ canvasId }: { canvasId: string }) {
   const [cheatOpen, setCheatOpen] = useState(false);
   const [publicLensOpen, setPublicLensOpen] = useState(false);
   const [portalAt, setPortalAt] = useState<{ x: number; y: number } | null>(null);
+  const [canvasMenuAt, setCanvasMenuAt] = useState<{
+    screenX: number;
+    screenY: number;
+    canvasX: number;
+    canvasY: number;
+  } | null>(null);
+  const contextImageInput = useRef<HTMLInputElement>(null);
+  const contextFileInput = useRef<HTMLInputElement>(null);
+  const contextUploadAt = useRef<{ x: number; y: number } | null>(null);
   // A candidate is overlapped enough to offer the radar. The target becomes
   // armed only when the pointer enters its centre, leaving the rest of the
   // card available for deliberate visual stacking.
@@ -1651,6 +1662,54 @@ function CanvasInner({ canvasId }: { canvasId: string }) {
     createCardAt(pos.x, pos.y, "", true);
   }
 
+  function openNodeContextMenu(event: React.MouseEvent, node: Node) {
+    const placement = useCanvasStore.getState().nodes.find(({ id }) => id === node.id);
+    if (!placement) return;
+    event.preventDefault();
+    event.stopPropagation();
+    setCanvasMenuAt(null);
+
+    // Keyboard context-menu gestures sometimes arrive at (0, 0). Put those
+    // beside the focused node rather than in the corner of the window.
+    const bounds = (event.currentTarget as HTMLElement).getBoundingClientRect();
+    const point =
+      event.clientX === 0 && event.clientY === 0
+        ? { x: bounds.left + Math.min(bounds.width, 36), y: bounds.top + 36 }
+        : { x: event.clientX, y: event.clientY };
+    setMenuOpenFor(node.id, point);
+
+    // Preserve a multi-selection when its member is right-clicked. A card
+    // outside it becomes the sole selection, matching desktop context menus
+    // and expanding a folded hub child before its menu is rendered.
+    const currentSelection = useCanvasStore.getState().selection;
+    if (!currentSelection.includes(node.id)) {
+      setSelection([node.id]);
+      setNodes((current) =>
+        current.map((candidate) => ({
+          ...candidate,
+          selected: candidate.id === node.id,
+        }))
+      );
+    }
+  }
+
+  function openCanvasContextMenu(event: MouseEvent | React.MouseEvent) {
+    event.preventDefault();
+    event.stopPropagation();
+    setMenuOpenFor(null);
+    if (readOnly) {
+      setCanvasMenuAt(null);
+      return;
+    }
+    const pos = screenToFlowPosition({ x: event.clientX, y: event.clientY });
+    setCanvasMenuAt({
+      screenX: event.clientX,
+      screenY: event.clientY,
+      canvasX: pos.x,
+      canvasY: pos.y,
+    });
+  }
+
   function onDrop(e: React.DragEvent) {
     if (readOnly) return;
     // Top-left corner at the drop point, so whatever lands sits under the
@@ -1759,6 +1818,35 @@ function CanvasInner({ canvasId }: { canvasId: string }) {
     // writing surface instead of leaving a blank card that needs a second
     // interaction.
     createCardAt(x, y, "", kind === "text" || kind === "document", kind);
+  }
+
+  function createFromCanvasMenu(kind: CardType) {
+    if (!canvasMenuAt) return;
+    const { canvasX, canvasY } = canvasMenuAt;
+    setCanvasMenuAt(null);
+    void newCardOfType(kind, canvasX, canvasY);
+  }
+
+  function chooseContextUpload(kind: "image" | "file") {
+    if (!canvasMenuAt) return;
+    contextUploadAt.current = {
+      x: canvasMenuAt.canvasX,
+      y: canvasMenuAt.canvasY,
+    };
+    setCanvasMenuAt(null);
+    (kind === "image" ? contextImageInput : contextFileInput).current?.click();
+  }
+
+  async function createZoneFromCanvasMenu() {
+    if (!canvasMenuAt) return;
+    const { canvasX, canvasY } = canvasMenuAt;
+    setCanvasMenuAt(null);
+    const name = await promptDialog({
+      title: "New zone",
+      label: "Name",
+      confirmLabel: "Create zone",
+    });
+    if (name) await createZone({ name, x: canvasX, y: canvasY });
   }
 
   function composeSelection() {
@@ -1915,7 +2003,13 @@ function CanvasInner({ canvasId }: { canvasId: string }) {
       onPointerUpCapture={finishTouchSelection}
       onPointerCancelCapture={cancelTouchSelection}
       onContextMenuCapture={(event) => {
-        if (touchSelection.current?.activated) event.preventDefault();
+        const target = event.target as HTMLElement;
+        if (
+          touchSelection.current?.activated ||
+          target.closest(".react-flow")
+        ) {
+          event.preventDefault();
+        }
       }}
       onDoubleClick={onDoubleClick}
       onDragOver={(e) => {
@@ -2178,6 +2272,75 @@ function CanvasInner({ canvasId }: { canvasId: string }) {
           }}
         />
       )}
+      <FloatingCardMenu
+        point={
+          canvasMenuAt
+            ? { x: canvasMenuAt.screenX, y: canvasMenuAt.screenY }
+            : null
+        }
+        open={canvasMenuAt !== null}
+        onClose={() => setCanvasMenuAt(null)}
+        appearance={canvasAppearance}
+      >
+        <div className="canvas-create-menu-title">Create here</div>
+        {ALL_CARD_TOOLS.map((tool) => (
+          <button
+            key={tool.kind}
+            type="button"
+            className="canvas-create-menu-item"
+            onClick={() => createFromCanvasMenu(tool.kind)}
+          >
+            <Icon name={tool.icon} /> {tool.label}
+          </button>
+        ))}
+        <div className="card-menu-sep" />
+        <button
+          type="button"
+          className="canvas-create-menu-item"
+          onClick={() => chooseContextUpload("image")}
+        >
+          <Icon name="image" /> Image…
+        </button>
+        <button
+          type="button"
+          className="canvas-create-menu-item"
+          onClick={() => chooseContextUpload("file")}
+        >
+          <Icon name="file" /> File…
+        </button>
+        <button
+          type="button"
+          className="canvas-create-menu-item"
+          onClick={() => void createZoneFromCanvasMenu()}
+        >
+          <span className="tool-glyph">▱</span> Zone
+        </button>
+      </FloatingCardMenu>
+      <input
+        ref={contextImageInput}
+        className="canvas-context-file-input"
+        type="file"
+        accept="image/*"
+        onChange={(event) => {
+          const file = event.target.files?.[0];
+          const at = contextUploadAt.current;
+          contextUploadAt.current = null;
+          if (file && at) void createImageCard(at.x, at.y, file);
+          event.target.value = "";
+        }}
+      />
+      <input
+        ref={contextFileInput}
+        className="canvas-context-file-input"
+        type="file"
+        onChange={(event) => {
+          const file = event.target.files?.[0];
+          const at = contextUploadAt.current;
+          contextUploadAt.current = null;
+          if (file && at) void createFileCard(at.x, at.y, file);
+          event.target.value = "";
+        }}
+      />
 
       <ReactFlow
         nodes={renderNodes}
@@ -2185,6 +2348,8 @@ function CanvasInner({ canvasId }: { canvasId: string }) {
         onNodesChange={onNodesChange}
         onSelectionChange={onSelectionChange}
         onNodeClick={onNodeClick}
+        onNodeContextMenu={openNodeContextMenu}
+        onPaneContextMenu={openCanvasContextMenu}
         onNodeDragStart={onNodeDragStart}
         onNodeDrag={onNodeDrag}
         onNodeDragStop={onNodeDragStop}
@@ -2193,16 +2358,24 @@ function CanvasInner({ canvasId }: { canvasId: string }) {
         connectionMode={ConnectionMode.Loose}
         nodesDraggable={!readOnly}
         onEdgeClick={(_, edge) => setSelectedLinkId(edge.id)}
+        onEdgeContextMenu={(event, edge) => {
+          event.preventDefault();
+          setCanvasMenuAt(null);
+          setMenuOpenFor(null);
+          setSelectedLinkId(edge.id);
+        }}
         onPaneClick={() => {
           if (moreToolsRef.current) moreToolsRef.current.open = false;
           if (appearancePickerRef.current) appearancePickerRef.current.open = false;
           setSelectedLinkId(null);
           setMenuOpenFor(null);
+          setCanvasMenuAt(null);
           clearReveal();
         }}
         onMoveStart={() => {
           if (moreToolsRef.current) moreToolsRef.current.open = false;
           if (appearancePickerRef.current) appearancePickerRef.current.open = false;
+          setCanvasMenuAt(null);
         }}
         onMoveEnd={onMoveEnd}
         nodeTypes={nodeTypes}

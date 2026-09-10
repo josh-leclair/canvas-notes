@@ -56,21 +56,58 @@ export default function AudioCardBody({ card }: { card: Card }) {
   }
 
   async function startRecording() {
+    if (!window.isSecureContext || !navigator.mediaDevices?.getUserMedia) {
+      showToast(
+        "Microphone recording needs trusted HTTPS. Use the Tailscale HTTPS hostname, not its IP address."
+      );
+      return;
+    }
+    if (typeof MediaRecorder === "undefined") {
+      showToast("This browser cannot record audio; you can still upload a recording");
+      return;
+    }
+
+    let stream: MediaStream | null = null;
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      const recorder = new MediaRecorder(stream);
+      stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const activeStream = stream;
+      const preferredMime = [
+        "audio/webm;codecs=opus",
+        "audio/ogg;codecs=opus",
+        "audio/mp4",
+      ].find((mime) => MediaRecorder.isTypeSupported(mime));
+      const recorder = new MediaRecorder(
+        activeStream,
+        preferredMime ? { mimeType: preferredMime } : undefined
+      );
       chunksRef.current = [];
-      recorder.ondataavailable = (e) => chunksRef.current.push(e.data);
+      recorder.ondataavailable = (e) => {
+        if (e.data.size > 0) chunksRef.current.push(e.data);
+      };
       recorder.onstop = () => {
-        stream.getTracks().forEach((t) => t.stop());
+        activeStream.getTracks().forEach((track) => track.stop());
         const mime = recorder.mimeType || "audio/webm";
-        upload(new Blob(chunksRef.current, { type: mime }), mime.split(";")[0]);
+        void upload(new Blob(chunksRef.current, { type: mime }), mime.split(";")[0]);
       };
       recorder.start();
       recorderRef.current = recorder;
       setRecording(true);
-    } catch {
-      showToast("Microphone access was refused");
+    } catch (error) {
+      stream?.getTracks().forEach((track) => track.stop());
+      const name = error instanceof DOMException ? error.name : "";
+      if (name === "NotAllowedError" || name === "SecurityError") {
+        showToast(
+          "Microphone was blocked. Allow this site in Firefox and Firefox in macOS Microphone settings."
+        );
+      } else if (name === "NotFoundError") {
+        showToast("No microphone was found");
+      } else if (name === "NotReadableError" || name === "AbortError") {
+        showToast(
+          "The microphone is unavailable. Check macOS permission and close other apps using it."
+        );
+      } else {
+        showToast(error instanceof Error ? error.message : "Could not start the microphone");
+      }
     }
   }
 

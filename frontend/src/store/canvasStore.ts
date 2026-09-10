@@ -117,6 +117,10 @@ export interface CardNodeData extends Record<string, unknown> {
 export type CardNode = Node<CardNodeData, "card">;
 
 export type LayerMove = "front" | "forward" | "backward" | "back";
+export interface MenuPoint {
+  x: number;
+  y: number;
+}
 
 function toNode(p: PlacementWithCard): CardNode {
   return {
@@ -193,6 +197,9 @@ interface CanvasState {
   /** Placement whose ⋯ menu is open. Its node is lifted above the rest so a
    * neighbour — or a card stacked inside it — cannot cover the menu. */
   menuOpenFor: string | null;
+  /** Screen coordinate used when the card menu came from a context click.
+   * Null means the visible ⋯ button is the anchor instead. */
+  menuPoint: MenuPoint | null;
 
   undoStack: UndoOp[];
   lightbox: LightboxMedia | null;
@@ -287,7 +294,10 @@ interface CanvasState {
   setPlaceOnBoardFor: (
     request: { cardId: string; title: string | null } | null
   ) => void;
-  setMenuOpenFor: (placementId: string | null) => void;
+  setMenuOpenFor: (
+    placementId: string | null,
+    point?: MenuPoint | null
+  ) => void;
   createLink: (sourceCardId: string, targetCardId: string) => Promise<void>;
   updateLink: (
     linkId: string,
@@ -356,6 +366,7 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
   linkPickerFor: null,
   placeOnBoardFor: null,
   menuOpenFor: null,
+  menuPoint: null,
 
   loadCanvas: async (canvasId) => {
     const detail = await api.get<CanvasDetail>(`/api/canvases/${canvasId}`);
@@ -395,6 +406,7 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
             // The column menu renders in a portal now, so an open one would
             // otherwise float over the new board on arrival.
             menuOpenFor: null,
+            menuPoint: null,
           }
         : {}),
     });
@@ -1349,7 +1361,8 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
 
   setPlaceOnBoardFor: (request) => set({ placeOnBoardFor: request }),
 
-  setMenuOpenFor: (placementId) => set({ menuOpenFor: placementId }),
+  setMenuOpenFor: (placementId, point = null) =>
+    set({ menuOpenFor: placementId, menuPoint: placementId ? point : null }),
 
   createLink: async (sourceCardId, targetCardId) => {
     const { canvasId } = get();

@@ -559,6 +559,7 @@ function CardNodeImpl({ id, data, selected }: NodeProps<CardNodeType>) {
   // Menu open state lives in the store so the canvas can lift this node above
   // its neighbours while the dropdown is showing.
   const menuOpenFor = useCanvasStore((s) => s.menuOpenFor);
+  const menuPoint = useCanvasStore((s) => s.menuPoint);
   const setMenuOpenFor = useCanvasStore((s) => s.setMenuOpenFor);
   const generationAvailable = useCanvasStore((s) => s.generationAvailable);
   const splitCard = useCanvasStore((s) => s.splitCard);
@@ -1188,6 +1189,7 @@ function CardNodeImpl({ id, data, selected }: NodeProps<CardNodeType>) {
         </button>
         <FloatingCardMenu
           anchorRef={menuButtonRef}
+          point={menuOpen ? menuPoint : null}
           open={menuOpen}
           onClose={closeMenu}
           appearance={canvasAppearance}

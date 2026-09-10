@@ -28,12 +28,14 @@ function clamp(value: number, minimum: number, maximum: number) {
  * anchor and stay inside every edge of the browser viewport. */
 export default function FloatingCardMenu({
   anchorRef,
+  point,
   open,
   onClose,
   appearance,
   children,
 }: {
-  anchorRef: RefObject<HTMLElement>;
+  anchorRef?: RefObject<HTMLElement>;
+  point?: { x: number; y: number } | null;
   open: boolean;
   onClose: () => void;
   appearance: CanvasAppearance;
@@ -51,11 +53,25 @@ export default function FloatingCardMenu({
     }
 
     const place = () => {
-      const anchor = anchorRef.current?.getBoundingClientRect();
       const menu = menuRef.current?.getBoundingClientRect();
-      if (!anchor || !menu) return;
+      if (!menu) return;
 
       const maxLeft = window.innerWidth - VIEWPORT_GUTTER - menu.width;
+      if (point) {
+        setPosition({
+          top: clamp(
+            point.y,
+            VIEWPORT_GUTTER,
+            window.innerHeight - VIEWPORT_GUTTER - menu.height
+          ),
+          left: clamp(point.x, VIEWPORT_GUTTER, maxLeft),
+          ready: true,
+        });
+        return;
+      }
+
+      const anchor = anchorRef?.current?.getBoundingClientRect();
+      if (!anchor) return;
       const left = clamp(
         anchor.right - menu.width,
         VIEWPORT_GUTTER,
@@ -88,7 +104,7 @@ export default function FloatingCardMenu({
       observer.disconnect();
       window.removeEventListener("resize", place);
     };
-  }, [anchorRef, open]);
+  }, [anchorRef, open, point?.x, point?.y]);
 
   useEffect(() => {
     if (!open) return;
@@ -96,17 +112,22 @@ export default function FloatingCardMenu({
       const target = event.target as Node;
       if (
         !menuRef.current?.contains(target) &&
-        !anchorRef.current?.contains(target)
+        !anchorRef?.current?.contains(target)
       ) {
         onClose();
       }
     };
     // A wheel gesture pans or zooms the canvas, so the anchor is about to
     // move independently of this body-level portal.
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") onClose();
+    };
     window.addEventListener("wheel", onClose, { passive: true });
+    window.addEventListener("keydown", closeOnEscape);
     document.addEventListener("pointerdown", closeOnOutsidePointer, true);
     return () => {
       window.removeEventListener("wheel", onClose);
+      window.removeEventListener("keydown", closeOnEscape);
       document.removeEventListener("pointerdown", closeOnOutsidePointer, true);
     };
   }, [anchorRef, onClose, open]);
@@ -116,6 +137,8 @@ export default function FloatingCardMenu({
     <div
       ref={menuRef}
       className={`card-menu nodrag is-floating canvas-appearance-${appearance}`}
+      role="menu"
+      onContextMenu={(event) => event.preventDefault()}
       style={{
         top: position.top,
         left: position.left,

@@ -37,6 +37,7 @@ function ColumnNodeImpl({ id, data, selected }: NodeProps<CardNodeType>) {
   const inputRef = useRef<HTMLInputElement>(null);
 
   const menuOpenFor = useCanvasStore((s) => s.menuOpenFor);
+  const menuPoint = useCanvasStore((s) => s.menuPoint);
   const setMenuOpenFor = useCanvasStore((s) => s.setMenuOpenFor);
   const menuOpen = menuOpenFor === id;
   const closeMenu = () => setMenuOpenFor(null);
@@ -121,6 +122,7 @@ function ColumnNodeImpl({ id, data, selected }: NodeProps<CardNodeType>) {
               </button>
               <FloatingCardMenu
                 anchorRef={menuButtonRef}
+                point={menuOpen ? menuPoint : null}
                 open={menuOpen}
                 onClose={closeMenu}
                 appearance={canvasAppearance}
