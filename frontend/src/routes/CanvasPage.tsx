@@ -112,10 +112,11 @@ const MORE_TOOLS: { kind: CardType; label: string; icon: IconName }[] = [
   { kind: "portal", label: "Portal", icon: "portal" },
 ];
 
-/** How far two cards must genuinely overlap, on both axes, before dropping
- * one on the other links them. A corner graze is almost always someone
- * arranging a board rather than drawing a connection. */
+/** How far two cards must genuinely overlap, on both axes, before offering
+ * the link radar. A corner graze is just someone arranging a board. */
 const MIN_OVERLAP = 14;
+/** Radius of the deliberate drop hotspot shown at a link candidate's centre. */
+const LINK_TARGET_RADIUS = 46;
 const ALIGN_GUIDE_ENTER_PX = 3;
 const ALIGN_GUIDE_RELEASE_PX = 6;
 const ALIGN_GUIDE_REACH_PX = 140;
@@ -240,8 +241,10 @@ function CanvasInner({ canvasId }: { canvasId: string }) {
   const [cheatOpen, setCheatOpen] = useState(false);
   const [publicLensOpen, setPublicLensOpen] = useState(false);
   const [portalAt, setPortalAt] = useState<{ x: number; y: number } | null>(null);
-  // Transient drag state: the card a drop would link, and the column it would
-  // drop into. What un-dims is derived from these, not from distance.
+  // A candidate is overlapped enough to offer the radar. The target becomes
+  // armed only when the pointer enters its centre, leaving the rest of the
+  // card available for deliberate visual stacking.
+  const [linkCandidate, setLinkCandidate] = useState<string | null>(null);
   const [linkTarget, setLinkTarget] = useState<string | null>(null);
   const [columnTarget, setColumnTarget] = useState<
     { id: string; slot: number; movingIds: string[] } | null
@@ -738,6 +741,7 @@ function CanvasInner({ canvasId }: { canvasId: string }) {
       const next =
         [
           className,
+          node.id === linkCandidate ? "is-link-candidate" : null,
           node.id === linkTarget ? "is-link-target" : null,
           node.id === columnTarget?.id ? "is-column-target" : null,
         ]
@@ -843,6 +847,7 @@ function CanvasInner({ canvasId }: { canvasId: string }) {
     graph,
     searchMatches,
     neighbourCardIds,
+    linkCandidate,
     linkTarget,
     collapsedCardIds,
     childCountByCard,
@@ -932,6 +937,8 @@ function CanvasInner({ canvasId }: { canvasId: string }) {
   const onNodeDragStart = useCallback(
     (_event: MouseEvent | TouchEvent, __: Node, dragged: Node[]) => {
       setDragging(true);
+      setLinkCandidate(null);
+      setLinkTarget(null);
       setAlignmentGuides(null);
       alignmentGuideLock.current = { x: null, y: null };
 
@@ -999,6 +1006,7 @@ function CanvasInner({ canvasId }: { canvasId: string }) {
       };
 
       let over: string | null = null;
+      let overBox: Rect | null = null;
       let bestOverlap = 0;
       const zoom = getZoom();
       const enterTolerance = ALIGN_GUIDE_ENTER_PX / zoom;
@@ -1101,6 +1109,7 @@ function CanvasInner({ canvasId }: { canvasId: string }) {
         ) {
           bestOverlap = overlapX * overlapY;
           over = other.id;
+          overBox = theirs;
         }
       }
       // A column under the pointer takes precedence over linking: dropping
@@ -1164,7 +1173,16 @@ function CanvasInner({ canvasId }: { canvasId: string }) {
           ? current
           : column;
       });
-      setLinkTarget(dragged.length === 1 && !column ? over : null);
+      const candidate = dragged.length === 1 && !column ? over : null;
+      const armed =
+        candidate && overBox
+          ? Math.hypot(
+              pointer.x - (overBox.x + overBox.w / 2),
+              pointer.y - (overBox.y + overBox.h / 2)
+            ) <= LINK_TARGET_RADIUS
+          : false;
+      setLinkCandidate(candidate);
+      setLinkTarget(armed ? candidate : null);
       const pickGuide = (
         candidates: AlignmentCandidate[],
         locked: number | null
@@ -1243,6 +1261,7 @@ function CanvasInner({ canvasId }: { canvasId: string }) {
 
       const droppedOn = linkTarget;
       const intoColumn = columnTarget;
+      setLinkCandidate(null);
       setLinkTarget(null);
       setColumnTarget(null);
       setAlignmentGuides(null);
@@ -1304,8 +1323,8 @@ function CanvasInner({ canvasId }: { canvasId: string }) {
         }
       }
 
-      /* A card dropped onto another card is a link gesture, not a move: make
-       * the link and put the card back where it came from.
+      /* A card released on another card's armed radar is a link gesture, not
+       * a move: make the link and put the card back where it came from.
        *
        * Cards only. A column is a container, and moving one necessarily lays
        * it over its own members — treating that as a drop-on-target linked
@@ -1421,6 +1440,21 @@ function CanvasInner({ canvasId }: { canvasId: string }) {
       showToast,
     ]
   );
+
+  const linkRadar = useMemo(() => {
+    if (!linkCandidate) return null;
+    const byId = new Map(nodes.map((node) => [node.id, node]));
+    const candidate = byId.get(linkCandidate);
+    if (!candidate) return null;
+    const position = worldPosition(candidate, byId);
+    const size = effectiveSize(candidate);
+    return {
+      x: position.x + size.w / 2,
+      y: position.y + size.h / 2,
+      armed: linkTarget === linkCandidate,
+      label: candidate.data.card.type === "portal" ? "add" : "child",
+    };
+  }, [linkCandidate, linkTarget, nodes, worldPosition, effectiveSize]);
 
   const onMoveEnd = useCallback(
     (_: unknown, viewport: Viewport) => {
@@ -2225,6 +2259,22 @@ function CanvasInner({ canvasId }: { canvasId: string }) {
                 }}
               />
             )}
+          </ViewportPortal>
+        )}
+        {linkRadar && (
+          <ViewportPortal>
+            <div
+              className={`link-drop-radar ${linkRadar.armed ? "is-armed" : ""}`}
+              style={{ left: linkRadar.x, top: linkRadar.y }}
+              aria-hidden="true"
+            >
+              <span className="link-radar-sweep is-clockwise" />
+              <span className="link-radar-sweep is-counterclockwise" />
+              <span className="link-radar-core">
+                <span>↳</span>
+                <small>{linkRadar.label}</small>
+              </span>
+            </div>
           </ViewportPortal>
         )}
         <MiniMap

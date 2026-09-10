@@ -20,12 +20,13 @@ import ColourPicker from "./ColourPicker";
 import {
   axesFor,
   hasAccent,
+  hasDefaultAccent,
   huesForAppearance,
   paintOf,
   paintStyle,
   withPaint,
   type Axis,
-  type PaintValue,
+  type PaintSelection,
 } from "./cardPaint";
 import Icon from "./Icon";
 import ImageCropper, { type Crop } from "./ImageCropper";
@@ -518,6 +519,7 @@ function CardNodeImpl({ id, data, selected }: NodeProps<CardNodeType>) {
   const clearEditOnMount = useCanvasStore((s) => s.clearEditOnMount);
   const updateCard = useCanvasStore((s) => s.updateCard);
   const savePlacement = useCanvasStore((s) => s.savePlacement);
+  const movePlacementLayer = useCanvasStore((s) => s.movePlacementLayer);
   const setNodes = useCanvasStore((s) => s.setNodes);
   const removePlacements = useCanvasStore((s) => s.removePlacements);
   const deleteCard = useCanvasStore((s) => s.deleteCard);
@@ -562,6 +564,14 @@ function CardNodeImpl({ id, data, selected }: NodeProps<CardNodeType>) {
   const splitCard = useCanvasStore((s) => s.splitCard);
   const reportMemberHeight = useCanvasStore((s) => s.reportMemberHeight);
   const selection = useCanvasStore((s) => s.selection);
+  const hasLayerPeer = useCanvasStore((s) =>
+    s.nodes.some(
+      (node) =>
+        node.id !== id &&
+        !node.data.parentId &&
+        node.data.card.type !== "column"
+    )
+  );
   const touchCard = useCanvasStore((s) => s.touchCard);
   const menuOpen = menuOpenFor === id;
   const closeMenu = () => setMenuOpenFor(null);
@@ -877,7 +887,7 @@ function CardNodeImpl({ id, data, selected }: NodeProps<CardNodeType>) {
    * has been given a colour. */
   const accent = {
     ...paintStyle(paint),
-    ...(paint.accent || asIcon
+    ...(paint.accent || paint.accentDisabled || asIcon
       ? {}
       : { "--card-accent": `var(--cardtype-${card.type})` }),
   } as React.CSSProperties;
@@ -990,7 +1000,7 @@ function CardNodeImpl({ id, data, selected }: NodeProps<CardNodeType>) {
     }
   }
 
-  async function setPaint(axis: Axis, next: PaintValue | null) {
+  async function setPaint(axis: Axis, next: PaintSelection) {
     closeMenu();
     const payload = withPaint(card.payload, axis, next);
     try {
@@ -1336,6 +1346,43 @@ function CardNodeImpl({ id, data, selected }: NodeProps<CardNodeType>) {
                 Place on another board…
               </button>
             )}
+            {!readOnly && !inColumn && hasLayerPeer && (
+              <>
+                <div className="card-menu-sep" />
+                <button
+                  onClick={() => {
+                    closeMenu();
+                    void movePlacementLayer(id, "front");
+                  }}
+                >
+                  Bring to front
+                </button>
+                <button
+                  onClick={() => {
+                    closeMenu();
+                    void movePlacementLayer(id, "forward");
+                  }}
+                >
+                  Move forward
+                </button>
+                <button
+                  onClick={() => {
+                    closeMenu();
+                    void movePlacementLayer(id, "backward");
+                  }}
+                >
+                  Move backward
+                </button>
+                <button
+                  onClick={() => {
+                    closeMenu();
+                    void movePlacementLayer(id, "back");
+                  }}
+                >
+                  Send to back
+                </button>
+              </>
+            )}
             {!readOnly && (
               <>
                 <div className="card-menu-sep" />
@@ -1343,6 +1390,11 @@ function CardNodeImpl({ id, data, selected }: NodeProps<CardNodeType>) {
                   axes={axes}
                   paint={paint}
                   hues={huesForAppearance(canvasAppearance)}
+                  defaultAccent={
+                    hasDefaultAccent(card)
+                      ? `var(--cardtype-${card.type})`
+                      : null
+                  }
                   onPick={setPaint}
                 />
                 <div className="card-menu-sep" />

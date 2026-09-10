@@ -6,6 +6,7 @@ import {
   lineColour,
   type Axis,
   type Paint,
+  type PaintSelection,
   type PaintValue,
   type TextTone,
   type Hue,
@@ -251,11 +252,14 @@ export default function ColourPicker({
   paint,
   onPick,
   hues = HUES,
+  defaultAccent,
 }: {
   axes: Axis[];
   paint: Paint;
-  onPick: (axis: Axis, value: PaintValue | null) => void;
+  onPick: (axis: Axis, value: PaintSelection) => void;
   hues?: readonly Hue[];
+  /** Theme token used by card types that carry an accent by default. */
+  defaultAccent?: string | null;
 }) {
   // One wheel at a time: four of them open at once is taller than the card.
   const [wheelFor, setWheelFor] = useState<Axis | null>(null);
@@ -321,61 +325,89 @@ export default function ColourPicker({
                 ))}
               </div>
             ) : (
-            <>
-              <div className="paint-row">
-              <button
-                className={`paint-swatch paint-none ${chosen ? "" : "is-active"}`}
-                title="Default"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setWheelFor(null);
-                  onPick(axis, null);
-                }}
-              >
-                ✕
-              </button>
-              {hues.map((hue) => (
-                <button
-                  key={hue}
-                  className={`paint-swatch is-${IS_FILL[axis] ? "fill" : axis} ${
-                    chosen === hue ? "is-active" : ""
+              <>
+                <div
+                  className={`paint-row ${
+                    axis === "accent" && defaultAccent ? "has-default" : ""
                   }`}
-                  style={swatchStyle(axis, hue)}
-                  title={hue[0].toUpperCase() + hue.slice(1)}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setWheelFor(null);
-                    onPick(axis, hue);
-                  }}
                 >
-                  {""}
-                </button>
-              ))}
-              <button
-                className={`paint-swatch paint-wheel is-${
-                  IS_FILL[axis] ? "fill" : axis
-                } ${custom ? "is-custom is-active" : ""} ${
-                  wheelFor === axis ? "is-open" : ""
-                }`}
-                style={custom ? swatchStyle(axis, chosen) : undefined}
-                title={custom ? `Custom (${chosen})` : "Custom colour…"}
-                aria-expanded={wheelFor === axis}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setWheelFor(wheelFor === axis ? null : axis);
-                }}
-              >
-                {""}
-              </button>
-              </div>
-              {wheelFor === axis && (
-                <CustomPaint
-                  axis={axis}
-                  value={chosen}
-                  onPick={(next) => onPick(axis, next as PaintValue)}
-                />
-              )}
-            </>
+                  {axis === "accent" && defaultAccent && (
+                    <button
+                      className={`paint-swatch is-accent paint-default ${
+                        !chosen && !paint.accentDisabled ? "is-active" : ""
+                      }`}
+                      style={{ background: defaultAccent }}
+                      title="Theme default"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setWheelFor(null);
+                        onPick(axis, "default");
+                      }}
+                    >
+                      {""}
+                    </button>
+                  )}
+                  <button
+                    className={`paint-swatch paint-none ${
+                      axis === "accent"
+                        ? paint.accentDisabled
+                          ? "is-active"
+                          : ""
+                        : chosen
+                          ? ""
+                          : "is-active"
+                    }`}
+                    title={axis === "accent" ? "No accent" : "Default"}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setWheelFor(null);
+                      onPick(axis, null);
+                    }}
+                  >
+                    ✕
+                  </button>
+                  {hues.map((hue) => (
+                    <button
+                      key={hue}
+                      className={`paint-swatch is-${
+                        IS_FILL[axis] ? "fill" : axis
+                      } ${chosen === hue ? "is-active" : ""}`}
+                      style={swatchStyle(axis, hue)}
+                      title={hue[0].toUpperCase() + hue.slice(1)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setWheelFor(null);
+                        onPick(axis, hue);
+                      }}
+                    >
+                      {""}
+                    </button>
+                  ))}
+                  <button
+                    className={`paint-swatch paint-wheel is-${
+                      IS_FILL[axis] ? "fill" : axis
+                    } ${custom ? "is-custom is-active" : ""} ${
+                      wheelFor === axis ? "is-open" : ""
+                    }`}
+                    style={custom ? swatchStyle(axis, chosen) : undefined}
+                    title={custom ? `Custom (${chosen})` : "Custom colour…"}
+                    aria-expanded={wheelFor === axis}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setWheelFor(wheelFor === axis ? null : axis);
+                    }}
+                  >
+                    {""}
+                  </button>
+                </div>
+                {wheelFor === axis && (
+                  <CustomPaint
+                    axis={axis}
+                    value={chosen}
+                    onPick={(next) => onPick(axis, next as PaintValue)}
+                  />
+                )}
+              </>
             )}
           </div>
         );

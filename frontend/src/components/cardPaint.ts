@@ -70,6 +70,9 @@ export type TextTone = "dark" | "light";
 
 /** What an axis can be painted: one of the presets, or anything at all. */
 export type PaintValue = Hue | LegacyHue | TextTone | Custom;
+/** A picker action rather than a stored colour. `default` removes an override;
+ * null means that the axis should have no paint. */
+export type PaintSelection = PaintValue | "default" | null;
 
 export function isCustom(value: PaintValue | null): value is Custom {
   return typeof value === "string" && value.startsWith("#");
@@ -127,8 +130,13 @@ const DEFAULT_ACCENT = new Set([
   "document",
 ]);
 
+export function hasDefaultAccent(card: Card): boolean {
+  return DEFAULT_ACCENT.has(card.type);
+}
+
 export function hasAccent(card: Card, accent: PaintValue | null): boolean {
-  return accent !== null || DEFAULT_ACCENT.has(card.type);
+  if (card.payload.accent === "none") return false;
+  return accent !== null || hasDefaultAccent(card);
 }
 
 export function axesFor(card: Card): Axis[] {
@@ -157,6 +165,8 @@ function textTone(value: unknown): TextTone | null {
 
 export interface Paint {
   accent: PaintValue | null;
+  /** An explicit user choice, distinct from a card with no stored override. */
+  accentDisabled: boolean;
   fill: PaintValue | null;
   header: PaintValue | null;
   ink: PaintValue | null;
@@ -168,6 +178,7 @@ export function paintOf(card: Card): Paint {
   const payload = card.payload as Record<string, unknown>;
   return {
     accent: paintValue(payload.accent),
+    accentDisabled: payload.accent === "none",
     fill: paintValue(payload.color),
     header: paintValue(payload.header_color),
     ink: textTone(payload.ink),
@@ -184,10 +195,12 @@ const KEYS: Record<Axis, string> = {
 export function withPaint(
   payload: Record<string, unknown>,
   axis: Axis,
-  value: PaintValue | null
+  value: PaintSelection
 ): Record<string, unknown> {
   const next = { ...payload };
-  if (value) next[KEYS[axis]] = value;
+  if (value === "default") delete next[KEYS[axis]];
+  else if (axis === "accent" && value === null) next[KEYS[axis]] = "none";
+  else if (value) next[KEYS[axis]] = value;
   else delete next[KEYS[axis]];
   return next;
 }

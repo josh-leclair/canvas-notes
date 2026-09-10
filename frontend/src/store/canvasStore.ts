@@ -116,6 +116,8 @@ export interface CardNodeData extends Record<string, unknown> {
 
 export type CardNode = Node<CardNodeData, "card">;
 
+export type LayerMove = "front" | "forward" | "backward" | "back";
+
 function toNode(p: PlacementWithCard): CardNode {
   return {
     id: p.id,
@@ -258,6 +260,11 @@ interface CanvasState {
   ) => Promise<void>;
   placeInboxCard: (cardId: string, x: number, y: number) => Promise<void>;
   savePlacement: (placementId: string) => void;
+  /** Change a free-standing card's persistent position in the visual stack. */
+  movePlacementLayer: (
+    placementId: string,
+    direction: LayerMove
+  ) => Promise<void>;
   updateCard: (
     cardId: string,
     patch: {
@@ -1169,6 +1176,66 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
         }
       }, 200)
     );
+  },
+
+  movePlacementLayer: async (placementId, direction) => {
+    const nodes = get().nodes;
+    // Column members are laid out by their column, while columns themselves
+    // deliberately sit behind their contents. Layer controls are for the
+    // free-standing cards that can actually overlap on the canvas.
+    const layered = nodes
+      .map((node, index) => ({ node, index }))
+      .filter(
+        ({ node }) =>
+          !node.data.parentId && node.data.card.type !== "column"
+      )
+      .sort(
+        (a, b) =>
+          (a.node.zIndex ?? 0) - (b.node.zIndex ?? 0) || a.index - b.index
+      );
+    const from = layered.findIndex(({ node }) => node.id === placementId);
+    if (from < 0 || layered.length < 2) return;
+
+    const to =
+      direction === "front"
+        ? layered.length - 1
+        : direction === "back"
+          ? 0
+          : direction === "forward"
+            ? Math.min(layered.length - 1, from + 1)
+            : Math.max(0, from - 1);
+    if (to === from) return;
+
+    const [moving] = layered.splice(from, 1);
+    layered.splice(to, 0, moving);
+
+    // Re-number the whole stack so one-step moves stay deterministic even on
+    // older canvases where every placement still has the default z of zero.
+    const nextZ = new Map(layered.map(({ node }, z) => [node.id, z]));
+    const changed = nodes.filter(
+      (node) => nextZ.has(node.id) && (node.zIndex ?? 0) !== nextZ.get(node.id)
+    );
+    set({
+      nodes: nodes.map((node) =>
+        nextZ.has(node.id) ? { ...node, zIndex: nextZ.get(node.id) } : node
+      ),
+    });
+
+    try {
+      await Promise.all(
+        changed.map((node) =>
+          api.patch(`/api/placements/${node.id}`, { z: nextZ.get(node.id) })
+        )
+      );
+    } catch (err) {
+      // Several placements may have been re-numbered before one request
+      // failed, so reload instead of guessing which optimistic values stuck.
+      const { canvasId } = get();
+      if (canvasId) await get().loadCanvas(canvasId);
+      get().showToast(
+        err instanceof Error ? err.message : "Could not change the card layer"
+      );
+    }
   },
 
   updateCard: async (cardId, patch) => {

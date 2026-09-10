@@ -10,7 +10,7 @@ import {
   paintStyle,
   withPaint,
   type Axis,
-  type PaintValue,
+  type PaintSelection,
 } from "./cardPaint";
 import Icon from "./Icon";
 import SideHandles from "./SideHandles";
@@ -52,7 +52,7 @@ function ColumnNodeImpl({ id, data, selected }: NodeProps<CardNodeType>) {
   const paint = paintOf(card);
   const accent = paintStyle(paint) as React.CSSProperties;
 
-  async function setPaint(axis: Axis, next: PaintValue | null) {
+  async function setPaint(axis: Axis, next: PaintSelection) {
     closeMenu();
     const payload = withPaint(card.payload, axis, next);
     try {

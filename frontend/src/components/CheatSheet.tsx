@@ -41,8 +41,8 @@ const GESTURES: [string, string][] = [
   ],
   ["Drag from any card edge dot", "Draw a link to another card"],
   [
-    "Drop a card so it overlaps another",
-    "Link them, leaving the card where it was",
+    "Drop on another card's centre radar",
+    "Make the dragged card its child; drop elsewhere to keep the overlap",
   ],
   ["Click the dot on a link", "Edit its type and reason, or delete it"],
   ["Double-click a board card", "Open the board nested inside this one"],

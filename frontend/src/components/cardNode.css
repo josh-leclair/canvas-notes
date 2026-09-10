@@ -485,6 +485,12 @@
   padding: 4px 6px 5px;
 }
 
+/* Default-accent cards have one additional, theme-coloured choice. */
+.paint-row.has-default {
+  grid-template-columns: repeat(9, 1fr);
+  min-width: 238px;
+}
+
 .paint-ink-options {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -784,10 +790,16 @@
   pointer-events: none;
 }
 
-/* The card a drag would link to, highlighted while it is hovered. */
-.card-node.is-link-target {
-  outline: 2px dashed var(--accent);
+/* A candidate is only an invitation; the radar at its centre is the actual
+   link action, so the rest of the card remains usable for visual overlap. */
+.react-flow__node.is-link-candidate .card-node {
+  outline: 1px dashed color-mix(in srgb, var(--accent) 68%, transparent);
   outline-offset: 3px;
+}
+
+.react-flow__node.is-link-target .card-node {
+  outline: 2px solid var(--accent);
+  box-shadow: var(--shadow-lift), 0 0 0 5px var(--accent-soft);
 }
 
 /* ---- hubs and folded children ------------------------------------------ */
@@ -1903,6 +1915,7 @@ button.youtube-play:active:not(:disabled) {
   white-space: normal;
   text-align: center;
   font-size: 14px;
+  color: var(--canvas-icon-name, var(--text));
 }
 
 /* The menu would otherwise float over open canvas with no card under it. */

@@ -32,6 +32,8 @@
   --bg-input: var(--pantry-bg-panel);
   --text: var(--palette-chocolate);
   --text-muted: var(--pantry-text-muted);
+  /* Icon cards sit directly on the plum canvas rather than on cream paper. */
+  --canvas-icon-name: var(--pantry-bg-card);
   --border: var(--pantry-border);
   --border-strong: var(--palette-strawberry);
   --accent: var(--pantry-accent);
@@ -479,6 +481,132 @@ button.tool.icon-only {
 @keyframes dash-run {
   to {
     stroke-dashoffset: -22;
+  }
+}
+
+/* The centre of an overlapped card becomes a small semantic drop zone. Two
+   opposed sweeps make it lively without moving the target itself; the whole
+   ornament lives above the dragged card and never catches the pointer. */
+.link-drop-radar {
+  position: absolute;
+  z-index: 7000;
+  width: 92px;
+  height: 92px;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  filter: drop-shadow(0 5px 13px color-mix(in srgb, var(--bg) 48%, transparent));
+  transition: filter var(--dur-quick) ease;
+}
+
+.link-drop-radar::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border: 1px solid color-mix(in srgb, var(--accent) 72%, transparent);
+  border-radius: var(--radius-round) !important;
+  background:
+    radial-gradient(circle, transparent 0 17px, var(--accent-soft) 18px 19px, transparent 20px 31px, color-mix(in srgb, var(--accent) 44%, transparent) 32px 33px, transparent 34px),
+    color-mix(in srgb, var(--bg-panel) 78%, transparent);
+  box-shadow:
+    inset 0 0 20px var(--accent-soft),
+    0 0 0 4px color-mix(in srgb, var(--accent-soft) 54%, transparent);
+  backdrop-filter: blur(4px);
+}
+
+.link-radar-sweep {
+  position: absolute;
+  border-radius: var(--radius-round) !important;
+  animation: link-radar-clockwise 1.8s linear infinite;
+}
+
+.link-radar-sweep.is-clockwise {
+  inset: 5px;
+  background: conic-gradient(
+    from 12deg,
+    transparent 0 250deg,
+    color-mix(in srgb, var(--accent) 8%, transparent) 270deg,
+    color-mix(in srgb, var(--accent) 72%, transparent) 345deg,
+    var(--accent) 356deg,
+    transparent 359deg
+  );
+  -webkit-mask: radial-gradient(circle, transparent 0 32px, #000 33px);
+  mask: radial-gradient(circle, transparent 0 32px, #000 33px);
+}
+
+.link-radar-sweep.is-counterclockwise {
+  inset: 17px;
+  background: conic-gradient(
+    from 190deg,
+    transparent 0 238deg,
+    color-mix(in srgb, var(--border-strong) 12%, transparent) 260deg,
+    var(--border-strong) 350deg,
+    transparent 358deg
+  );
+  -webkit-mask: radial-gradient(circle, transparent 0 18px, #000 19px);
+  mask: radial-gradient(circle, transparent 0 18px, #000 19px);
+  animation-name: link-radar-counterclockwise;
+  animation-duration: 1.25s;
+}
+
+.link-radar-core {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 38px;
+  height: 38px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  transform: translate(-50%, -50%);
+  border: 1px solid color-mix(in srgb, var(--accent) 72%, var(--bg-panel));
+  border-radius: var(--radius-round) !important;
+  background: var(--bg-panel);
+  color: var(--accent);
+  box-shadow: 0 0 12px var(--accent-soft);
+  font-weight: 800;
+  line-height: 0.75;
+}
+
+.link-radar-core > span {
+  font-size: 17px;
+}
+
+.link-radar-core small {
+  margin-top: 3px;
+  font-size: 8px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.link-drop-radar.is-armed {
+  filter:
+    drop-shadow(0 0 8px var(--accent))
+    drop-shadow(0 6px 15px color-mix(in srgb, var(--bg) 48%, transparent));
+}
+
+.link-drop-radar.is-armed .link-radar-core {
+  background: var(--accent-gradient);
+  color: var(--accent-text);
+  animation: link-radar-heartbeat 620ms var(--ease-spring) infinite alternate;
+}
+
+@keyframes link-radar-clockwise {
+  to { transform: rotate(1turn); }
+}
+
+@keyframes link-radar-counterclockwise {
+  to { transform: rotate(-1turn); }
+}
+
+@keyframes link-radar-heartbeat {
+  to { transform: translate(-50%, -50%) scale(1.13); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .link-radar-sweep,
+  .link-drop-radar.is-armed .link-radar-core {
+    animation: none;
   }
 }
 
