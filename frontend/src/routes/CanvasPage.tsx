@@ -64,6 +64,7 @@ import {
 } from "../store/columnLayout";
 import { confirmDialog, promptDialog } from "../store/dialogStore";
 import { buildRevealGraph } from "../store/revealGraph";
+import { spreadExpandedChildren } from "../store/expandedChildLayout";
 import Icon, { type IconName } from "../components/Icon";
 import { cycleTheme } from "../theme";
 import "./canvasPage.css";
@@ -426,12 +427,6 @@ function CanvasInner({ canvasId }: { canvasId: string }) {
     return () => window.clearTimeout(timer);
   }, [nodes, canvasId, loadCanvas]);
 
-  const graph = useMemo(
-    () =>
-      reveal && revealAnchor ? buildRevealGraph(reveal, revealAnchor, nodes) : null,
-    [reveal, revealAnchor, nodes]
-  );
-
   /** Hub cards fold their children down to titles until the hub is selected.
    * Children are the targets of the hub's outgoing links on this canvas —
    * the same parent/child direction the reveal uses. */
@@ -462,6 +457,64 @@ function CanvasInner({ canvasId }: { canvasId: string }) {
     for (const [parent, kids] of childrenOf) counts.set(parent, kids.length);
     return { collapsedCardIds: collapsed, childCountByCard: counts };
   }, [canvasLinks, nodes, selection]);
+
+  /** Full-size children of the selected hub borrow just enough room from one
+   * another to avoid covering their siblings. This is deliberately a render
+   * layout: collapsing the hub restores the compact arrangement the user
+   * made, while expanding it remains readable without rewriting placements. */
+  const expandedChildPositions = useMemo(() => {
+    const selectedHubCardIds = new Set(
+      nodes
+        .filter((node) => node.data.isHub && selection.includes(node.id))
+        .map((node) => node.data.card.id)
+    );
+    const positions = new Map<string, { x: number; y: number }>();
+    for (const hubCardId of selectedHubCardIds) {
+      const childCardIds = new Set(
+        canvasLinks
+          .filter((link) => link.source_card_id === hubCardId)
+          .map((link) => link.target_card_id)
+          .filter((cardId): cardId is string => cardId !== null)
+      );
+      const boxes = nodes
+        // Columns already own a collision-free member layout, and hub children
+        // remain full-size rather than participating in this fold gesture.
+        .filter(
+          (node) =>
+            childCardIds.has(node.data.card.id) &&
+            !node.data.parentId &&
+            !node.data.isHub
+        )
+        .map((node) => ({
+          id: node.id,
+          x: node.position.x,
+          y: node.position.y,
+          w: node.data.w,
+          h: node.data.h,
+        }));
+      for (const [id, position] of spreadExpandedChildren(boxes)) {
+        positions.set(id, position);
+      }
+    }
+    return positions;
+  }, [canvasLinks, nodes, selection]);
+
+  const visuallyPositionedNodes = useMemo(
+    () =>
+      nodes.map((node) => {
+        const position = expandedChildPositions.get(node.id);
+        return position ? { ...node, position } : node;
+      }),
+    [nodes, expandedChildPositions]
+  );
+
+  const graph = useMemo(
+    () =>
+      reveal && revealAnchor
+        ? buildRevealGraph(reveal, revealAnchor, visuallyPositionedNodes)
+        : null,
+    [reveal, revealAnchor, visuallyPositionedNodes]
+  );
 
   /** Who each card on this canvas is already linked to, by card id.
    *
@@ -537,7 +590,9 @@ function CanvasInner({ canvasId }: { canvasId: string }) {
     (node: CardNodeType, byId: Map<string, CardNodeType>) => {
       const parentId = node.data.parentId;
       const kids = parentId ? columns.members.get(parentId) : null;
-      if (!parentId || !kids) return node.position;
+      if (!parentId || !kids) {
+        return expandedChildPositions.get(node.id) ?? node.position;
+      }
       const parent = byId.get(parentId);
       if (!parent) return node.position;
       const index = Math.max(
@@ -553,7 +608,7 @@ function CanvasInner({ canvasId }: { canvasId: string }) {
         y: parent.position.y + offset.y,
       };
     },
-    [columns]
+    [columns, expandedChildPositions]
   );
 
   const effectiveSize = useCallback(
@@ -730,12 +785,12 @@ function CanvasInner({ canvasId }: { canvasId: string }) {
     if (searchMatches !== null) {
       const matches = new Set(searchMatches);
       return finish(
-        nodes.map((n) =>
+        visuallyPositionedNodes.map((n) =>
           decorate(n, matches.has(n.id) ? "search-match" : "search-dimmed")
         )
       );
     }
-    if (!graph) return finish(nodes.map((n) => decorate(n)));
+    if (!graph) return finish(visuallyPositionedNodes.map((n) => decorate(n)));
 
 
     const lit = new Set(graph.revealedNodeIds);
@@ -779,7 +834,7 @@ function CanvasInner({ canvasId }: { canvasId: string }) {
       if (seeded.has(node.id)) lit.add(parent);
     }
 
-    const dimmed = nodes.map((n) =>
+    const dimmed = visuallyPositionedNodes.map((n) =>
       lit.has(n.id) ? decorate(n) : decorate(n, "reveal-dimmed")
     );
     return [...finish(dimmed), ...graph.ghosts, ...graph.tombstones];
@@ -791,6 +846,7 @@ function CanvasInner({ canvasId }: { canvasId: string }) {
     linkTarget,
     collapsedCardIds,
     childCountByCard,
+    visuallyPositionedNodes,
     applyColumns,
     columnTarget,
     menuOpenFor,
@@ -1310,7 +1366,9 @@ function CanvasInner({ canvasId }: { canvasId: string }) {
               n.id === source.id ? { ...n, position: { x: before.x, y: before.y } } : n
             )
           );
-          createLink(source.data.card.id, target.data.card.id);
+          // Dropping a card onto another makes the stationary target the
+          // parent and the dragged card its child.
+          createLink(target.data.card.id, source.data.card.id);
           showToast(`Linked to “${target.data.card.title ?? "that card"}”`);
           return;
         }
