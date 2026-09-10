@@ -23,6 +23,10 @@ AI_KEY = "ai"
 CACHE_TTL_SECONDS = 10.0
 
 SECRET_FIELDS = ("embedding_api_key", "whisper_api_key", "chat_api_key")
+# A remote transcription server often has exactly one model loaded and wants
+# the multipart request to omit `model`. Unlike other blank settings, this is
+# therefore a deliberate value rather than a request to fall back to the env.
+EMPTY_OVERRIDE_FIELDS = ("whisper_model",)
 
 
 @dataclass(frozen=True)
@@ -80,10 +84,17 @@ def _load(db: DbSession) -> AiConfig:
     for field in SECRET_FIELDS:
         if field in stored:
             stored[field] = decrypt(str(stored[field]))
-    # Only keys actually present in the row override the environment, so
-    # clearing a field in the app is distinct from never having set it.
+    # Most empty values mean "use the environment seed". A blank remote
+    # transcription model is different: it tells the request builder not to
+    # send a model field, even when WHISPER_MODEL seeds local transcription.
     known = {f for f in AiConfig.__dataclass_fields__}
-    overrides = {k: v for k, v in stored.items() if k in known and v not in (None, "")}
+    overrides = {
+        key: value
+        for key, value in stored.items()
+        if key in known
+        and value is not None
+        and (value != "" or key in EMPTY_OVERRIDE_FIELDS)
+    }
     if "embedding_dim" in overrides:
         overrides["embedding_dim"] = int(overrides["embedding_dim"])
     return replace(config, **overrides)

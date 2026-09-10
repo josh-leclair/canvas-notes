@@ -370,7 +370,8 @@ class PublicLensOut(BaseModel):
 
 class AiSettingsIn(BaseModel):
     """Unset fields are left alone. An explicit empty string clears a value
-    and lets the environment fallback take over again."""
+    and lets the environment fallback take over again, except whisper_model:
+    blank is meaningful for remote endpoints and suppresses the model field."""
 
     model_config = ConfigDict(extra="forbid")
     embedding_base_url: str | None = None

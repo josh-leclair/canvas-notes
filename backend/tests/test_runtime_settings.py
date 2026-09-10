@@ -57,16 +57,39 @@ def test_cleared_value_falls_back_to_environment(client, admin, monkeypatch):
     from app.config import settings
     from app.db import SessionLocal
 
-    monkeypatch.setattr(settings, "whisper_model", "env-whisper")
-    client.put("/api/ai/settings", json={"whisper_model": "db-whisper"})
+    monkeypatch.setattr(settings, "embedding_model", "env-embedding")
+    client.put("/api/ai/settings", json={"embedding_model": "db-embedding"})
     runtime_settings.invalidate_cache()
     with SessionLocal() as db:
-        assert runtime_settings.get_ai_config(db).whisper_model == "db-whisper"
+        assert runtime_settings.get_ai_config(db).embedding_model == "db-embedding"
 
-    client.put("/api/ai/settings", json={"whisper_model": ""})
+    client.put("/api/ai/settings", json={"embedding_model": ""})
     runtime_settings.invalidate_cache()
     with SessionLocal() as db:
-        assert runtime_settings.get_ai_config(db).whisper_model == "env-whisper"
+        assert runtime_settings.get_ai_config(db).embedding_model == "env-embedding"
+
+
+def test_blank_whisper_model_overrides_environment(client, admin, monkeypatch):
+    from app.config import settings
+    from app.db import SessionLocal
+
+    monkeypatch.setattr(settings, "whisper_model", "small")
+    runtime_settings.invalidate_cache()
+
+    resp = client.put(
+        "/api/ai/settings",
+        json={
+            "whisper_base_url": "http://transcriber:8080/v1",
+            "whisper_model": "",
+        },
+    )
+    assert resp.status_code == 200
+    assert resp.json()["transcription"]["model"] == ""
+
+    runtime_settings.invalidate_cache()
+    with SessionLocal() as db:
+        config = runtime_settings.get_ai_config(db)
+        assert config.whisper_model == ""
 
 
 def test_api_keys_are_encrypted_at_rest(client, admin):
