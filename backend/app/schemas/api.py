@@ -6,7 +6,7 @@ from pydantic import BaseModel, ConfigDict, EmailStr, Field
 
 CardType = Literal[
     "text", "link", "youtube", "audio", "image", "board", "column", "file",
-    "checklist", "table", "document", "portal",
+    "checklist", "table", "document", "portal", "timer",
 ]
 
 

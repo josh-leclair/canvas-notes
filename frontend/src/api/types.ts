@@ -17,7 +17,8 @@ export type CardType =
   | "checklist"
   | "table"
   | "document"
-  | "portal";
+  | "portal"
+  | "timer";
 
 export interface BoardRef {
   canvas_id: string;

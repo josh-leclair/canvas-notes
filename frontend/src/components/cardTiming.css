@@ -12,18 +12,15 @@
 }
 
 .timing-editor {
-  width: min(460px, calc(100vw - 28px));
-  max-height: min(760px, 92vh);
-  overflow-y: auto;
+  width: min(400px, calc(100vw - 28px));
   padding: 18px;
   border: 1px solid var(--border-strong);
-  border-radius: var(--radius-lg);
   background: var(--bg-panel);
   color: var(--text);
   box-shadow: var(--shadow-pop);
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 16px;
   animation: timing-arrive var(--dur-quick) var(--ease-out) backwards;
 }
 
@@ -50,15 +47,13 @@
   white-space: nowrap;
 }
 
-/* A clock, not abstract radar. Its face is static; motion belongs to actual
-   recorded progress below and therefore always means something. */
 .timing-editor-mark {
   width: 34px;
   height: 34px;
   display: grid;
   place-items: center;
   border: 1px solid var(--border);
-  border-radius: 50%;
+  border-radius: 50% !important;
   background: var(--bg-hover);
   color: var(--accent);
 }
@@ -74,13 +69,18 @@
   text-transform: uppercase;
 }
 
+.timing-eta-row {
+  display: grid;
+  grid-template-columns: 1fr 120px;
+  gap: 8px;
+}
+
 .timing-editor input,
 .timing-editor select {
   min-width: 0;
   width: 100%;
-  padding: 9px 10px;
+  padding: 10px;
   border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
   background: var(--bg-input);
   color: var(--text);
   font: inherit;
@@ -93,37 +93,9 @@
   border-color: var(--accent);
 }
 
-.timing-editor input:disabled,
-.timing-editor select:disabled { opacity: .5; }
-
-.timing-quick-days {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  margin-top: -7px;
-}
-
-.timing-quick-days button,
-.timing-editor footer button,
-.timing-close,
-.timing-session button {
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  background: var(--bg-card);
-  color: var(--text);
-}
-
-.timing-quick-days button { padding: 5px 8px; font-size: 11px; }
-
-.timing-eta-row {
-  display: grid;
-  grid-template-columns: 1fr 120px;
-  gap: 8px;
-}
-
 .timing-hint,
 .timing-error {
-  margin: -5px 0 0;
+  margin: -7px 0 0;
   font-size: 11px;
   line-height: 1.45;
 }
@@ -131,69 +103,24 @@
 .timing-error,
 .timing-clear { color: var(--danger) !important; }
 
-.timing-session {
-  position: relative;
-  overflow: hidden;
-  min-height: 58px;
-  display: grid;
-  grid-template-columns: 1fr auto auto;
-  align-items: center;
-  gap: 7px;
-  padding: 13px 10px 9px;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  background: var(--bg-card);
-}
-
-.timing-session-track {
-  position: absolute;
-  inset: 0 0 auto;
-  height: 3px;
-  background: var(--bg-sunk);
-}
-
-.timing-session-track i {
-  display: block;
-  height: 100%;
-  background: var(--accent);
-  transition: width 500ms linear;
-}
-
-.timing-session.is-running .timing-session-track i {
-  box-shadow: 0 0 8px color-mix(in srgb, var(--accent) 55%, transparent);
-}
-
-.timing-session > span:nth-child(2) {
-  display: flex;
-  flex-direction: column;
-  gap: 1px;
-}
-
-.timing-session small { color: var(--text-muted); font-size: 10px; }
-.timing-session strong { font-variant-numeric: tabular-nums; }
-
-.timing-session button {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  padding: 7px 9px;
-}
-
-.timing-session button:not(.timing-reset) {
-  border-color: var(--accent);
-  background: var(--accent);
-  color: var(--accent-text);
-}
-
 .timing-editor footer {
   display: flex;
   align-items: center;
   gap: 7px;
-  padding-top: 2px;
+  margin-top: 2px;
 }
 
-.timing-editor footer span { flex: 1; }
+.timing-editor footer > span { flex: 1; }
+
+.timing-editor footer button,
+.timing-close {
+  border: 1px solid var(--border);
+  background: var(--bg-card);
+  color: var(--text);
+}
+
 .timing-editor footer button { padding: 8px 11px; }
+.timing-close { width: 30px; height: 30px; padding: 6px; }
 
 .timing-editor footer .primary {
   border-color: var(--accent);
@@ -201,147 +128,72 @@
   color: var(--accent-text);
 }
 
-.timing-close { width: 30px; height: 30px; padding: 6px; }
-
-/* The card tether is a progress rail. The marker moves only when the focus
-   timer advances, so its animation is literal rather than decorative. */
+/* Ordinary cards carry estimates, not stopwatches. The strip and its icon
+   scale from the same variables as card text. */
 .card-time-tether {
   flex: 0 0 auto;
   display: flex;
   flex-direction: column;
   margin: 0 8px 7px;
   border: 1px solid color-mix(in srgb, var(--border) 72%, transparent);
-  border-radius: var(--radius-sm);
-  background: color-mix(in srgb, var(--bg-card) 90%, var(--accent));
+  background: color-mix(in srgb, var(--bg-card) 92%, var(--accent));
   color: var(--card-fg);
   overflow: hidden;
 }
 
-.card-time-own { display: flex; min-width: 0; }
-
-.card-time-summary {
-  flex: 1;
+.card-eta-summary,
+.child-time-rollup {
   min-width: 0;
   display: flex;
-  flex-direction: column;
-  gap: 4px;
-  padding: 5px 7px;
+  align-items: center;
+  gap: .45em;
+  padding:
+    clamp(6px, calc(var(--card-copy-size, 13px) * .48), 9px)
+    clamp(8px, calc(var(--card-copy-size, 13px) * .62), 12px);
+  font-size: var(--card-copy-medium, 12px);
+  font-weight: 700;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.card-eta-summary {
+  width: 100%;
   border: 0;
   background: transparent;
   color: inherit;
   text-align: left;
 }
 
-button.card-time-summary:hover:not(:disabled),
-button.card-time-summary:active:not(:disabled) {
+.card-eta-summary .icon,
+.child-time-rollup .icon {
+  width: 1.1em;
+  height: 1.1em;
+  flex: 0 0 auto;
+}
+
+button.card-eta-summary:hover:not(:disabled),
+button.card-eta-summary:active:not(:disabled) {
   transform: none;
   border-color: transparent;
-  background: transparent;
-}
-
-.time-progress {
-  position: relative;
-  display: block;
-  width: 100%;
-  height: 2px;
-  border-radius: 99px;
-  background: color-mix(in srgb, var(--card-muted) 22%, transparent);
-}
-
-.time-progress-fill {
-  display: block;
-  height: 100%;
-  border-radius: inherit;
-  background: var(--accent);
-  transition: width 500ms linear;
-}
-
-.time-progress-marker {
-  position: absolute;
-  top: 50%;
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: var(--accent);
-  transform: translate(-50%, -50%);
-  transition: left 500ms linear;
-}
-
-.card-time-tether.is-running .time-progress-marker {
-  animation: time-marker-pulse 1.6s ease-in-out infinite;
-}
-
-.time-summary-copy {
-  display: flex;
-  align-items: baseline;
-  gap: 4px;
-  min-width: 0;
-  font-size: 10px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.time-summary-copy b { font-weight: 700; }
-.time-summary-copy .is-over { color: var(--danger); }
-
-.card-time-toggle {
-  flex: 0 0 28px;
-  display: grid;
-  place-items: center;
-  width: 28px;
-  padding: 0;
-  border: 0;
-  border-left: 1px solid var(--border);
-  background: color-mix(in srgb, var(--bg-hover) 70%, transparent);
-  color: var(--accent);
-}
-
-button.card-time-toggle:hover:not(:disabled),
-button.card-time-toggle:active:not(:disabled) {
-  transform: none;
-  border-color: var(--border);
   background: var(--bg-hover);
 }
 
 .child-time-rollup {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  min-width: 0;
-  padding: 4px 7px;
-  border: 0;
   border-top: 1px solid var(--border);
   background: color-mix(in srgb, var(--bg-hover) 58%, transparent);
-  color: var(--card-muted);
-  font-size: 9px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
 }
 
 .card-time-tether > .child-time-rollup:first-child { border-top: 0; }
-
-.child-time-rollup b { color: var(--danger); }
-.child-time-rollup .is-over { color: var(--danger); }
-.card-time-tether.is-soon { border-color: color-mix(in srgb, var(--accent) 60%, var(--border)); }
-.card-time-tether.is-overdue { border-color: color-mix(in srgb, var(--danger) 65%, var(--border)); }
-.card-time-tether.is-overdue .time-summary-copy b { color: var(--danger); }
-
-@keyframes time-marker-pulse {
-  50% { box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent) 18%, transparent); }
-}
 
 @keyframes timing-arrive {
   from { opacity: 0; transform: translateY(7px) scale(.985); }
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .card-time-tether.is-running .time-progress-marker { animation: none; }
-}
-
-@media (max-width: 520px) {
+@media (max-width: 560px) {
+  .timing-editor-backdrop { padding: 10px; align-items: end; }
+  .timing-editor { width: 100%; }
   .timing-eta-row { grid-template-columns: 1fr 105px; }
-  .timing-session { grid-template-columns: 1fr auto; }
-  .timing-session .timing-reset { grid-column: 1 / -1; justify-content: center; }
+  .timing-editor footer { flex-wrap: wrap; }
+  .timing-editor footer > span { display: none; }
 }

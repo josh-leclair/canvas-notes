@@ -112,6 +112,7 @@ const AXES: Record<string, Axis[]> = {
   board: ["accent"],
   portal: ["accent"],
   document: ["accent"],
+  timer: ["accent"],
 };
 
 /** The kinds of card that wear an accent without being asked.

@@ -122,10 +122,6 @@ export interface TimingRollup {
   childCount: number;
   timedChildCount: number;
   etaMinutes: number;
-  elapsedSeconds: number;
-  runningStartedAt: string[];
-  dueDates: string[];
-  nextDueAt: string | null;
 }
 
 export type LayerMove = "front" | "forward" | "backward" | "back";

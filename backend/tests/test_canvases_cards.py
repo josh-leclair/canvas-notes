@@ -49,22 +49,25 @@ def test_card_create_with_canvas_places_in_one_transaction(client, admin):
     assert detail["placements"][0]["card"]["body"] == "hi"
 
 
-def test_card_timing_and_focus_timer_are_persistent(client, admin):
-    due = datetime.now(timezone.utc) + timedelta(days=1)
+def test_timer_card_is_persistent(client, admin):
+    canvas = client.post("/api/canvases", json={"name": "Timers"}).json()
     created = client.post(
         "/api/cards",
         json={
+            "type": "timer",
             "title": "Timed work",
-            "due_at": due.isoformat(),
             "eta_minutes": 30,
-            "reminder_minutes": 15,
+            "canvas_id": canvas["id"],
+            "x": 40,
+            "y": 60,
         },
     )
     assert created.status_code == 201, created.text
     card = created.json()["card"]
     assert card["eta_minutes"] == 30
-    assert card["reminder_minutes"] == 15
     assert card["timer_elapsed_seconds"] == 0
+    assert created.json()["placement"]["w"] == 320
+    assert created.json()["placement"]["h"] == 440
 
     started = client.post(
         f"/api/cards/{card['id']}/timer", json={"action": "start"}
@@ -89,6 +92,15 @@ def test_card_timing_and_focus_timer_are_persistent(client, admin):
     )
     assert reset.status_code == 200, reset.text
     assert reset.json()["timer_elapsed_seconds"] == 0
+
+    ordinary = client.post(
+        "/api/cards", json={"title": "Just an estimate"}
+    ).json()["card"]
+    rejected = client.post(
+        f"/api/cards/{ordinary['id']}/timer", json={"action": "start"}
+    )
+    assert rejected.status_code == 400
+    assert rejected.json()["error"]["code"] == "timer_card_required"
 
 
 def test_card_create_requires_position_with_canvas(client, admin):

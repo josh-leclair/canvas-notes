@@ -73,7 +73,6 @@ import { buildRevealGraph } from "../store/revealGraph";
 import { spreadExpandedChildren } from "../store/expandedChildLayout";
 import Icon, { type IconName } from "../components/Icon";
 import { cycleTheme } from "../theme";
-import { timeLensBucket } from "../lib/cardTiming";
 import "./canvasPage.css";
 
 const nodeTypes = {
@@ -112,6 +111,7 @@ const PRIMARY_TOOLS: { kind: CardType; label: string; icon: IconName }[] = [
  * Keeping them in one fully labelled menu leaves the everyday writing tools
  * visible without turning every action into an unexplained icon. */
 const MORE_TOOLS: { kind: CardType; label: string; icon: IconName }[] = [
+  { kind: "timer", label: "Timer", icon: "clock" },
   { kind: "table", label: "Table", icon: "table" },
   { kind: "audio", label: "Audio", icon: "audio" },
   { kind: "column", label: "Column", icon: "column" },
@@ -215,6 +215,7 @@ function CanvasInner({ canvasId }: { canvasId: string }) {
   const generationAvailable = useCanvasStore((s) => s.generationAvailable);
   const composeCards = useCanvasStore((s) => s.composeCards);
   const createCardAt = useCanvasStore((s) => s.createCardAt);
+  const updateCard = useCanvasStore((s) => s.updateCard);
   const createImageCard = useCanvasStore((s) => s.createImageCard);
   const createFileCard = useCanvasStore((s) => s.createFileCard);
   const createBoard = useCanvasStore((s) => s.createBoard);
@@ -349,55 +350,6 @@ function CanvasInner({ canvasId }: { canvasId: string }) {
       document.removeEventListener("visibilitychange", onVisibility);
     };
   }, [canvasId, loadInbox]);
-
-  // Deadline alerts are card-owned and survive reloads. A due timestamp is
-  // part of the alert key, so changing the deadline naturally arms the new
-  // one without resurrecting the old notification.
-  useEffect(() => {
-    const seen = new Set<string>();
-    const checkDeadlines = () => {
-      const state = useCanvasStore.getState();
-      const cards = new Map<string, Card>();
-      for (const node of state.nodes) cards.set(node.data.card.id, node.data.card);
-      for (const card of state.inbox) cards.set(card.id, card);
-      for (const item of state.focusShelf) cards.set(item.card.id, item.card);
-      const now = Date.now();
-      for (const card of cards.values()) {
-        if (!card.due_at || card.reminder_minutes === null) continue;
-        const due = new Date(card.due_at).getTime();
-        const threshold = due - card.reminder_minutes * 60_000;
-        if (now < threshold || now > due + 86_400_000) continue;
-        const key = `canvas-notes:due-alert:${card.id}:${card.due_at}:${card.reminder_minutes}`;
-        if (seen.has(key)) continue;
-        try {
-          if (localStorage.getItem(key)) continue;
-          localStorage.setItem(key, String(now));
-        } catch {
-          // Private browsing can deny storage; the in-memory guard still
-          // prevents a repeat for the lifetime of this page.
-        }
-        seen.add(key);
-        const title = card.title || "Untitled card";
-        const message = now >= due ? `“${title}” is due now.` : `“${title}” is due soon.`;
-        showToast(message);
-        if ("Notification" in window && Notification.permission === "granted") {
-          try {
-            new Notification("Canvas Notes", { body: message, tag: key });
-          } catch {
-            // The in-app alert remains available on browsers that expose the
-            // API but disallow construction in this context.
-          }
-        }
-      }
-    };
-    checkDeadlines();
-    const timer = window.setInterval(checkDeadlines, 30_000);
-    window.addEventListener("focus", checkDeadlines);
-    return () => {
-      window.clearInterval(timer);
-      window.removeEventListener("focus", checkDeadlines);
-    };
-  }, [showToast]);
 
   // Finite boards are really auto-growing workspaces. Approaching either far
   // edge adds one modest strip; leaving ample breathing room stops growth.
@@ -570,30 +522,13 @@ function CanvasInner({ canvasId }: { canvasId: string }) {
         .map((id) => cardById.get(id))
         .filter((card): card is Card => Boolean(card));
       const timed = children.filter(
-        (card) =>
-          card.due_at ||
-          card.eta_minutes ||
-          card.timer_started_at ||
-          card.timer_elapsed_seconds
+        (card) => card.type !== "timer" && Boolean(card.eta_minutes)
       );
       if (!timed.length) continue;
-      const dueDates = timed
-        .map((card) => card.due_at)
-        .filter((due): due is string => Boolean(due))
-        .sort((left, right) => new Date(left).getTime() - new Date(right).getTime());
       rollups.set(parentId, {
         childCount: children.length,
         timedChildCount: timed.length,
         etaMinutes: timed.reduce((total, card) => total + (card.eta_minutes ?? 0), 0),
-        elapsedSeconds: timed.reduce(
-          (total, card) => total + (card.timer_elapsed_seconds || 0),
-          0
-        ),
-        runningStartedAt: timed
-          .map((card) => card.timer_started_at)
-          .filter((started): started is string => Boolean(started)),
-        dueDates,
-        nextDueAt: dueDates[0] ?? null,
       });
     }
     return rollups;
@@ -877,12 +812,14 @@ function CanvasInner({ canvasId }: { canvasId: string }) {
     // node object makes it reset that node's measured internals.
     const decorate = (node: Node, className?: string): Node => {
       const data = node.data as CardNodeType["data"];
-      const timeBucket = timeLensOpen ? timeLensBucket(data.card) : null;
+      const timeBucket = timeLensOpen && data.card.eta_minutes ? "estimate" : null;
       const next =
         [
           className,
           timeLensOpen ? `time-lens-${timeBucket ?? "untimed"}` : null,
-          timeLensOpen && data.card.timer_started_at ? "time-lens-active" : null,
+          timeLensOpen && data.card.type === "timer" && data.card.timer_started_at
+            ? "time-lens-active"
+            : null,
           node.id === linkCandidate ? "is-link-candidate" : null,
           node.id === linkTarget ? "is-link-target" : null,
           node.id === columnTarget?.id ? "is-column-target" : null,
@@ -895,7 +832,7 @@ function CanvasInner({ canvasId }: { canvasId: string }) {
       const timingRollup = timingRollupByCard.get(data.card.id) ?? null;
       const lifted = node.id === menuOpenFor;
       const rollupSignature = timingRollup
-        ? `${timingRollup.timedChildCount}:${timingRollup.etaMinutes}:${timingRollup.elapsedSeconds}:${timingRollup.runningStartedAt.join(",")}:${timingRollup.dueDates.join(",")}`
+        ? `${timingRollup.timedChildCount}:${timingRollup.etaMinutes}`
         : "none";
       const signature = `${next ?? ""}:${collapsed ? 1 : 0}:${kids}:${lifted ? 1 : 0}:${rollupSignature}`;
       const cached = decoratedNodeCache.current.get(node.id);
@@ -1912,6 +1849,11 @@ function CanvasInner({ canvasId }: { canvasId: string }) {
    * to appear *somewhere*, and the middle of the screen is usually on top of
    * something else. Dropped, it lands where it was aimed. */
   async function newCardOfType(kind: CardType, x: number, y: number) {
+    if (kind === "timer") {
+      const created = await createCardAt(x, y, "", false, "timer", {}, "Focus Timer");
+      if (created) await updateCard(created.id, { eta_minutes: 25 });
+      return;
+    }
     if (kind === "checklist") {
       createCardAt(x, y, "", true, "checklist", { items: [{ text: "", done: false }] });
       return;
@@ -2361,7 +2303,7 @@ function CanvasInner({ canvasId }: { canvasId: string }) {
           <button
             className={`tool ${timeLensOpen ? "is-active" : ""}`}
             onClick={() => setTimeLensOpen((open) => !open)}
-            title="Show due dates, estimates, and active timers"
+            title="Show estimates and timer cards"
           >
             <Icon name="clock" /> Time
           </button>

@@ -233,7 +233,13 @@ def create_card(
     enqueue_embed_if_needed(db, card)
 
     if canvas is not None:
-        placement = Placement(card_id=card.id, canvas_id=canvas.id, x=body.x, y=body.y)
+        placement = Placement(
+            card_id=card.id,
+            canvas_id=canvas.id,
+            x=body.x,
+            y=body.y,
+            **({"w": 320, "h": 440} if card.type == "timer" else {}),
+        )
         db.add(placement)
         db.flush()
 
@@ -298,6 +304,12 @@ def control_card_timer(
 ):
     """Start, pause, or reset a persisted focus timer atomically."""
     card = get_editable_card(db, user, card_id)
+    if card.type != "timer":
+        raise ApiError(
+            400,
+            "timer_card_required",
+            "Elapsed-time controls are available on timer cards",
+        )
     now = datetime.now(timezone.utc)
     if body.action == "start":
         if card.timer_started_at is None:

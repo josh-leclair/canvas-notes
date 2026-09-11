@@ -43,6 +43,7 @@ import YouTubeAttachment from "./YouTubeAttachment";
 import FloatingCardMenu from "./FloatingCardMenu";
 import CardTimingEditor from "./CardTimingEditor";
 import CardTimeTether from "./CardTimeTether";
+import TimerCardBody from "./TimerCardBody";
 import { CARD_OVERVIEW_ZOOM } from "../lib/canvasBounds";
 import "./cardNode.css";
 
@@ -105,6 +106,7 @@ const MIN_SIZE: Partial<Record<CardType, { width: number; height: number }>> = {
   // A glyph with a name under it, so it wants to be tallish rather than wide.
   file: { width: 128, height: 118 },
   portal: { width: 260, height: 180 },
+  timer: { width: 300, height: 400 },
 };
 const DEFAULT_MIN = { width: 160, height: 100 };
 
@@ -520,7 +522,6 @@ function CardNodeImpl({ id, data, selected }: NodeProps<CardNodeType>) {
   const editOnMount = useCanvasStore((s) => s.editOnMount);
   const clearEditOnMount = useCanvasStore((s) => s.clearEditOnMount);
   const updateCard = useCanvasStore((s) => s.updateCard);
-  const controlCardTimer = useCanvasStore((s) => s.controlCardTimer);
   const savePlacement = useCanvasStore((s) => s.savePlacement);
   const movePlacementLayer = useCanvasStore((s) => s.movePlacementLayer);
   const setNodes = useCanvasStore((s) => s.setNodes);
@@ -697,7 +698,6 @@ function CardNodeImpl({ id, data, selected }: NodeProps<CardNodeType>) {
     spotifyStatus,
     card.type,
     card.body,
-    card.due_at,
     card.eta_minutes,
     data.timingRollup?.timedChildCount,
     data.h,
@@ -912,13 +912,8 @@ function CardNodeImpl({ id, data, selected }: NodeProps<CardNodeType>) {
   const minSize = MIN_SIZE[card.type] ?? DEFAULT_MIN;
   minSizeRef.current = minSize.height;
   const progress = taskProgress(card.body);
-  const hasTiming = Boolean(
-    card.due_at ||
-    card.eta_minutes ||
-    card.timer_started_at ||
-    card.timer_elapsed_seconds ||
-    data.timingRollup?.timedChildCount
-  );
+  const hasOwnTiming = card.type !== "timer" && Boolean(card.eta_minutes);
+  const hasChildTiming = Boolean(data.timingRollup?.timedChildCount);
 
   async function applyCrop(next: Crop | null) {
     setCropping(false);
@@ -1165,7 +1160,7 @@ function CardNodeImpl({ id, data, selected }: NodeProps<CardNodeType>) {
       {listening && (
         <AudioViewer card={card} onClose={() => setListening(false)} />
       )}
-      {timingOpen && (
+      {timingOpen && card.type !== "timer" && (
         <CardTimingEditor
           card={card}
           appearance={canvasAppearance}
@@ -1174,7 +1169,6 @@ function CardNodeImpl({ id, data, selected }: NodeProps<CardNodeType>) {
             await updateCard(card.id, patch);
             setTimingOpen(false);
           }}
-          onTimerAction={(action) => controlCardTimer(card.id, action)}
         />
       )}
 
@@ -1226,7 +1220,7 @@ function CardNodeImpl({ id, data, selected }: NodeProps<CardNodeType>) {
                   ? "Edit"
                   : card.type === "checklist"
                     ? "Edit to-do list"
-                  : card.type === "audio"
+                  : card.type === "audio" || card.type === "timer"
                     ? "Rename"
                     : "Edit title and text"}
               </button>
@@ -1247,14 +1241,14 @@ function CardNodeImpl({ id, data, selected }: NodeProps<CardNodeType>) {
             >
               {focused ? "Remove from focus" : "Add to focus"}
             </button>
-            {!readOnly && (
+            {!readOnly && card.type !== "timer" && (
               <button
                 onClick={() => {
                   closeMenu();
                   setTimingOpen(true);
                 }}
               >
-                {hasTiming ? "Edit time tether…" : "Add time tether…"}
+                {hasOwnTiming ? "Edit estimate…" : "Add estimate…"}
               </button>
             )}
             {/* Not gated on readOnly: the new cards are yours and this one is
@@ -1502,10 +1496,9 @@ function CardNodeImpl({ id, data, selected }: NodeProps<CardNodeType>) {
                 save();
             }}
           />
-          {/* An audio card has no body to write, so it gets the title field
-              and nothing else — the card shows a transcript, and a prose box
-              underneath it would be writing into a space that never appears. */}
-          {card.type !== "audio" && (
+          {/* Audio and timer cards get only the title field: their transcript
+              and clock are purpose-built bodies rather than editable prose. */}
+          {card.type !== "audio" && card.type !== "timer" && (
             <>
               {card.type !== "text" && card.type !== "link" && (
                 <EditorToolbar
@@ -1568,6 +1561,14 @@ function CardNodeImpl({ id, data, selected }: NodeProps<CardNodeType>) {
           onDoubleClick={editOnDoubleClick}
         >
           <YouTubeCardBody card={card} />
+        </div>
+      ) : card.type === "timer" ? (
+        <div
+          ref={content.ref}
+          className="card-content card-content-flush"
+          onDoubleClick={editOnDoubleClick}
+        >
+          <TimerCardBody card={card} readOnly={readOnly} />
         </div>
       ) : card.type === "portal" ? (
         <div
@@ -1685,7 +1686,7 @@ function CardNodeImpl({ id, data, selected }: NodeProps<CardNodeType>) {
           )}
         </div>
       )}
-      {hasTiming && (
+      {(hasOwnTiming || hasChildTiming) && card.type !== "timer" && (
         <CardTimeTether
           card={card}
           rollup={data.timingRollup}

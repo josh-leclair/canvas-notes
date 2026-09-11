@@ -53,6 +53,7 @@ async function copyText(value: string) {
 function iconFor(type: CardNode["data"]["card"]["type"]): IconName {
   if (type === "text" || type === "link" || type === "youtube") return "note";
   if (type === "image") return "image";
+  if (type === "timer") return "clock";
   return type;
 }
 

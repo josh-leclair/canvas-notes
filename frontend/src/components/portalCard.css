@@ -140,6 +140,7 @@
 .portal-item.type-audio .portal-item-dot { background: var(--cardtype-audio); }
 .portal-item.type-image .portal-item-dot { background: var(--cardtype-image); }
 .portal-item.type-board .portal-item-dot { background: var(--cardtype-board); }
+.portal-item.type-timer .portal-item-dot { background: var(--cardtype-timer); }
 .portal-item.type-checklist .portal-item-dot { background: var(--hue-green); }
 .portal-item.type-table .portal-item-dot { background: var(--hue-blue); }
 

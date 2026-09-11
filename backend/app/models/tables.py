@@ -21,7 +21,7 @@ from app.db import Base
 
 CARD_TYPES = (
     "text", "link", "youtube", "audio", "image", "board", "column", "file",
-    "checklist", "table", "document", "portal",
+    "checklist", "table", "document", "portal", "timer",
 )
 
 

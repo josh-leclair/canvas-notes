@@ -22,6 +22,7 @@ import { LinkCardBody } from "../components/CardNode";
 import Icon from "../components/Icon";
 import SpotifyAttachment from "../components/SpotifyAttachment";
 import YouTubeAttachment from "../components/YouTubeAttachment";
+import TimerCardBody from "../components/TimerCardBody";
 import { withoutAttachmentUrls } from "../lib/urls";
 import Logo from "../components/Logo";
 import { hasAccent, paintOf, paintStyle } from "../components/cardPaint";
@@ -146,6 +147,10 @@ function PublishedCard({
               {card.body && <div className="card-body"><CardMarkdown body={card.body} onCardReference={onReference} externalLinksNewTab /></div>}
             </div>
           )}
+        </div>
+      ) : card.type === "timer" ? (
+        <div className="card-content card-content-flush">
+          <TimerCardBody card={fullCard} readOnly />
         </div>
       ) : card.type === "link" ? (
         <div className="card-content public-lens-card-content">

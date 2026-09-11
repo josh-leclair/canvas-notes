@@ -465,6 +465,7 @@
   --cardtype-checklist: var(--hue-avocado);
   --cardtype-table: var(--hue-maple);
   --cardtype-column: var(--hue-avocado);
+  --cardtype-timer: var(--accent);
 
 
 
