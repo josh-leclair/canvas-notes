@@ -81,6 +81,7 @@ export default function PortalEditor({
   const [cardType, setCardType] = useState<PortalConfig["card_type"]>(seed.card_type);
   const [openTasks, setOpenTasks] = useState(seed.open_tasks);
   const [timeframe, setTimeframe] = useState<PortalConfig["timeframe"]>(seed.timeframe);
+  const [due, setDue] = useState<PortalConfig["due"]>(seed.due);
   const [canvases, setCanvases] = useState<CanvasSummary[]>([]);
   const [saving, setSaving] = useState(false);
 
@@ -109,7 +110,7 @@ export default function PortalEditor({
         card_type: cardType,
         open_tasks: openTasks,
         timeframe,
-        due: "any",
+        due,
         timezone_offset_minutes: new Date().getTimezoneOffset(),
         limit: 20,
       });
@@ -156,6 +157,7 @@ export default function PortalEditor({
                   setQuery("");
                   setCardType("any");
                   setOpenTasks(false);
+                  setDue("any");
                 }}
               >
                 <Icon name="note" />
@@ -239,11 +241,26 @@ export default function PortalEditor({
           <span>Only cards changed today</span>
         </label>
 
+        <label>
+          <span>Due</span>
+          <select
+            value={due}
+            onChange={(event) => setDue(event.target.value as PortalConfig["due"])}
+          >
+            <option value="any">Any due date</option>
+            <option value="overdue">Overdue</option>
+            <option value="today">Due today</option>
+            <option value="week">Due in the next 7 days</option>
+            <option value="unscheduled">No due date</option>
+          </select>
+        </label>
+
         <p className="portal-rule-preview">
           Showing {cardType === "any" ? "cards" : cardType} from {scope === "workspace" ? "everywhere" : sourceName}
           {query.trim() && <> containing “{query.trim()}”</>}
           {openTasks && <> with something left to do</>}.
           {timeframe === "today" && <> Changed today.</>}
+          {due !== "any" && <>{` Due: ${due === "week" ? "next 7 days" : due}.`}</>}
         </p>
 
         <footer>

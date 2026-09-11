@@ -12,6 +12,14 @@ const ETA_MULTIPLIER: Record<EtaUnit, number> = {
   days: 1_440,
 };
 
+function localInputValue(iso: string | null): string {
+  if (!iso) return "";
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return "";
+  const local = new Date(date.getTime() - date.getTimezoneOffset() * 60_000);
+  return local.toISOString().slice(0, 16);
+}
+
 function initialEta(minutes: number | null): { value: string; unit: EtaUnit } {
   if (!minutes) return { value: "", unit: "minutes" };
   if (minutes % 1_440 === 0) return { value: String(minutes / 1_440), unit: "days" };
@@ -27,10 +35,11 @@ export default function CardTimingEditor({
 }: {
   card: Card;
   appearance: CanvasAppearance;
-  onSave: (patch: { eta_minutes: number | null }) => Promise<void>;
+  onSave: (patch: { due_at: string | null; eta_minutes: number | null }) => Promise<void>;
   onClose: () => void;
 }) {
   const etaSeed = useMemo(() => initialEta(card.eta_minutes), [card.eta_minutes]);
+  const [due, setDue] = useState(() => localInputValue(card.due_at));
   const [eta, setEta] = useState(etaSeed.value);
   const [unit, setUnit] = useState<EtaUnit>(etaSeed.unit);
   const [saving, setSaving] = useState(false);
@@ -44,6 +53,22 @@ export default function CardTimingEditor({
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [onClose]);
 
+  function chooseDay(daysFromToday: number) {
+    const now = new Date();
+    const next = new Date();
+    next.setDate(next.getDate() + daysFromToday);
+    next.setHours(17, 0, 0, 0);
+    if (daysFromToday === 0 && next <= now) {
+      next.setTime(now.getTime() + 60 * 60_000);
+      if (next.getDate() !== now.getDate()) {
+        next.setTime(now.getTime());
+        next.setHours(23, 59, 0, 0);
+      }
+    }
+    const local = new Date(next.getTime() - next.getTimezoneOffset() * 60_000);
+    setDue(local.toISOString().slice(0, 16));
+  }
+
   async function submit(event: React.FormEvent) {
     event.preventDefault();
     const numericEta = eta.trim() === "" ? null : Number(eta);
@@ -55,6 +80,7 @@ export default function CardTimingEditor({
     setError(null);
     try {
       await onSave({
+        due_at: due ? new Date(due).toISOString() : null,
         eta_minutes:
           numericEta === null
             ? null
@@ -81,13 +107,29 @@ export default function CardTimingEditor({
             <Icon name="clock" size={22} />
           </span>
           <span>
-            <strong>Estimate</strong>
+            <strong>Schedule</strong>
             <small>{card.title || "Untitled card"}</small>
           </span>
           <button type="button" className="timing-close" onClick={onClose} aria-label="Close">
             <Icon name="close" />
           </button>
         </header>
+
+        <label>
+          <span>Due date</span>
+          <input
+            type="datetime-local"
+            value={due}
+            onChange={(event) => setDue(event.target.value)}
+            autoFocus
+          />
+        </label>
+        <div className="timing-quick-days" aria-label="Quick due dates">
+          <button type="button" onClick={() => chooseDay(0)}>Today</button>
+          <button type="button" onClick={() => chooseDay(1)}>Tomorrow</button>
+          <button type="button" onClick={() => chooseDay(7)}>Next week</button>
+          {due && <button type="button" onClick={() => setDue("")}>Clear due date</button>}
+        </div>
 
         <label>
           <span>Expected effort</span>
@@ -100,7 +142,6 @@ export default function CardTimingEditor({
               placeholder="No estimate"
               value={eta}
               onChange={(event) => setEta(event.target.value)}
-              autoFocus
             />
             <select value={unit} onChange={(event) => setUnit(event.target.value as EtaUnit)}>
               <option value="minutes">minutes</option>
@@ -110,20 +151,27 @@ export default function CardTimingEditor({
           </span>
         </label>
         <p className="timing-hint">
-          This is an estimate only. Use a Timer card when you want to track elapsed time.
+          The due date says when it should be finished. The ETA says how much work it may take.
         </p>
         {error && <p className="timing-error">{error}</p>}
 
         <footer>
-          {card.eta_minutes && (
-            <button type="button" className="timing-clear" onClick={() => setEta("")}>
-              Clear estimate
+          {(card.due_at || card.eta_minutes) && (
+            <button
+              type="button"
+              className="timing-clear"
+              onClick={() => {
+                setDue("");
+                setEta("");
+              }}
+            >
+              Clear schedule
             </button>
           )}
           <span />
           <button type="button" onClick={onClose}>Cancel</button>
           <button type="submit" className="primary" disabled={saving}>
-            {saving ? "Saving…" : "Save estimate"}
+            {saving ? "Saving…" : "Save schedule"}
           </button>
         </footer>
       </form>

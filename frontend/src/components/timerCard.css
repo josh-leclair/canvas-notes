@@ -1,11 +1,20 @@
+.card-node.type-timer {
+  container-type: size;
+}
+
+.card-node.type-timer .card-content {
+  overflow: hidden;
+}
+
 .timer-card {
   --timer-accent: var(--card-accent, var(--accent));
   height: 100%;
   min-height: 0;
   display: grid;
-  grid-template-rows: auto minmax(150px, 1fr) auto auto;
-  gap: clamp(12px, 1.1em, 18px);
-  padding: clamp(14px, 1.15em, 20px);
+  grid-template-rows: auto minmax(0, 1fr) auto auto;
+  gap: clamp(7px, 2.4cqh, 16px);
+  padding: clamp(10px, 3cqw, 18px);
+  overflow: hidden;
   color: var(--card-fg);
   background:
     linear-gradient(135deg, color-mix(in srgb, var(--timer-accent) 6%, transparent), transparent 42%);
@@ -16,9 +25,9 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 10px;
+  gap: clamp(6px, 2cqw, 10px);
   padding-right: 28px;
-  padding-bottom: .9em;
+  padding-bottom: clamp(6px, 1.8cqh, 12px);
   border-bottom: 1px solid var(--border);
 }
 
@@ -29,10 +38,14 @@
   min-width: 0;
   display: flex;
   align-items: center;
-  gap: .65em;
+  gap: .55em;
   overflow: hidden;
   font-family: var(--font-display);
-  font-size: clamp(17px, calc(var(--card-copy-size, 13px) * 1.42), 25px);
+  font-size: clamp(
+    16px,
+    calc(var(--card-copy-size, 13px) * 1.32),
+    min(25px, 7cqw)
+  );
   font-weight: 750;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -48,7 +61,7 @@
 
 .timer-card-state {
   flex: 0 0 auto;
-  padding: .4em .55em;
+  padding: clamp(4px, .32em, 7px) clamp(5px, .5em, 9px);
   border: 1px solid var(--border);
   background: var(--bg-hover);
   color: var(--card-muted);
@@ -72,8 +85,9 @@
 }
 
 .timer-card-dial svg {
-  width: min(100%, 230px);
-  height: min(100%, 230px);
+  width: min(72cqw, 45cqh, 230px);
+  height: auto;
+  aspect-ratio: 1;
   overflow: visible;
   transform: rotate(-90deg);
 }
@@ -105,7 +119,11 @@
 
 .timer-card-dial strong {
   font-family: var(--font-display);
-  font-size: clamp(34px, calc(var(--card-copy-size, 13px) * 3.5), 58px);
+  font-size: clamp(
+    28px,
+    calc(var(--card-copy-size, 13px) * 2.9),
+    min(58px, 15cqw, 11cqh)
+  );
   font-variant-numeric: tabular-nums;
   letter-spacing: -.035em;
   line-height: 1;
@@ -121,12 +139,12 @@
 .timer-card-controls {
   display: grid;
   grid-template-columns: 1fr auto auto;
-  gap: .65em;
+  gap: clamp(5px, 1.8cqw, 10px);
 }
 
 .timer-card-controls button,
 .timer-card-interval button {
-  min-height: 42px;
+  min-height: clamp(34px, 9cqh, 42px);
   border: 1px solid var(--border);
   background: var(--bg-hover);
   color: var(--card-fg);
@@ -135,8 +153,8 @@
 }
 
 .timer-card-controls button {
-  min-width: 52px;
-  padding: .7em .85em;
+  min-width: clamp(42px, 14cqw, 54px);
+  padding: clamp(5px, 1.5cqh, 9px) clamp(7px, 2.5cqw, 12px);
 }
 
 .timer-card-controls .timer-card-primary {
@@ -159,8 +177,8 @@
   display: grid;
   grid-template-columns: auto 1fr;
   align-items: center;
-  gap: 1em;
-  padding-top: 1em;
+  gap: clamp(7px, 2.5cqw, 14px);
+  padding-top: clamp(7px, 2cqh, 13px);
   border-top: 1px solid var(--border);
 }
 
@@ -175,12 +193,12 @@
 .timer-card-interval > div {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: .5em;
+  gap: clamp(4px, 1.4cqw, 8px);
 }
 
 .timer-card-interval button {
-  min-height: 36px;
-  padding: .45em .55em;
+  min-height: clamp(30px, 7.5cqh, 38px);
+  padding: clamp(4px, 1cqh, 7px) clamp(4px, 1.5cqw, 8px);
 }
 
 .timer-card-interval button.is-active {
@@ -202,4 +220,18 @@
 
 @media (prefers-reduced-motion: reduce) {
   .timer-card-progress { transition: none; }
+}
+
+@container (max-height: 360px) {
+  .timer-card-state,
+  .timer-card-interval > span {
+    display: none;
+  }
+
+  .timer-card-interval { grid-template-columns: 1fr; }
+}
+
+@container (max-width: 330px) {
+  .timer-card-state { font-size: var(--card-copy-micro, 9px); }
+  .timer-card-controls button { min-width: 40px; }
 }

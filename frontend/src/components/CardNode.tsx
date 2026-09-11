@@ -106,7 +106,7 @@ const MIN_SIZE: Partial<Record<CardType, { width: number; height: number }>> = {
   // A glyph with a name under it, so it wants to be tallish rather than wide.
   file: { width: 128, height: 118 },
   portal: { width: 260, height: 180 },
-  timer: { width: 300, height: 400 },
+  timer: { width: 240, height: 280 },
 };
 const DEFAULT_MIN = { width: 160, height: 100 };
 
@@ -698,6 +698,7 @@ function CardNodeImpl({ id, data, selected }: NodeProps<CardNodeType>) {
     spotifyStatus,
     card.type,
     card.body,
+    card.due_at,
     card.eta_minutes,
     data.timingRollup?.timedChildCount,
     data.h,
@@ -912,7 +913,8 @@ function CardNodeImpl({ id, data, selected }: NodeProps<CardNodeType>) {
   const minSize = MIN_SIZE[card.type] ?? DEFAULT_MIN;
   minSizeRef.current = minSize.height;
   const progress = taskProgress(card.body);
-  const hasOwnTiming = card.type !== "timer" && Boolean(card.eta_minutes);
+  const hasOwnTiming =
+    card.type !== "timer" && Boolean(card.due_at || card.eta_minutes);
   const hasChildTiming = Boolean(data.timingRollup?.timedChildCount);
 
   async function applyCrop(next: Crop | null) {
@@ -1248,7 +1250,7 @@ function CardNodeImpl({ id, data, selected }: NodeProps<CardNodeType>) {
                   setTimingOpen(true);
                 }}
               >
-                {hasOwnTiming ? "Edit estimate…" : "Add estimate…"}
+                {hasOwnTiming ? "Edit schedule…" : "Add due date or ETA…"}
               </button>
             )}
             {/* Not gated on readOnly: the new cards are yours and this one is

@@ -73,6 +73,7 @@ import { buildRevealGraph } from "../store/revealGraph";
 import { spreadExpandedChildren } from "../store/expandedChildLayout";
 import Icon, { type IconName } from "../components/Icon";
 import { cycleTheme } from "../theme";
+import { timeLensBucket } from "../lib/cardTiming";
 import "./canvasPage.css";
 
 const nodeTypes = {
@@ -522,13 +523,19 @@ function CanvasInner({ canvasId }: { canvasId: string }) {
         .map((id) => cardById.get(id))
         .filter((card): card is Card => Boolean(card));
       const timed = children.filter(
-        (card) => card.type !== "timer" && Boolean(card.eta_minutes)
+        (card) => card.type !== "timer" && Boolean(card.due_at || card.eta_minutes)
       );
       if (!timed.length) continue;
+      const dueDates = timed
+        .map((card) => card.due_at)
+        .filter((due): due is string => Boolean(due))
+        .sort((left, right) => new Date(left).getTime() - new Date(right).getTime());
       rollups.set(parentId, {
         childCount: children.length,
         timedChildCount: timed.length,
         etaMinutes: timed.reduce((total, card) => total + (card.eta_minutes ?? 0), 0),
+        dueDates,
+        nextDueAt: dueDates[0] ?? null,
       });
     }
     return rollups;
@@ -812,7 +819,7 @@ function CanvasInner({ canvasId }: { canvasId: string }) {
     // node object makes it reset that node's measured internals.
     const decorate = (node: Node, className?: string): Node => {
       const data = node.data as CardNodeType["data"];
-      const timeBucket = timeLensOpen && data.card.eta_minutes ? "estimate" : null;
+      const timeBucket = timeLensOpen ? timeLensBucket(data.card) : null;
       const next =
         [
           className,
@@ -832,7 +839,7 @@ function CanvasInner({ canvasId }: { canvasId: string }) {
       const timingRollup = timingRollupByCard.get(data.card.id) ?? null;
       const lifted = node.id === menuOpenFor;
       const rollupSignature = timingRollup
-        ? `${timingRollup.timedChildCount}:${timingRollup.etaMinutes}`
+        ? `${timingRollup.timedChildCount}:${timingRollup.etaMinutes}:${timingRollup.dueDates.join(",")}`
         : "none";
       const signature = `${next ?? ""}:${collapsed ? 1 : 0}:${kids}:${lifted ? 1 : 0}:${rollupSignature}`;
       const cached = decoratedNodeCache.current.get(node.id);
@@ -2303,7 +2310,7 @@ function CanvasInner({ canvasId }: { canvasId: string }) {
           <button
             className={`tool ${timeLensOpen ? "is-active" : ""}`}
             onClick={() => setTimeLensOpen((open) => !open)}
-            title="Show estimates and timer cards"
+            title="Show due dates, estimates, and timer cards"
           >
             <Icon name="clock" /> Time
           </button>

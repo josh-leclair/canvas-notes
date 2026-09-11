@@ -13,6 +13,8 @@
 
 .timing-editor {
   width: min(400px, calc(100vw - 28px));
+  max-height: min(650px, 92vh);
+  overflow-y: auto;
   padding: 18px;
   border: 1px solid var(--border-strong);
   background: var(--bg-panel);
@@ -73,6 +75,21 @@
   display: grid;
   grid-template-columns: 1fr 120px;
   gap: 8px;
+}
+
+.timing-quick-days {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: -9px;
+}
+
+.timing-quick-days button {
+  padding: 6px 9px;
+  border: 1px solid var(--border);
+  background: var(--bg-card);
+  color: var(--text);
+  font-size: 11px;
 }
 
 .timing-editor input,
@@ -172,6 +189,17 @@
   flex: 0 0 auto;
 }
 
+.card-schedule-copy {
+  min-width: 0;
+  display: flex;
+  align-items: baseline;
+  gap: .4em;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.card-schedule-copy strong { font-weight: 750; }
+
 button.card-eta-summary:hover:not(:disabled),
 button.card-eta-summary:active:not(:disabled) {
   transform: none;
@@ -185,6 +213,10 @@ button.card-eta-summary:active:not(:disabled) {
 }
 
 .card-time-tether > .child-time-rollup:first-child { border-top: 0; }
+.child-time-rollup b,
+.card-time-tether.is-overdue .card-schedule-copy strong { color: var(--danger); }
+.card-time-tether.is-soon { border-color: color-mix(in srgb, var(--accent) 58%, var(--border)); }
+.card-time-tether.is-overdue { border-color: color-mix(in srgb, var(--danger) 65%, var(--border)); }
 
 @keyframes timing-arrive {
   from { opacity: 0; transform: translateY(7px) scale(.985); }
