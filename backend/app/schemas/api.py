@@ -103,6 +103,8 @@ class CardOut(BaseModel):
     title: str | None
     body: str | None
     payload: dict[str, Any]
+    due_at: datetime | None = None
+    eta_minutes: int | None = None
     created_at: datetime
     updated_at: datetime
     inbox_canvas_id: uuid.UUID | None = None
@@ -160,6 +162,8 @@ class CardCreateIn(BaseModel):
     title: str | None = None
     body: str | None = None
     payload: dict[str, Any] = Field(default_factory=dict)
+    due_at: datetime | None = None
+    eta_minutes: int | None = Field(default=None, ge=1)
     canvas_id: uuid.UUID | None = None
     inbox_canvas_id: uuid.UUID | None = None
     x: float | None = None
@@ -199,6 +203,8 @@ class CardPatchIn(BaseModel):
     title: str | None = None
     body: str | None = None
     payload: dict[str, Any] | None = None
+    due_at: datetime | None = None
+    eta_minutes: int | None = Field(default=None, ge=1)
     # Type conversion: a text card whose body turns out to be a URL becomes a
     # link/youtube card.
     type: CardType | None = None

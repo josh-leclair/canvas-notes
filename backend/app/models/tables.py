@@ -138,6 +138,12 @@ class Card(Base):
     __tablename__ = "cards"
     __table_args__ = (
         Index("ix_cards_owner_created", "owner_id", text("created_at DESC")),
+        Index(
+            "ix_cards_owner_due_at",
+            "owner_id",
+            "due_at",
+            postgresql_where=text("due_at IS NOT NULL"),
+        ),
     )
 
     id: Mapped[uuid.UUID] = uuid_pk()
@@ -158,6 +164,8 @@ class Card(Base):
     payload: Mapped[dict] = mapped_column(
         JSONB, nullable=False, server_default=text("'{}'::jsonb")
     )
+    due_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    eta_minutes: Mapped[int | None] = mapped_column(Integer)
     created_at: Mapped[datetime] = now_col()
     updated_at: Mapped[datetime] = now_col()
 

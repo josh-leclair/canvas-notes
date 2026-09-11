@@ -279,6 +279,8 @@ interface CanvasState {
       body?: string | null;
       type?: CardType;
       payload?: Record<string, unknown>;
+      due_at?: string | null;
+      eta_minutes?: number | null;
     }
   ) => Promise<void>;
   /** Replace a card's data everywhere from a server response (uploads, unfurl polls). */
@@ -320,6 +322,7 @@ interface CanvasState {
 
 const saveTimers = new Map<string, number>();
 const boundsSaveTimers = new Map<string, number>();
+let inboxLoadInFlight: Promise<void> | null = null;
 const touchedToday = new Set<string>();
 
 export function localDay(): string {
@@ -512,8 +515,14 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
   },
 
   loadInbox: async () => {
-    const resp = await api.get<{ items: Card[] }>("/api/inbox?limit=100");
-    set({ inbox: resp.items });
+    if (inboxLoadInFlight) return inboxLoadInFlight;
+    inboxLoadInFlight = api
+      .get<{ items: Card[] }>("/api/inbox?limit=100")
+      .then((resp) => set({ inbox: resp.items }))
+      .finally(() => {
+        inboxLoadInFlight = null;
+      });
+    return inboxLoadInFlight;
   },
 
   loadProductivity: async () => {
@@ -809,6 +818,7 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
   setInboxOpen: (open) => {
     localStorage.setItem("inboxOpen", String(open));
     set({ inboxOpen: open });
+    if (open) void get().loadInbox().catch(() => undefined);
   },
 
   clearEditOnMount: () => set({ editOnMount: null }),

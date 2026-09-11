@@ -87,12 +87,43 @@ export default function MobileBoard() {
     void Promise.all([
       api.get<CanvasDetail>(`/api/canvases/${canvasId}`),
       api.get<CanvasSummary[]>("/api/canvases"),
-      api.get<{ items: Card[] }>(`/api/inbox?canvas_id=${canvasId}&limit=100`),
-    ]).then(([nextDetail, nextBoards, nextInbox]) => {
+    ]).then(([nextDetail, nextBoards]) => {
       setDetail(nextDetail);
       setBoards(nextBoards);
-      setInbox(nextInbox.items);
     });
+  }, [canvasId]);
+
+  useEffect(() => {
+    if (!canvasId) return;
+    let disposed = false;
+    let inFlight = false;
+    const refresh = async () => {
+      if (disposed || inFlight || document.visibilityState === "hidden") return;
+      inFlight = true;
+      try {
+        const next = await api.get<{ items: Card[] }>(
+          `/api/inbox?canvas_id=${canvasId}&limit=100`
+        );
+        if (!disposed) setInbox(next.items);
+      } catch {
+        // The next tick or focus event will try again without interrupting reading.
+      } finally {
+        inFlight = false;
+      }
+    };
+    const onVisibility = () => {
+      if (document.visibilityState === "visible") void refresh();
+    };
+    void refresh();
+    const timer = window.setInterval(refresh, 5_000);
+    window.addEventListener("focus", refresh);
+    document.addEventListener("visibilitychange", onVisibility);
+    return () => {
+      disposed = true;
+      window.clearInterval(timer);
+      window.removeEventListener("focus", refresh);
+      document.removeEventListener("visibilitychange", onVisibility);
+    };
   }, [canvasId]);
 
   const zones = useMemo(() => detail ? [...detail.zones].sort((a, b) => a.sort - b.sort || a.name.localeCompare(b.name)) : [], [detail]);

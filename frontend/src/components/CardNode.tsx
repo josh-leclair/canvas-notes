@@ -41,6 +41,11 @@ import SideHandles from "./SideHandles";
 import SpotifyAttachment from "./SpotifyAttachment";
 import YouTubeAttachment from "./YouTubeAttachment";
 import FloatingCardMenu from "./FloatingCardMenu";
+import CardTimingEditor, {
+  dueLabel,
+  etaLabel,
+  timingTone,
+} from "./CardTimingEditor";
 import { CARD_OVERVIEW_ZOOM } from "../lib/canvasBounds";
 import "./cardNode.css";
 
@@ -546,6 +551,7 @@ function CardNodeImpl({ id, data, selected }: NodeProps<CardNodeType>) {
   const [cropping, setCropping] = useState(false);
   const [writing, setWriting] = useState(false);
   const [listening, setListening] = useState(false);
+  const [timingOpen, setTimingOpen] = useState(false);
   const [editing, setEditing] = useState(false);
   const [checklistFocusRequest, setChecklistFocusRequest] = useState(0);
   const [draftTitle, setDraftTitle] = useState("");
@@ -693,6 +699,8 @@ function CardNodeImpl({ id, data, selected }: NodeProps<CardNodeType>) {
     spotifyStatus,
     card.type,
     card.body,
+    card.due_at,
+    card.eta_minutes,
     data.h,
     data.parentId,
     fitToContent,
@@ -905,6 +913,8 @@ function CardNodeImpl({ id, data, selected }: NodeProps<CardNodeType>) {
   const minSize = MIN_SIZE[card.type] ?? DEFAULT_MIN;
   minSizeRef.current = minSize.height;
   const progress = taskProgress(card.body);
+  const due = dueLabel(card.due_at);
+  const eta = etaLabel(card.eta_minutes);
 
   async function applyCrop(next: Crop | null) {
     setCropping(false);
@@ -1151,6 +1161,16 @@ function CardNodeImpl({ id, data, selected }: NodeProps<CardNodeType>) {
       {listening && (
         <AudioViewer card={card} onClose={() => setListening(false)} />
       )}
+      {timingOpen && (
+        <CardTimingEditor
+          card={card}
+          onClose={() => setTimingOpen(false)}
+          onSave={async (patch) => {
+            await updateCard(card.id, patch);
+            setTimingOpen(false);
+          }}
+        />
+      )}
 
       {cropping && (
         <ImageCropper
@@ -1221,6 +1241,16 @@ function CardNodeImpl({ id, data, selected }: NodeProps<CardNodeType>) {
             >
               {focused ? "Remove from focus" : "Add to focus"}
             </button>
+            {!readOnly && (
+              <button
+                onClick={() => {
+                  closeMenu();
+                  setTimingOpen(true);
+                }}
+              >
+                {due || eta ? "Edit time tether…" : "Add time tether…"}
+              </button>
+            )}
             {/* Not gated on readOnly: the new cards are yours and this one is
                 never touched, so viewing is enough — same as linking. */}
             {generationAvailable && splittableLength(card) >= MIN_SPLIT_CHARS && (
@@ -1648,6 +1678,29 @@ function CardNodeImpl({ id, data, selected }: NodeProps<CardNodeType>) {
             <YouTubeAttachment card={card} />
           )}
         </div>
+      )}
+      {(due || eta) && (
+        <button
+          type="button"
+          className={`card-timing-pip nodrag is-${timingTone(card.due_at)}`}
+          title={
+            card.due_at
+              ? `Due ${new Date(card.due_at).toLocaleString()}${eta ? ` · ETA ${eta}` : ""}`
+              : `ETA ${eta}`
+          }
+          aria-label="Edit this card's time tether"
+          aria-disabled={readOnly}
+          onPointerDown={(event) => event.stopPropagation()}
+          onClick={(event) => {
+            event.stopPropagation();
+            if (!readOnly) setTimingOpen(true);
+          }}
+        >
+          <span className="time-tether-orbit" aria-hidden="true"><i /><b /></span>
+          {due && <span>{due}</span>}
+          {due && eta && <span className="card-timing-divider">·</span>}
+          {eta && <span>ETA {eta}</span>}
+        </button>
       )}
       </div>
     </>

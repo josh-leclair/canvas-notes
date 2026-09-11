@@ -311,10 +311,36 @@ function CanvasInner({ canvasId }: { canvasId: string }) {
 
   useEffect(() => {
     loadCanvas(canvasId);
-    loadInbox();
     loadCapabilities();
     loadProductivity();
-  }, [canvasId, loadCanvas, loadInbox, loadCapabilities, loadProductivity]);
+  }, [canvasId, loadCanvas, loadCapabilities, loadProductivity]);
+
+  // Cards can arrive through the browser extension, API, or another device,
+  // so a canvas load is not a useful inbox clock. Refresh promptly while the
+  // page is visible, and immediately whenever the user returns to it. The
+  // store coalesces overlapping requests, keeping a slow NAS round trip from
+  // building a queue of stale responses.
+  useEffect(() => {
+    let disposed = false;
+    const refresh = () => {
+      if (disposed || document.visibilityState === "hidden") return;
+      void loadInbox().catch(() => undefined);
+    };
+    const onVisibility = () => {
+      if (document.visibilityState === "visible") refresh();
+    };
+
+    refresh();
+    const timer = window.setInterval(refresh, 5_000);
+    window.addEventListener("focus", refresh);
+    document.addEventListener("visibilitychange", onVisibility);
+    return () => {
+      disposed = true;
+      window.clearInterval(timer);
+      window.removeEventListener("focus", refresh);
+      document.removeEventListener("visibilitychange", onVisibility);
+    };
+  }, [canvasId, loadInbox]);
 
   // Finite boards are really auto-growing workspaces. Approaching either far
   // edge adds one modest strip; leaving ample breathing room stops growth.

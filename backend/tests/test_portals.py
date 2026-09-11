@@ -119,6 +119,67 @@ def test_today_portal_only_includes_cards_changed_today(client, admin):
     assert old["id"] not in ids
 
 
+def test_portal_can_filter_cards_by_due_state(client, admin):
+    dashboard = client.post("/api/canvases", json={"name": "Dashboard"}).json()
+    now = datetime.now(timezone.utc)
+    overdue = client.post(
+        "/api/cards",
+        json={
+            "title": "Late card",
+            "due_at": (now - timedelta(days=2)).isoformat(),
+            "eta_minutes": 45,
+        },
+    ).json()["card"]
+    current = client.post(
+        "/api/cards",
+        json={
+            "title": "Today card",
+            "due_at": (now + timedelta(days=2)).isoformat(),
+        },
+    ).json()["card"]
+    client.post("/api/cards", json={"title": "Unscheduled card"})
+    portal = make_portal(
+        client,
+        dashboard["id"],
+        {
+            "scope": "workspace",
+            "due": "overdue",
+            "timezone_offset_minutes": 0,
+            "card_type": "any",
+        },
+    )
+
+    result = client.get(f"/api/cards/{portal['id']}/portal")
+    assert result.status_code == 200, result.text
+    assert [item["card"]["id"] for item in result.json()["items"]] == [overdue["id"]]
+    assert result.json()["items"][0]["card"]["eta_minutes"] == 45
+
+    client.patch(
+        f"/api/cards/{current['id']}",
+        json={
+            "due_at": now.replace(hour=12, minute=0, second=0, microsecond=0).isoformat()
+        },
+    )
+    response = client.patch(
+        f"/api/cards/{portal['id']}",
+        json={
+            "payload": {
+                "scope": "workspace",
+                "due": "today",
+                "timezone_offset_minutes": 0,
+                "card_type": "any",
+            }
+        },
+    )
+    assert response.status_code == 200, response.text
+    ids = {
+        item["card"]["id"]
+        for item in client.get(f"/api/cards/{portal['id']}/portal").json()["items"]
+    }
+    assert current["id"] in ids
+    assert overdue["id"] not in ids
+
+
 def test_dropping_on_canvas_portal_places_the_canonical_card(client, admin):
     dashboard = client.post("/api/canvases", json={"name": "Dashboard"}).json()
     source = client.post("/api/canvases", json={"name": "Projects"}).json()

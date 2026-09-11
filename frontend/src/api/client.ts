@@ -12,6 +12,10 @@ export class ApiError extends Error {
 async function request<T>(method: string, path: string, body?: unknown): Promise<T> {
   const resp = await fetch(path, {
     method,
+    // Authenticated API reads are live application state, not documents.
+    // In particular, an inbox poll must reach the NAS instead of reusing a
+    // heuristically cached response after an extension or bot adds a card.
+    cache: method === "GET" ? "no-store" : undefined,
     headers: body !== undefined ? { "Content-Type": "application/json" } : undefined,
     body: body !== undefined ? JSON.stringify(body) : undefined,
     credentials: "same-origin",

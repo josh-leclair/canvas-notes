@@ -58,6 +58,13 @@ export default function PortalCardBody({
     config.card_type !== "any" ? config.card_type : null,
     config.query ? `“${config.query}”` : null,
     config.open_tasks ? "open tasks" : null,
+    config.due !== "any"
+      ? config.due === "week"
+        ? "due next 7 days"
+        : config.due === "unscheduled"
+          ? "no due date"
+          : `due ${config.due}`
+      : null,
   ].filter(Boolean);
 
   return (

@@ -16,11 +16,41 @@ export default function MobileHome() {
   useEffect(() => {
     void Promise.all([
       api.get<CanvasSummary[]>("/api/canvases"),
-      api.get<{ items: Card[] }>("/api/inbox?general=true&limit=100"),
-    ]).then(([nextBoards, nextInbox]) => {
+    ]).then(([nextBoards]) => {
       setBoards(nextBoards);
-      setInbox(nextInbox.items);
     });
+  }, []);
+
+  useEffect(() => {
+    let disposed = false;
+    let inFlight = false;
+    const refresh = async () => {
+      if (disposed || inFlight || document.visibilityState === "hidden") return;
+      inFlight = true;
+      try {
+        const next = await api.get<{ items: Card[] }>(
+          "/api/inbox?general=true&limit=100"
+        );
+        if (!disposed) setInbox(next.items);
+      } catch {
+        // Stay usable offline and retry on the next tick or focus event.
+      } finally {
+        inFlight = false;
+      }
+    };
+    const onVisibility = () => {
+      if (document.visibilityState === "visible") void refresh();
+    };
+    void refresh();
+    const timer = window.setInterval(refresh, 5_000);
+    window.addEventListener("focus", refresh);
+    document.addEventListener("visibilitychange", onVisibility);
+    return () => {
+      disposed = true;
+      window.clearInterval(timer);
+      window.removeEventListener("focus", refresh);
+      document.removeEventListener("visibilitychange", onVisibility);
+    };
   }, []);
 
   return (

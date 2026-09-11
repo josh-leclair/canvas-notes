@@ -33,6 +33,8 @@ export interface Card {
   title: string | null;
   body: string | null;
   payload: Record<string, unknown>;
+  due_at: string | null;
+  eta_minutes: number | null;
   created_at: string;
   updated_at: string;
   inbox_canvas_id: string | null;
@@ -281,6 +283,7 @@ export interface PortalConfig {
   card_type: CardType | "any";
   open_tasks: boolean;
   timeframe: "any" | "today";
+  due: "any" | "overdue" | "today" | "week" | "unscheduled";
   timezone_offset_minutes: number;
   limit: number;
 }

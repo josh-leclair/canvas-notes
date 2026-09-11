@@ -74,7 +74,7 @@ PORTAL_FILTER_TYPES = {
 
 def _portal_settings(
     card: Card,
-) -> tuple[str, uuid.UUID | None, str, str, bool, str, int, int]:
+) -> tuple[str, uuid.UUID | None, str, str, bool, str, str, int, int]:
     """Read a portal payload defensively.
 
     Payloads remain ordinary JSON so an old client can still copy or export a
@@ -94,6 +94,12 @@ def _portal_settings(
     card_type = raw_type if raw_type in PORTAL_FILTER_TYPES else "any"
     open_tasks = bool(payload.get("open_tasks"))
     timeframe = "today" if payload.get("timeframe") == "today" else "any"
+    raw_due = str(payload.get("due") or "any")
+    due = (
+        raw_due
+        if raw_due in {"any", "overdue", "today", "week", "unscheduled"}
+        else "any"
+    )
     try:
         timezone_offset = max(
             -840, min(840, int(payload.get("timezone_offset_minutes", 0)))
@@ -104,7 +110,17 @@ def _portal_settings(
         limit = max(1, min(50, int(payload.get("limit", 20))))
     except (TypeError, ValueError):
         limit = 20
-    return scope, canvas_id, query, card_type, open_tasks, timeframe, timezone_offset, limit
+    return (
+        scope,
+        canvas_id,
+        query,
+        card_type,
+        open_tasks,
+        timeframe,
+        due,
+        timezone_offset,
+        limit,
+    )
 
 
 def _reference_snapshot(card: Card) -> dict:
@@ -197,6 +213,8 @@ def create_card(
         title=body.title,
         body=body.body,
         payload=body.payload,
+        due_at=body.due_at,
+        eta_minutes=body.eta_minutes,
         inbox_canvas_id=inbox_canvas.id if inbox_canvas is not None else None,
     )
     # A checklist or a table carries its structure in the payload; the body is
@@ -238,7 +256,7 @@ def patch_card(
         if destination is not None:
             destination = get_editable_canvas(db, user, destination).id
         card.inbox_canvas_id = destination
-    for key in ("title", "body", "payload"):
+    for key in ("title", "body", "payload", "due_at", "eta_minutes"):
         if key in fields:
             setattr(card, key, fields[key])
     if fields.get("type") is not None:
@@ -374,6 +392,7 @@ def portal_contents(
         card_type,
         open_tasks,
         timeframe,
+        due,
         timezone_offset,
         limit,
     ) = _portal_settings(portal)
@@ -409,11 +428,27 @@ def portal_contents(
         conditions.append(
             or_(Card.body.contains("- [ ]"), Card.body.contains("* [ ]"))
         )
-    if timeframe == "today":
+    utc_now = datetime.now(timezone.utc)
+    if timeframe == "today" or due == "today":
         offset = timedelta(minutes=timezone_offset)
-        local_now = datetime.now(timezone.utc) - offset
+        local_now = utc_now - offset
         start = local_now.replace(hour=0, minute=0, second=0, microsecond=0) + offset
+    else:
+        start = None
+    if timeframe == "today" and start is not None:
         conditions.append(Card.updated_at >= start)
+    if due == "overdue":
+        conditions.append(Card.due_at < utc_now)
+    elif due == "today" and start is not None:
+        conditions.extend(
+            (Card.due_at >= start, Card.due_at < start + timedelta(days=1))
+        )
+    elif due == "week":
+        conditions.extend(
+            (Card.due_at >= utc_now, Card.due_at < utc_now + timedelta(days=7))
+        )
+    elif due == "unscheduled":
+        conditions.append(Card.due_at.is_(None))
 
     statement = statement.where(*conditions)
     total = int(
@@ -422,9 +457,12 @@ def portal_contents(
         )
         or 0
     )
-    cards = list(
-        db.scalars(statement.order_by(Card.updated_at.desc(), Card.id.desc()).limit(limit))
+    ordering = (
+        (Card.due_at.asc().nulls_last(), Card.updated_at.desc(), Card.id.desc())
+        if due != "any"
+        else (Card.updated_at.desc(), Card.id.desc())
     )
+    cards = list(db.scalars(statement.order_by(*ordering).limit(limit)))
     card_ids = [card.id for card in cards]
     placement_rows = (
         db.execute(
@@ -481,7 +519,7 @@ def add_portal_item(
     portal = get_visible_card(db, user, portal_id)
     if portal.type != "portal":
         raise ApiError(409, "not_a_portal", "This card is not a portal")
-    scope, canvas_id, _, _, _, _, _, _ = _portal_settings(portal)
+    scope, canvas_id, _, _, _, _, _, _, _ = _portal_settings(portal)
     if scope != "canvas" or canvas_id is None:
         raise ApiError(
             409,

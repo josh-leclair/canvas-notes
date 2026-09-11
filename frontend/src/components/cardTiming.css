@@ -1,0 +1,259 @@
+.timing-editor-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 7000;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  background: color-mix(in srgb, #07111f 48%, transparent);
+  backdrop-filter: blur(4px);
+}
+
+.timing-editor {
+  width: min(430px, calc(100vw - 28px));
+  padding: 18px;
+  border: 1px solid var(--border);
+  background: var(--bg-panel);
+  color: var(--text);
+  box-shadow: var(--shadow-lift);
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  animation: timing-arrive 180ms var(--ease-out) backwards;
+}
+
+.timing-editor header {
+  display: grid;
+  grid-template-columns: 42px 1fr 30px;
+  align-items: center;
+  gap: 11px;
+}
+
+.timing-editor header > span:nth-child(2) {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.timing-editor header strong {
+  font-size: 18px;
+}
+
+.timing-editor header small,
+.timing-hint {
+  color: var(--text-muted);
+}
+
+.timing-editor header small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.timing-editor-orbit,
+.time-tether-orbit {
+  position: relative;
+  display: inline-grid;
+  place-items: center;
+  flex: 0 0 auto;
+  border-radius: 50%;
+  border: 1px solid color-mix(in srgb, var(--accent) 50%, transparent);
+  background: color-mix(in srgb, var(--accent) 12%, var(--bg-card));
+}
+
+.timing-editor-orbit {
+  width: 38px;
+  height: 38px;
+}
+
+.timing-editor-orbit::after,
+.time-tether-orbit::after {
+  content: "";
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 8px var(--accent);
+}
+
+.timing-editor-orbit i,
+.timing-editor-orbit b,
+.time-tether-orbit i,
+.time-tether-orbit b {
+  position: absolute;
+  inset: 3px;
+  border-radius: 50%;
+  border-top: 1px solid var(--accent);
+  border-right: 1px solid transparent;
+  animation: tether-sweep 2.8s linear infinite;
+}
+
+.timing-editor-orbit b,
+.time-tether-orbit b {
+  inset: 7px;
+  border-top-color: transparent;
+  border-right-color: var(--accent);
+  animation-direction: reverse;
+  animation-duration: 2s;
+}
+
+.timing-editor label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.timing-editor input,
+.timing-editor select {
+  min-width: 0;
+  padding: 9px 10px;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  background: var(--bg-input);
+  color: var(--text);
+  font: inherit;
+}
+
+.timing-quick-days {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: -8px;
+}
+
+.timing-quick-days button,
+.timing-editor footer button,
+.timing-close {
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  background: var(--bg-card);
+  color: var(--text);
+}
+
+.timing-quick-days button {
+  padding: 5px 8px;
+  font-size: 11px;
+}
+
+.timing-eta-row {
+  display: grid;
+  grid-template-columns: 1fr 120px;
+  gap: 8px;
+}
+
+.timing-hint,
+.timing-error {
+  margin: -5px 0 0;
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.timing-error,
+.timing-clear {
+  color: var(--danger) !important;
+}
+
+.timing-editor footer {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding-top: 2px;
+}
+
+.timing-editor footer span {
+  flex: 1;
+}
+
+.timing-editor footer button {
+  padding: 8px 11px;
+}
+
+.timing-editor footer .primary {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: var(--accent-ink, white);
+}
+
+.timing-close {
+  width: 30px;
+  height: 30px;
+  padding: 6px;
+}
+
+.card-timing-pip {
+  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  max-width: calc(100% - 16px);
+  margin: 0 8px 7px;
+  padding: 3px 7px 3px 4px;
+  border: 1px solid color-mix(in srgb, var(--accent) 35%, var(--border));
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--bg-card) 84%, var(--accent));
+  color: var(--card-fg);
+  font-size: 10.5px;
+  line-height: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.card-timing-pip:hover {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--bg-card) 72%, var(--accent));
+}
+
+.card-timing-pip.is-soon {
+  --accent: var(--hue-maple, #d79535);
+}
+
+.card-timing-pip.is-overdue {
+  --accent: var(--danger);
+}
+
+.card-timing-pip.is-overdue .time-tether-orbit {
+  animation: tether-pulse 1.7s ease-in-out infinite;
+}
+
+.time-tether-orbit {
+  width: 17px;
+  height: 17px;
+}
+
+.time-tether-orbit i,
+.time-tether-orbit b {
+  inset: 2px;
+}
+
+.time-tether-orbit b {
+  inset: 4px;
+}
+
+.card-timing-divider {
+  color: var(--card-muted);
+}
+
+@keyframes tether-sweep {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes tether-pulse {
+  50% { box-shadow: 0 0 0 4px color-mix(in srgb, var(--danger) 16%, transparent); }
+}
+
+@keyframes timing-arrive {
+  from { opacity: 0; transform: translateY(8px) scale(0.98); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .timing-editor-orbit i,
+  .timing-editor-orbit b,
+  .time-tether-orbit i,
+  .time-tether-orbit b,
+  .card-timing-pip.is-overdue .time-tether-orbit {
+    animation: none;
+  }
+}
