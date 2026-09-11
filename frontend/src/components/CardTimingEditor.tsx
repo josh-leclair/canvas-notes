@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
-import type { Card } from "../api/types";
+import type { CanvasAppearance, Card } from "../api/types";
+import { elapsedSeconds, formatDuration } from "../lib/cardTiming";
 import Icon from "./Icon";
 import "./cardTiming.css";
 
@@ -33,61 +34,42 @@ function atLocalTime(date: Date, hour: number, minute: number): string {
   return local.toISOString().slice(0, 16);
 }
 
-export function etaLabel(minutes: number | null): string | null {
-  if (!minutes) return null;
-  if (minutes >= 1_440 && minutes % 1_440 === 0) {
-    const days = minutes / 1_440;
-    return `${days}d`;
-  }
-  if (minutes >= 60 && minutes % 60 === 0) return `${minutes / 60}h`;
-  if (minutes >= 60) return `${Math.floor(minutes / 60)}h ${minutes % 60}m`;
-  return `${minutes}m`;
-}
-
-export function dueLabel(iso: string | null): string | null {
-  if (!iso) return null;
-  const due = new Date(iso);
-  if (Number.isNaN(due.getTime())) return null;
-  const now = new Date();
-  const startToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-  const startDue = new Date(due.getFullYear(), due.getMonth(), due.getDate());
-  const days = Math.round(
-    (Date.UTC(startDue.getFullYear(), startDue.getMonth(), startDue.getDate()) -
-      Date.UTC(startToday.getFullYear(), startToday.getMonth(), startToday.getDate())) /
-      86_400_000
-  );
-  if (due.getTime() < now.getTime()) return "Overdue";
-  if (days === 0) return `Today ${due.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}`;
-  if (days === 1) return `Tomorrow ${due.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}`;
-  if (days > 1 && days < 7) {
-    return due.toLocaleString([], { weekday: "short", hour: "numeric", minute: "2-digit" });
-  }
-  return due.toLocaleDateString([], { month: "short", day: "numeric" });
-}
-
-export function timingTone(iso: string | null): "quiet" | "soon" | "overdue" {
-  if (!iso) return "quiet";
-  const difference = new Date(iso).getTime() - Date.now();
-  if (difference < 0) return "overdue";
-  if (difference < 86_400_000) return "soon";
-  return "quiet";
-}
-
 export default function CardTimingEditor({
   card,
+  appearance,
   onSave,
+  onTimerAction,
   onClose,
 }: {
   card: Card;
-  onSave: (patch: { due_at: string | null; eta_minutes: number | null }) => Promise<void>;
+  appearance: CanvasAppearance;
+  onSave: (patch: {
+    due_at: string | null;
+    eta_minutes: number | null;
+    reminder_minutes: number | null;
+  }) => Promise<void>;
+  onTimerAction: (action: "start" | "pause" | "reset") => Promise<void>;
   onClose: () => void;
 }) {
   const etaSeed = useMemo(() => initialEta(card.eta_minutes), [card.eta_minutes]);
   const [due, setDue] = useState(() => localInputValue(card.due_at));
   const [eta, setEta] = useState(etaSeed.value);
   const [unit, setUnit] = useState<EtaUnit>(etaSeed.unit);
+  const [reminder, setReminder] = useState(
+    card.reminder_minutes == null ? "off" : String(card.reminder_minutes)
+  );
   const [saving, setSaving] = useState(false);
+  const [timerBusy, setTimerBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [now, setNow] = useState(Date.now());
+  const running = Boolean(card.timer_started_at);
+  const elapsed = elapsedSeconds(card, now);
+
+  useEffect(() => {
+    if (!running) return;
+    const timer = window.setInterval(() => setNow(Date.now()), 1_000);
+    return () => window.clearInterval(timer);
+  }, [running]);
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
@@ -112,6 +94,18 @@ export default function CardTimingEditor({
     setDue(atLocalTime(next, next.getHours(), next.getMinutes()));
   }
 
+  async function runTimer(action: "start" | "pause" | "reset") {
+    setTimerBusy(true);
+    setError(null);
+    try {
+      await onTimerAction(action);
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : "Could not update the timer.");
+    } finally {
+      setTimerBusy(false);
+    }
+  }
+
   async function submit(event: React.FormEvent) {
     event.preventDefault();
     const numericEta = eta.trim() === "" ? null : Number(eta);
@@ -122,12 +116,21 @@ export default function CardTimingEditor({
     setSaving(true);
     setError(null);
     try {
+      const reminderMinutes = reminder === "off" ? null : Number(reminder);
+      if (
+        reminderMinutes !== null &&
+        "Notification" in window &&
+        Notification.permission === "default"
+      ) {
+        await Notification.requestPermission();
+      }
       await onSave({
         due_at: due ? new Date(due).toISOString() : null,
         eta_minutes:
           numericEta === null
             ? null
             : Math.max(1, Math.round(numericEta * ETA_MULTIPLIER[unit])),
+        reminder_minutes: due ? reminderMinutes : null,
       });
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "Could not save timing.");
@@ -136,14 +139,17 @@ export default function CardTimingEditor({
   }
 
   return createPortal(
-    <div className="timing-editor-backdrop" onPointerDown={onClose}>
+    <div
+      className={`timing-editor-backdrop canvas-appearance-${appearance}`}
+      onPointerDown={onClose}
+    >
       <form
         className="timing-editor"
         onSubmit={submit}
         onPointerDown={(event) => event.stopPropagation()}
       >
         <header>
-          <span className="timing-editor-orbit" aria-hidden="true"><i /><b /></span>
+          <span className="timing-editor-mark" aria-hidden="true"><Icon name="clock" size={22} /></span>
           <span>
             <strong>Time tether</strong>
             <small>{card.title || "Untitled card"}</small>
@@ -189,6 +195,61 @@ export default function CardTimingEditor({
           </span>
         </label>
         <p className="timing-hint">The due date says when. The ETA says how much focused time it may take.</p>
+
+        <section className={`timing-session ${running ? "is-running" : ""}`}>
+          <span className="timing-session-track" aria-hidden="true">
+            <i
+              style={{
+                width: `${Math.min(100, card.eta_minutes ? (elapsed / (card.eta_minutes * 60)) * 100 : 0)}%`,
+              }}
+            />
+          </span>
+          <span>
+            <small>{running ? "Focus session running" : elapsed ? "Focus time logged" : "Focus timer"}</small>
+            <strong>{formatDuration(elapsed, true)}</strong>
+          </span>
+          <button
+            type="button"
+            disabled={timerBusy || (!card.eta_minutes && !running)}
+            title={
+              !card.eta_minutes && !running
+                ? "Save an ETA before starting the timer"
+                : undefined
+            }
+            onClick={() => void runTimer(running ? "pause" : "start")}
+          >
+            <Icon name={running ? "pause" : "play"} size={13} />
+            {running ? "Pause" : "Start"}
+          </button>
+          {elapsed > 0 && (
+            <button
+              type="button"
+              className="timing-reset"
+              disabled={timerBusy}
+              onClick={() => void runTimer("reset")}
+            >
+              Reset
+            </button>
+          )}
+        </section>
+
+        <label>
+          <span>Deadline alert</span>
+          <select
+            value={due ? reminder : "off"}
+            disabled={!due}
+            onChange={(event) => setReminder(event.target.value)}
+          >
+            <option value="off">Off</option>
+            <option value="0">At the due time</option>
+            <option value="15">15 minutes before</option>
+            <option value="60">1 hour before</option>
+            <option value="1440">1 day before</option>
+          </select>
+        </label>
+        <p className="timing-hint">
+          Alerts appear in Canvas Notes and as a system notification when your browser allows it.
+        </p>
         {error && <p className="timing-error">{error}</p>}
 
         <footer>
@@ -199,9 +260,10 @@ export default function CardTimingEditor({
               onClick={() => {
                 setDue("");
                 setEta("");
+                setReminder("off");
               }}
             >
-              Clear timing
+              Clear schedule
             </button>
           )}
           <span />

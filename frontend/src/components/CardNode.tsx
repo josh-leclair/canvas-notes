@@ -41,11 +41,8 @@ import SideHandles from "./SideHandles";
 import SpotifyAttachment from "./SpotifyAttachment";
 import YouTubeAttachment from "./YouTubeAttachment";
 import FloatingCardMenu from "./FloatingCardMenu";
-import CardTimingEditor, {
-  dueLabel,
-  etaLabel,
-  timingTone,
-} from "./CardTimingEditor";
+import CardTimingEditor from "./CardTimingEditor";
+import CardTimeTether from "./CardTimeTether";
 import { CARD_OVERVIEW_ZOOM } from "../lib/canvasBounds";
 import "./cardNode.css";
 
@@ -523,6 +520,7 @@ function CardNodeImpl({ id, data, selected }: NodeProps<CardNodeType>) {
   const editOnMount = useCanvasStore((s) => s.editOnMount);
   const clearEditOnMount = useCanvasStore((s) => s.clearEditOnMount);
   const updateCard = useCanvasStore((s) => s.updateCard);
+  const controlCardTimer = useCanvasStore((s) => s.controlCardTimer);
   const savePlacement = useCanvasStore((s) => s.savePlacement);
   const movePlacementLayer = useCanvasStore((s) => s.movePlacementLayer);
   const setNodes = useCanvasStore((s) => s.setNodes);
@@ -701,6 +699,7 @@ function CardNodeImpl({ id, data, selected }: NodeProps<CardNodeType>) {
     card.body,
     card.due_at,
     card.eta_minutes,
+    data.timingRollup?.timedChildCount,
     data.h,
     data.parentId,
     fitToContent,
@@ -913,8 +912,13 @@ function CardNodeImpl({ id, data, selected }: NodeProps<CardNodeType>) {
   const minSize = MIN_SIZE[card.type] ?? DEFAULT_MIN;
   minSizeRef.current = minSize.height;
   const progress = taskProgress(card.body);
-  const due = dueLabel(card.due_at);
-  const eta = etaLabel(card.eta_minutes);
+  const hasTiming = Boolean(
+    card.due_at ||
+    card.eta_minutes ||
+    card.timer_started_at ||
+    card.timer_elapsed_seconds ||
+    data.timingRollup?.timedChildCount
+  );
 
   async function applyCrop(next: Crop | null) {
     setCropping(false);
@@ -1164,11 +1168,13 @@ function CardNodeImpl({ id, data, selected }: NodeProps<CardNodeType>) {
       {timingOpen && (
         <CardTimingEditor
           card={card}
+          appearance={canvasAppearance}
           onClose={() => setTimingOpen(false)}
           onSave={async (patch) => {
             await updateCard(card.id, patch);
             setTimingOpen(false);
           }}
+          onTimerAction={(action) => controlCardTimer(card.id, action)}
         />
       )}
 
@@ -1248,7 +1254,7 @@ function CardNodeImpl({ id, data, selected }: NodeProps<CardNodeType>) {
                   setTimingOpen(true);
                 }}
               >
-                {due || eta ? "Edit time tether…" : "Add time tether…"}
+                {hasTiming ? "Edit time tether…" : "Add time tether…"}
               </button>
             )}
             {/* Not gated on readOnly: the new cards are yours and this one is
@@ -1679,28 +1685,13 @@ function CardNodeImpl({ id, data, selected }: NodeProps<CardNodeType>) {
           )}
         </div>
       )}
-      {(due || eta) && (
-        <button
-          type="button"
-          className={`card-timing-pip nodrag is-${timingTone(card.due_at)}`}
-          title={
-            card.due_at
-              ? `Due ${new Date(card.due_at).toLocaleString()}${eta ? ` · ETA ${eta}` : ""}`
-              : `ETA ${eta}`
-          }
-          aria-label="Edit this card's time tether"
-          aria-disabled={readOnly}
-          onPointerDown={(event) => event.stopPropagation()}
-          onClick={(event) => {
-            event.stopPropagation();
-            if (!readOnly) setTimingOpen(true);
-          }}
-        >
-          <span className="time-tether-orbit" aria-hidden="true"><i /><b /></span>
-          {due && <span>{due}</span>}
-          {due && eta && <span className="card-timing-divider">·</span>}
-          {eta && <span>ETA {eta}</span>}
-        </button>
+      {hasTiming && (
+        <CardTimeTether
+          card={card}
+          rollup={data.timingRollup}
+          readOnly={readOnly}
+          onEdit={() => setTimingOpen(true)}
+        />
       )}
       </div>
     </>

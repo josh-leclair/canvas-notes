@@ -1,0 +1,149 @@
+.time-lens {
+  position: absolute;
+  z-index: 75;
+  top: 64px;
+  right: 14px;
+  bottom: 58px;
+  width: min(340px, calc(100vw - 28px));
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-lg);
+  background: color-mix(in srgb, var(--bg-panel) 96%, transparent);
+  color: var(--text);
+  box-shadow: var(--shadow-pop);
+  backdrop-filter: blur(10px);
+  animation: time-lens-in var(--dur-quick) var(--ease-out) backwards;
+}
+
+.time-lens > header {
+  display: grid;
+  grid-template-columns: 32px 1fr 28px;
+  align-items: center;
+  gap: 9px;
+  padding: 11px;
+  border-bottom: 1px solid var(--border);
+}
+
+.time-lens-mark {
+  display: grid;
+  place-items: center;
+  width: 29px;
+  height: 29px;
+  border-radius: 50%;
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.time-lens > header > span:nth-child(2) { display: flex; flex-direction: column; }
+.time-lens > header small { color: var(--text-muted); font-size: 9px; }
+.time-lens > header button { width: 28px; height: 28px; padding: 5px; background: transparent; }
+
+.time-lens-summary {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  border-bottom: 1px solid var(--border);
+}
+
+.time-lens-summary span {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  padding: 8px 9px;
+  color: var(--text-muted);
+  font-size: 9px;
+}
+
+.time-lens-summary span + span { border-left: 1px solid var(--border); }
+.time-lens-summary b { color: var(--text); font-size: 13px; }
+
+.time-lens-sections { flex: 1; min-height: 0; overflow-y: auto; padding: 7px; }
+.time-lens-section + .time-lens-section { margin-top: 10px; }
+
+.time-lens-section h3 {
+  display: flex;
+  justify-content: space-between;
+  margin: 0;
+  padding: 4px 5px;
+  color: var(--text-muted);
+  font-size: 9px;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+}
+
+.time-lens-section h3 span { font-variant-numeric: tabular-nums; }
+
+.time-lens-section button {
+  display: grid;
+  grid-template-columns: 5px 1fr auto;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 7px 6px;
+  border: 0;
+  background: transparent;
+  text-align: left;
+}
+
+.time-lens-section button:hover { background: var(--bg-hover); }
+.time-lens-section button:hover:not(:disabled),
+.time-lens-section button:active:not(:disabled) { transform: none; }
+.time-lens-section button > span:nth-child(2) { min-width: 0; }
+.time-lens-section button strong,
+.time-lens-section button small {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.time-lens-section button strong { font-size: 11px; }
+.time-lens-section button small { color: var(--text-muted); font-size: 9px; }
+
+.time-lens-live {
+  color: var(--accent);
+  font-size: 8px;
+  font-weight: 750;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+}
+
+.time-lens-card-state {
+  width: 5px;
+  height: 18px;
+  background: var(--accent);
+}
+
+.time-lens-section.is-overdue .time-lens-card-state { background: var(--danger); }
+.time-lens-section.is-today .time-lens-card-state { background: var(--accent); }
+.time-lens-section.is-week .time-lens-card-state { opacity: .75; }
+.time-lens-section.is-later .time-lens-card-state,
+.time-lens-section.is-estimate .time-lens-card-state { opacity: .35; }
+
+.time-lens-empty {
+  min-height: 180px;
+  display: grid;
+  place-items: center;
+  align-content: center;
+  gap: 5px;
+  color: var(--text-muted);
+  text-align: center;
+  font-size: 10px;
+}
+
+.time-lens-empty strong { color: var(--text); font-size: 12px; }
+
+/* With the lens open, urgency is visible on the actual canvas as a quiet
+   semantic edge. Untimed cards recede but remain fully interactive. */
+.react-flow__node.time-lens-untimed .card-node { opacity: .46; }
+.react-flow__node.time-lens-overdue .card-node { box-shadow: var(--shadow-lift), 0 0 0 2px var(--danger); }
+.react-flow__node.time-lens-today .card-node { box-shadow: var(--shadow-lift), 0 0 0 2px var(--accent); }
+.react-flow__node.time-lens-active .card-node { opacity: 1; }
+
+@keyframes time-lens-in {
+  from { opacity: 0; transform: translateX(10px); }
+}
+
+@media (max-width: 700px) {
+  .time-lens { left: 14px; width: auto; }
+}

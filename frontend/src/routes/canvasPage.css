@@ -14,11 +14,33 @@
 .canvas-appearance-studio {
   --canvas-font: Candara, "Trebuchet MS", sans-serif;
   --font-display: Constantia, "Palatino Linotype", serif;
+  --bg: var(--study-bg);
+  --bg-sunk: var(--study-bg-sunk);
+  --bg-panel: var(--study-bg-panel);
+  --bg-card: var(--study-bg-card);
+  --bg-hover: var(--study-bg-hover);
+  --bg-input: var(--study-bg-input);
+  --text: var(--study-text);
+  --text-muted: var(--study-text-muted);
+  --border: var(--study-border);
+  --border-strong: var(--study-border-strong);
+  --accent: var(--study-accent);
+  --accent-hover: var(--study-accent-hover);
+  --accent-text: var(--study-accent-ink);
+  --accent-soft: var(--study-accent-soft);
+  --danger: var(--study-danger);
+  --danger-text: var(--study-danger-text);
+  --danger-soft: var(--study-danger-soft);
   --canvas-dots: var(--study-canvas-dots);
   --xy-background-color: var(--study-bg);
+  --minimap-bg: var(--study-minimap-bg);
+  --minimap-mask: var(--study-minimap-mask);
+  --minimap-node: var(--study-minimap-node);
+  --minimap-node-stroke: var(--study-minimap-node-stroke);
 }
 
 .canvas-appearance-pantry {
+  color-scheme: light;
   --canvas-font: "Bookman Old Style", Bookman, Georgia, serif;
   --font-display: "Bookman Old Style", Bookman, Georgia, serif;
   /* Pantry's cream belongs on the objects, not across the entire workspace.
@@ -40,6 +62,9 @@
   --accent-hover: var(--pantry-accent-hover);
   --accent-text: var(--pantry-bg-card);
   --accent-soft: var(--pantry-accent-soft);
+  --danger: var(--palette-strawberry);
+  --danger-text: var(--pantry-bg-card);
+  --danger-soft: color-mix(in srgb, var(--palette-strawberry) 16%, transparent);
   --canvas-dots: var(--pantry-canvas-dots);
   --xy-background-color: var(--palette-plum);
   --minimap-bg: var(--pantry-minimap-bg);
@@ -64,6 +89,7 @@
 }
 
 .canvas-appearance-night_garden {
+  color-scheme: dark;
   --canvas-font: "Palatino Linotype", "Book Antiqua", Palatino, serif;
   --font-display: Constantia, "Palatino Linotype", serif;
   --bg: var(--night-bg);
@@ -80,6 +106,9 @@
   --accent-hover: var(--night-accent-hover);
   --accent-text: var(--night-bg-sunk);
   --accent-soft: var(--night-accent-soft);
+  --danger: var(--palette-flare);
+  --danger-text: var(--night-text);
+  --danger-soft: color-mix(in srgb, var(--palette-flare) 18%, transparent);
   --canvas-dots: var(--night-canvas-dots);
   --xy-background-color: var(--night-bg);
   --minimap-bg: var(--night-minimap-bg);
@@ -101,6 +130,12 @@
   --cardtype-checklist: var(--palette-flare);
   --cardtype-table: var(--palette-sky);
   --cardtype-column: var(--palette-orchid);
+}
+
+.canvas-toolbar .tool.is-active {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  color: var(--accent);
 }
 
 /* ---- toolbar: floating pills, not a chrome bar -------------------------- */

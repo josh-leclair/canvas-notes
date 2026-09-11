@@ -104,6 +104,8 @@ export interface CardNodeData extends Record<string, unknown> {
   /** This card folds its own children away. */
   isHub?: boolean;
   childCount?: number;
+  /** Direct-child timing, summarized by the canvas without changing cards. */
+  timingRollup?: TimingRollup | null;
   /** Placement id of the column this card sits in, if any. */
   parentId?: string | null;
   sort?: number;
@@ -115,6 +117,16 @@ export interface CardNodeData extends Record<string, unknown> {
 }
 
 export type CardNode = Node<CardNodeData, "card">;
+
+export interface TimingRollup {
+  childCount: number;
+  timedChildCount: number;
+  etaMinutes: number;
+  elapsedSeconds: number;
+  runningStartedAt: string[];
+  dueDates: string[];
+  nextDueAt: string | null;
+}
 
 export type LayerMove = "front" | "forward" | "backward" | "back";
 export interface MenuPoint {
@@ -281,7 +293,12 @@ interface CanvasState {
       payload?: Record<string, unknown>;
       due_at?: string | null;
       eta_minutes?: number | null;
+      reminder_minutes?: number | null;
     }
+  ) => Promise<void>;
+  controlCardTimer: (
+    cardId: string,
+    action: "start" | "pause" | "reset"
   ) => Promise<void>;
   /** Replace a card's data everywhere from a server response (uploads, unfurl polls). */
   refreshCardFromServer: (cardId: string, card: Card) => Promise<void>;
@@ -1284,6 +1301,21 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
         await get().loadReveal(reveal.root_card_id, revealAnchor);
       }
     }
+  },
+
+  controlCardTimer: async (cardId, action) => {
+    const updated = await api.post<Card>(`/api/cards/${cardId}/timer`, { action });
+    set({
+      nodes: get().nodes.map((node) =>
+        node.data.card.id === cardId
+          ? { ...node, data: { ...node.data, card: updated } }
+          : node
+      ),
+      inbox: get().inbox.map((card) => (card.id === cardId ? updated : card)),
+      focusShelf: get().focusShelf.map((item) =>
+        item.card.id === cardId ? { ...item, card: updated } : item
+      ),
+    });
   },
 
   refreshCardFromServer: async (cardId, card) => {

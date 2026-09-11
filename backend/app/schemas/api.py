@@ -105,6 +105,9 @@ class CardOut(BaseModel):
     payload: dict[str, Any]
     due_at: datetime | None = None
     eta_minutes: int | None = None
+    timer_started_at: datetime | None = None
+    timer_elapsed_seconds: int = 0
+    reminder_minutes: int | None = None
     created_at: datetime
     updated_at: datetime
     inbox_canvas_id: uuid.UUID | None = None
@@ -164,6 +167,7 @@ class CardCreateIn(BaseModel):
     payload: dict[str, Any] = Field(default_factory=dict)
     due_at: datetime | None = None
     eta_minutes: int | None = Field(default=None, ge=1)
+    reminder_minutes: int | None = Field(default=None, ge=0)
     canvas_id: uuid.UUID | None = None
     inbox_canvas_id: uuid.UUID | None = None
     x: float | None = None
@@ -205,10 +209,15 @@ class CardPatchIn(BaseModel):
     payload: dict[str, Any] | None = None
     due_at: datetime | None = None
     eta_minutes: int | None = Field(default=None, ge=1)
+    reminder_minutes: int | None = Field(default=None, ge=0)
     # Type conversion: a text card whose body turns out to be a URL becomes a
     # link/youtube card.
     type: CardType | None = None
     inbox_canvas_id: uuid.UUID | None = None
+
+
+class CardTimerIn(BaseModel):
+    action: Literal["start", "pause", "reset"]
 
 
 class ZoneCreateIn(BaseModel):

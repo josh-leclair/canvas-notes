@@ -50,6 +50,7 @@ from app.schemas.api import (
     CardCreateOut,
     CardOut,
     CardPatchIn,
+    CardTimerIn,
     CardPlacementInfo,
     ComposeIn,
     ComposeOut,
@@ -215,6 +216,7 @@ def create_card(
         payload=body.payload,
         due_at=body.due_at,
         eta_minutes=body.eta_minutes,
+        reminder_minutes=body.reminder_minutes,
         inbox_canvas_id=inbox_canvas.id if inbox_canvas is not None else None,
     )
     # A checklist or a table carries its structure in the payload; the body is
@@ -256,7 +258,14 @@ def patch_card(
         if destination is not None:
             destination = get_editable_canvas(db, user, destination).id
         card.inbox_canvas_id = destination
-    for key in ("title", "body", "payload", "due_at", "eta_minutes"):
+    for key in (
+        "title",
+        "body",
+        "payload",
+        "due_at",
+        "eta_minutes",
+        "reminder_minutes",
+    ):
         if key in fields:
             setattr(card, key, fields[key])
     if fields.get("type") is not None:
@@ -275,6 +284,34 @@ def patch_card(
         enqueue_embed_if_needed(db, card)
     if "body" in fields:
         sync_card_references(db, user, card)
+    return CardOut.model_validate(card).model_copy(
+        update={"board": resolve_boards(db, user, [card]).get(card.id)}
+    )
+
+
+@router.post("/cards/{card_id}/timer", response_model=CardOut)
+def control_card_timer(
+    card_id: uuid.UUID,
+    body: CardTimerIn,
+    user: User = Depends(get_current_user),
+    db: DbSession = Depends(get_db),
+):
+    """Start, pause, or reset a persisted focus timer atomically."""
+    card = get_editable_card(db, user, card_id)
+    now = datetime.now(timezone.utc)
+    if body.action == "start":
+        if card.timer_started_at is None:
+            card.timer_started_at = now
+    elif body.action == "pause":
+        if card.timer_started_at is not None:
+            running = max(0, int((now - card.timer_started_at).total_seconds()))
+            card.timer_elapsed_seconds += running
+            card.timer_started_at = None
+    else:
+        card.timer_started_at = None
+        card.timer_elapsed_seconds = 0
+    card.updated_at = now
+    db.flush()
     return CardOut.model_validate(card).model_copy(
         update={"board": resolve_boards(db, user, [card]).get(card.id)}
     )

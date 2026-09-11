@@ -1,3 +1,8 @@
+import uuid
+from datetime import datetime, timedelta, timezone
+
+from app.db import SessionLocal
+from app.models import Card
 from tests.conftest import requires_db
 
 pytestmark = requires_db
@@ -42,6 +47,48 @@ def test_card_create_with_canvas_places_in_one_transaction(client, admin):
     detail = client.get(f"/api/canvases/{canvas['id']}").json()
     assert len(detail["placements"]) == 1
     assert detail["placements"][0]["card"]["body"] == "hi"
+
+
+def test_card_timing_and_focus_timer_are_persistent(client, admin):
+    due = datetime.now(timezone.utc) + timedelta(days=1)
+    created = client.post(
+        "/api/cards",
+        json={
+            "title": "Timed work",
+            "due_at": due.isoformat(),
+            "eta_minutes": 30,
+            "reminder_minutes": 15,
+        },
+    )
+    assert created.status_code == 201, created.text
+    card = created.json()["card"]
+    assert card["eta_minutes"] == 30
+    assert card["reminder_minutes"] == 15
+    assert card["timer_elapsed_seconds"] == 0
+
+    started = client.post(
+        f"/api/cards/{card['id']}/timer", json={"action": "start"}
+    )
+    assert started.status_code == 200, started.text
+    assert started.json()["timer_started_at"] is not None
+
+    with SessionLocal() as db:
+        row = db.get(Card, uuid.UUID(card["id"]))
+        row.timer_started_at = datetime.now(timezone.utc) - timedelta(seconds=75)
+        db.commit()
+
+    paused = client.post(
+        f"/api/cards/{card['id']}/timer", json={"action": "pause"}
+    )
+    assert paused.status_code == 200, paused.text
+    assert paused.json()["timer_started_at"] is None
+    assert 74 <= paused.json()["timer_elapsed_seconds"] < 90
+
+    reset = client.post(
+        f"/api/cards/{card['id']}/timer", json={"action": "reset"}
+    )
+    assert reset.status_code == 200, reset.text
+    assert reset.json()["timer_elapsed_seconds"] == 0
 
 
 def test_card_create_requires_position_with_canvas(client, admin):

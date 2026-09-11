@@ -166,6 +166,11 @@ class Card(Base):
     )
     due_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     eta_minutes: Mapped[int | None] = mapped_column(Integer)
+    timer_started_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    timer_elapsed_seconds: Mapped[int] = mapped_column(
+        Integer, nullable=False, server_default=text("0")
+    )
+    reminder_minutes: Mapped[int | None] = mapped_column(Integer)
     created_at: Mapped[datetime] = now_col()
     updated_at: Mapped[datetime] = now_col()
 

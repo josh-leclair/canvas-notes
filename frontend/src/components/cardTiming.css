@@ -1,30 +1,35 @@
 .timing-editor-backdrop {
   position: fixed;
   inset: 0;
-  z-index: 7000;
+  z-index: 9300;
   display: grid;
   place-items: center;
   padding: 20px;
-  background: color-mix(in srgb, #07111f 48%, transparent);
-  backdrop-filter: blur(4px);
+  background: color-mix(in srgb, var(--bg) 58%, transparent);
+  color: var(--text);
+  font-family: var(--canvas-font, Candara, "Trebuchet MS", sans-serif);
+  backdrop-filter: blur(3px);
 }
 
 .timing-editor {
-  width: min(430px, calc(100vw - 28px));
+  width: min(460px, calc(100vw - 28px));
+  max-height: min(760px, 92vh);
+  overflow-y: auto;
   padding: 18px;
-  border: 1px solid var(--border);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-lg);
   background: var(--bg-panel);
   color: var(--text);
-  box-shadow: var(--shadow-lift);
+  box-shadow: var(--shadow-pop);
   display: flex;
   flex-direction: column;
-  gap: 15px;
-  animation: timing-arrive 180ms var(--ease-out) backwards;
+  gap: 14px;
+  animation: timing-arrive var(--dur-quick) var(--ease-out) backwards;
 }
 
 .timing-editor header {
   display: grid;
-  grid-template-columns: 42px 1fr 30px;
+  grid-template-columns: 38px 1fr 30px;
   align-items: center;
   gap: 11px;
 }
@@ -35,14 +40,9 @@
   min-width: 0;
 }
 
-.timing-editor header strong {
-  font-size: 18px;
-}
-
+.timing-editor header strong { font-size: 18px; }
 .timing-editor header small,
-.timing-hint {
-  color: var(--text-muted);
-}
+.timing-hint { color: var(--text-muted); }
 
 .timing-editor header small {
   overflow: hidden;
@@ -50,92 +50,70 @@
   white-space: nowrap;
 }
 
-.timing-editor-orbit,
-.time-tether-orbit {
-  position: relative;
-  display: inline-grid;
+/* A clock, not abstract radar. Its face is static; motion belongs to actual
+   recorded progress below and therefore always means something. */
+.timing-editor-mark {
+  width: 34px;
+  height: 34px;
+  display: grid;
   place-items: center;
-  flex: 0 0 auto;
+  border: 1px solid var(--border);
   border-radius: 50%;
-  border: 1px solid color-mix(in srgb, var(--accent) 50%, transparent);
-  background: color-mix(in srgb, var(--accent) 12%, var(--bg-card));
-}
-
-.timing-editor-orbit {
-  width: 38px;
-  height: 38px;
-}
-
-.timing-editor-orbit::after,
-.time-tether-orbit::after {
-  content: "";
-  width: 4px;
-  height: 4px;
-  border-radius: 50%;
-  background: var(--accent);
-  box-shadow: 0 0 8px var(--accent);
-}
-
-.timing-editor-orbit i,
-.timing-editor-orbit b,
-.time-tether-orbit i,
-.time-tether-orbit b {
-  position: absolute;
-  inset: 3px;
-  border-radius: 50%;
-  border-top: 1px solid var(--accent);
-  border-right: 1px solid transparent;
-  animation: tether-sweep 2.8s linear infinite;
-}
-
-.timing-editor-orbit b,
-.time-tether-orbit b {
-  inset: 7px;
-  border-top-color: transparent;
-  border-right-color: var(--accent);
-  animation-direction: reverse;
-  animation-duration: 2s;
+  background: var(--bg-hover);
+  color: var(--accent);
 }
 
 .timing-editor label {
   display: flex;
   flex-direction: column;
   gap: 6px;
-  font-size: 12px;
+  color: var(--text-muted);
+  font-size: 10px;
   font-weight: 700;
+  letter-spacing: .04em;
+  text-transform: uppercase;
 }
 
 .timing-editor input,
 .timing-editor select {
   min-width: 0;
+  width: 100%;
   padding: 9px 10px;
   border: 1px solid var(--border);
-  border-radius: 7px;
+  border-radius: var(--radius-sm);
   background: var(--bg-input);
   color: var(--text);
   font: inherit;
+  text-transform: none;
 }
+
+.timing-editor input:focus,
+.timing-editor select:focus {
+  outline: 2px solid var(--accent-soft);
+  border-color: var(--accent);
+}
+
+.timing-editor input:disabled,
+.timing-editor select:disabled { opacity: .5; }
 
 .timing-quick-days {
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
-  margin-top: -8px;
+  margin-top: -7px;
 }
 
 .timing-quick-days button,
 .timing-editor footer button,
-.timing-close {
+.timing-close,
+.timing-session button {
   border: 1px solid var(--border);
-  border-radius: 7px;
+  border-radius: var(--radius-sm);
   background: var(--bg-card);
   color: var(--text);
 }
 
-.timing-quick-days button {
-  padding: 5px 8px;
-  font-size: 11px;
-}
+.timing-quick-days button { padding: 5px 8px; font-size: 11px; }
 
 .timing-eta-row {
   display: grid;
@@ -146,13 +124,65 @@
 .timing-hint,
 .timing-error {
   margin: -5px 0 0;
-  font-size: 12px;
+  font-size: 11px;
   line-height: 1.45;
 }
 
 .timing-error,
-.timing-clear {
-  color: var(--danger) !important;
+.timing-clear { color: var(--danger) !important; }
+
+.timing-session {
+  position: relative;
+  overflow: hidden;
+  min-height: 58px;
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  align-items: center;
+  gap: 7px;
+  padding: 13px 10px 9px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--bg-card);
+}
+
+.timing-session-track {
+  position: absolute;
+  inset: 0 0 auto;
+  height: 3px;
+  background: var(--bg-sunk);
+}
+
+.timing-session-track i {
+  display: block;
+  height: 100%;
+  background: var(--accent);
+  transition: width 500ms linear;
+}
+
+.timing-session.is-running .timing-session-track i {
+  box-shadow: 0 0 8px color-mix(in srgb, var(--accent) 55%, transparent);
+}
+
+.timing-session > span:nth-child(2) {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.timing-session small { color: var(--text-muted); font-size: 10px; }
+.timing-session strong { font-variant-numeric: tabular-nums; }
+
+.timing-session button {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 7px 9px;
+}
+
+.timing-session button:not(.timing-reset) {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: var(--accent-text);
 }
 
 .timing-editor footer {
@@ -162,98 +192,156 @@
   padding-top: 2px;
 }
 
-.timing-editor footer span {
-  flex: 1;
-}
-
-.timing-editor footer button {
-  padding: 8px 11px;
-}
+.timing-editor footer span { flex: 1; }
+.timing-editor footer button { padding: 8px 11px; }
 
 .timing-editor footer .primary {
   border-color: var(--accent);
   background: var(--accent);
-  color: var(--accent-ink, white);
+  color: var(--accent-text);
 }
 
-.timing-close {
-  width: 30px;
-  height: 30px;
-  padding: 6px;
-}
+.timing-close { width: 30px; height: 30px; padding: 6px; }
 
-.card-timing-pip {
-  align-self: flex-start;
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  max-width: calc(100% - 16px);
+/* The card tether is a progress rail. The marker moves only when the focus
+   timer advances, so its animation is literal rather than decorative. */
+.card-time-tether {
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
   margin: 0 8px 7px;
-  padding: 3px 7px 3px 4px;
-  border: 1px solid color-mix(in srgb, var(--accent) 35%, var(--border));
-  border-radius: 999px;
-  background: color-mix(in srgb, var(--bg-card) 84%, var(--accent));
+  border: 1px solid color-mix(in srgb, var(--border) 72%, transparent);
+  border-radius: var(--radius-sm);
+  background: color-mix(in srgb, var(--bg-card) 90%, var(--accent));
   color: var(--card-fg);
-  font-size: 10.5px;
-  line-height: 1;
+  overflow: hidden;
+}
+
+.card-time-own { display: flex; min-width: 0; }
+
+.card-time-summary {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 5px 7px;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  text-align: left;
+}
+
+button.card-time-summary:hover:not(:disabled),
+button.card-time-summary:active:not(:disabled) {
+  transform: none;
+  border-color: transparent;
+  background: transparent;
+}
+
+.time-progress {
+  position: relative;
+  display: block;
+  width: 100%;
+  height: 2px;
+  border-radius: 99px;
+  background: color-mix(in srgb, var(--card-muted) 22%, transparent);
+}
+
+.time-progress-fill {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--accent);
+  transition: width 500ms linear;
+}
+
+.time-progress-marker {
+  position: absolute;
+  top: 50%;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--accent);
+  transform: translate(-50%, -50%);
+  transition: left 500ms linear;
+}
+
+.card-time-tether.is-running .time-progress-marker {
+  animation: time-marker-pulse 1.6s ease-in-out infinite;
+}
+
+.time-summary-copy {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+  min-width: 0;
+  font-size: 10px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
-.card-timing-pip:hover {
-  border-color: var(--accent);
-  background: color-mix(in srgb, var(--bg-card) 72%, var(--accent));
+.time-summary-copy b { font-weight: 700; }
+.time-summary-copy .is-over { color: var(--danger); }
+
+.card-time-toggle {
+  flex: 0 0 28px;
+  display: grid;
+  place-items: center;
+  width: 28px;
+  padding: 0;
+  border: 0;
+  border-left: 1px solid var(--border);
+  background: color-mix(in srgb, var(--bg-hover) 70%, transparent);
+  color: var(--accent);
 }
 
-.card-timing-pip.is-soon {
-  --accent: var(--hue-maple, #d79535);
+button.card-time-toggle:hover:not(:disabled),
+button.card-time-toggle:active:not(:disabled) {
+  transform: none;
+  border-color: var(--border);
+  background: var(--bg-hover);
 }
 
-.card-timing-pip.is-overdue {
-  --accent: var(--danger);
-}
-
-.card-timing-pip.is-overdue .time-tether-orbit {
-  animation: tether-pulse 1.7s ease-in-out infinite;
-}
-
-.time-tether-orbit {
-  width: 17px;
-  height: 17px;
-}
-
-.time-tether-orbit i,
-.time-tether-orbit b {
-  inset: 2px;
-}
-
-.time-tether-orbit b {
-  inset: 4px;
-}
-
-.card-timing-divider {
+.child-time-rollup {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+  padding: 4px 7px;
+  border: 0;
+  border-top: 1px solid var(--border);
+  background: color-mix(in srgb, var(--bg-hover) 58%, transparent);
   color: var(--card-muted);
+  font-size: 9px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-@keyframes tether-sweep {
-  to { transform: rotate(360deg); }
-}
+.card-time-tether > .child-time-rollup:first-child { border-top: 0; }
 
-@keyframes tether-pulse {
-  50% { box-shadow: 0 0 0 4px color-mix(in srgb, var(--danger) 16%, transparent); }
+.child-time-rollup b { color: var(--danger); }
+.child-time-rollup .is-over { color: var(--danger); }
+.card-time-tether.is-soon { border-color: color-mix(in srgb, var(--accent) 60%, var(--border)); }
+.card-time-tether.is-overdue { border-color: color-mix(in srgb, var(--danger) 65%, var(--border)); }
+.card-time-tether.is-overdue .time-summary-copy b { color: var(--danger); }
+
+@keyframes time-marker-pulse {
+  50% { box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent) 18%, transparent); }
 }
 
 @keyframes timing-arrive {
-  from { opacity: 0; transform: translateY(8px) scale(0.98); }
+  from { opacity: 0; transform: translateY(7px) scale(.985); }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .timing-editor-orbit i,
-  .timing-editor-orbit b,
-  .time-tether-orbit i,
-  .time-tether-orbit b,
-  .card-timing-pip.is-overdue .time-tether-orbit {
-    animation: none;
-  }
+  .card-time-tether.is-running .time-progress-marker { animation: none; }
+}
+
+@media (max-width: 520px) {
+  .timing-eta-row { grid-template-columns: 1fr 105px; }
+  .timing-session { grid-template-columns: 1fr auto; }
+  .timing-session .timing-reset { grid-column: 1 / -1; justify-content: center; }
 }

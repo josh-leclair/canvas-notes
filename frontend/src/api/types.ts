@@ -35,6 +35,9 @@ export interface Card {
   payload: Record<string, unknown>;
   due_at: string | null;
   eta_minutes: number | null;
+  timer_started_at: string | null;
+  timer_elapsed_seconds: number;
+  reminder_minutes: number | null;
   created_at: string;
   updated_at: string;
   inbox_canvas_id: string | null;

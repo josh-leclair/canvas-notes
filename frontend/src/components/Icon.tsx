@@ -35,7 +35,8 @@ export type IconName =
   | "document"
   | "edit"
   | "textStyle"
-  | "check";
+  | "check"
+  | "clock";
 
 /* Most of the set is drawn as strokes on a 24-unit grid. A few come from
  * elsewhere and are solid shapes on a grid of their own, so they bring their
@@ -59,6 +60,12 @@ const PATHS: Record<IconName, JSX.Element> = {
     </>
   ),
   check: <path d="M4.5 12.5 9.5 17.5 19.5 6.5" />,
+  clock: (
+    <>
+      <circle cx="12" cy="12" r="8" />
+      <path d="M12 7.5V12l3.2 2" />
+    </>
+  ),
   more: (
     <>
       <circle cx="5" cy="12" r="1.6" fill="currentColor" stroke="none" />
