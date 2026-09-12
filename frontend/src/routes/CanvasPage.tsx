@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import { Link, useParams, useSearchParams } from "react-router-dom";
 import {
   applyNodeChanges,
@@ -74,6 +74,7 @@ import { spreadExpandedChildren } from "../store/expandedChildLayout";
 import Icon, { type IconName } from "../components/Icon";
 import { cycleTheme } from "../theme";
 import { timeLensBucket } from "../lib/cardTiming";
+import { applyCanvasSurfaceAppearance } from "../lib/canvasAppearance";
 import "./canvasPage.css";
 
 const nodeTypes = {
@@ -318,6 +319,10 @@ function CanvasInner({ canvasId }: { canvasId: string }) {
     x: null,
     y: null,
   });
+
+  useLayoutEffect(() => {
+    applyCanvasSurfaceAppearance(canvasAppearance);
+  }, [canvasAppearance]);
 
   useEffect(() => {
     loadCanvas(canvasId);

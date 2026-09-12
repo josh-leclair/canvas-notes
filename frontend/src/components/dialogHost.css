@@ -3,7 +3,7 @@
   inset: 0;
   /* Above every other overlay, including the lightbox and share dialog. */
   z-index: 80;
-  background: rgba(0, 0, 0, 0.45);
+  background: var(--overlay, rgba(0, 0, 0, 0.45));
   display: flex;
   align-items: flex-start;
   justify-content: center;
@@ -23,14 +23,17 @@
   background: var(--bg-panel);
   border: 1px solid var(--border-strong);
   border-radius: 10px;
-  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4);
+  box-shadow: var(--shadow-pop, 0 12px 40px rgba(0, 0, 0, 0.4));
   padding: 18px;
   display: flex;
   flex-direction: column;
   gap: 12px;
+  color: var(--text);
+  font-family: var(--canvas-font, var(--font));
 }
 
 .dialog-title {
+  font-family: var(--font-display);
   font-weight: 600;
   font-size: 15px;
 }

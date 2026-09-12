@@ -1,4 +1,4 @@
-import { useEffect, useState, type FormEvent } from "react";
+import { useEffect, useLayoutEffect, useState, type FormEvent } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { api } from "../api/client";
 import type { CanvasAppearance, CanvasSummary, Invite } from "../api/types";
@@ -10,9 +10,12 @@ import {
   initialCanvasSize,
 } from "../lib/canvasBounds";
 import {
+  applyCanvasSurfaceAppearance,
   normaliseCanvasAppearance,
   readCanvasAppearance,
+  readCanvasListAppearance,
   rememberCanvasAppearance,
+  rememberCanvasListAppearance,
 } from "../lib/canvasAppearance";
 import { confirmDialog, promptDialog } from "../store/dialogStore";
 import { cycleTheme } from "../theme";
@@ -39,7 +42,12 @@ export default function CanvasList() {
   const navigate = useNavigate();
   const [canvases, setCanvases] = useState<CanvasSummary[]>([]);
   const [name, setName] = useState("");
-  const [appearance, setAppearance] = useState<CanvasAppearance>("studio");
+  const [listAppearance, setListAppearance] = useState<CanvasAppearance>(() =>
+    readCanvasListAppearance()
+  );
+  const [appearance, setAppearance] = useState<CanvasAppearance>(() =>
+    readCanvasListAppearance()
+  );
   const [invites, setInvites] = useState<Invite[]>([]);
   const [showInvites, setShowInvites] = useState(false);
   const [sharing, setSharing] = useState<CanvasSummary | null>(null);
@@ -55,6 +63,19 @@ export default function CanvasList() {
   useEffect(() => {
     api.get<CanvasSummary[]>("/api/canvases").then(setCanvases);
   }, []);
+
+  useLayoutEffect(() => {
+    applyCanvasSurfaceAppearance(listAppearance, "list");
+    rememberCanvasListAppearance(listAppearance);
+  }, [listAppearance]);
+
+  function chooseListAppearance(next: CanvasAppearance) {
+    setListAppearance(next);
+    // A newly-created canvas begins in the mood currently framing the list,
+    // unless the person deliberately picks another one in the create panel.
+    setAppearance(next);
+    applyCanvasSurfaceAppearance(next, "list");
+  }
 
   async function createCanvas(e: FormEvent) {
     e.preventDefault();
@@ -156,7 +177,7 @@ export default function CanvasList() {
   }
 
   return (
-    <div className="list-page">
+    <div className={`list-page canvas-appearance-${listAppearance}`}>
       <header className="list-header">
         <h1>
           <Logo size={26} />
@@ -165,7 +186,37 @@ export default function CanvasList() {
         <Link to="/settings">
           <button className="ghost">Settings</button>
         </Link>
-        <button className="ghost" onClick={() => cycleTheme()} title="Switch theme">
+        <details className="list-appearance-picker">
+          <summary title="Change the canvas list appearance">
+            <span className={`list-appearance-dot appearance-${listAppearance}`} />
+            {APPEARANCES.find((option) => option.id === listAppearance)?.name}
+          </summary>
+          <div className="list-appearance-menu">
+            {APPEARANCES.map((option) => (
+              <button
+                key={option.id}
+                type="button"
+                className={listAppearance === option.id ? "is-active" : ""}
+                onClick={(event) => {
+                  chooseListAppearance(option.id);
+                  event.currentTarget.closest("details")?.removeAttribute("open");
+                }}
+              >
+                <span className={`list-appearance-dot appearance-${option.id}`} />
+                <span>
+                  <strong>{option.name}</strong>
+                  <small>{option.note}</small>
+                </span>
+              </button>
+            ))}
+          </div>
+        </details>
+        <button
+          className="ghost"
+          onClick={() => cycleTheme()}
+          title="Switch Studio between Paper and Ink"
+          aria-label="Switch Studio between Paper and Ink"
+        >
           ◐
         </button>
         {user?.is_admin && (

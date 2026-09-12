@@ -75,7 +75,10 @@ function Shell() {
 export default function App() {
   return (
     <AuthProvider>
-      <div className={PALETTE_STUDY ? "app-palette-study" : undefined}>
+      <div
+        id="app-shell"
+        className={PALETTE_STUDY ? "app-palette-study" : undefined}
+      >
         <Shell />
         <DialogHost />
       </div>

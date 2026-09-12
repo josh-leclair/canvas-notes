@@ -11,10 +11,12 @@
   font-family: var(--canvas-font, Candara, "Trebuchet MS", sans-serif);
 }
 
-.canvas-appearance-studio {
+.canvas-appearance-studio,
+.app-palette-study.canvas-appearance-studio {
   --studio-fill-strength: 18%;
   --studio-edge-strength: 42%;
   --canvas-font: Candara, "Trebuchet MS", sans-serif;
+  --font: var(--canvas-font);
   --font-display: Constantia, "Palatino Linotype", serif;
   --bg: var(--study-bg);
   --bg-sunk: var(--study-bg-sunk);
@@ -61,16 +63,19 @@
   --fill-ink-rust: var(--study-text);
 }
 
-.theme-dark .canvas-appearance-studio {
+.theme-dark .canvas-appearance-studio,
+.theme-dark.app-palette-study.canvas-appearance-studio {
   /* Light pigments close the gap against pale text quickly on Ink. Keep them
      present as a tint, with their stronger hue carried by the card accent. */
   --studio-fill-strength: 8%;
   --studio-edge-strength: 30%;
 }
 
-.canvas-appearance-pantry {
+.canvas-appearance-pantry,
+.app-palette-study.canvas-appearance-pantry {
   color-scheme: light;
   --canvas-font: "Bookman Old Style", Bookman, Georgia, serif;
+  --font: var(--canvas-font);
   --font-display: "Bookman Old Style", Bookman, Georgia, serif;
   /* Pantry's cream belongs on the objects, not across the entire workspace.
      The dark plum field is what gives the paper cards and warm dot grid room
@@ -94,6 +99,7 @@
   --danger: var(--palette-strawberry);
   --danger-text: var(--pantry-bg-card);
   --danger-soft: color-mix(in srgb, var(--palette-strawberry) 16%, transparent);
+  --overlay: rgba(30, 23, 29, 0.68);
   --canvas-dots: var(--pantry-canvas-dots);
   --xy-background-color: var(--palette-plum);
   --minimap-bg: var(--pantry-minimap-bg);
@@ -117,10 +123,12 @@
   --cardtype-column: var(--palette-strawberry);
 }
 
-.canvas-appearance-night_garden {
+.canvas-appearance-night_garden,
+.app-palette-study.canvas-appearance-night_garden {
   --night-fill-strength: 24%;
   color-scheme: dark;
   --canvas-font: "Palatino Linotype", "Book Antiqua", Palatino, serif;
+  --font: var(--canvas-font);
   --font-display: Constantia, "Palatino Linotype", serif;
   --bg: var(--night-bg);
   --bg-sunk: var(--night-bg-sunk);
@@ -139,6 +147,7 @@
   --danger: var(--palette-flare);
   --danger-text: var(--night-text);
   --danger-soft: color-mix(in srgb, var(--palette-flare) 18%, transparent);
+  --overlay: rgba(4, 8, 18, 0.72);
   --canvas-dots: var(--night-canvas-dots);
   --xy-background-color: var(--night-bg);
   --minimap-bg: var(--night-minimap-bg);
@@ -189,6 +198,34 @@
   --fill-ink-navy: var(--night-text);
   --fill-ink-mint: var(--night-text);
   --fill-ink-aqua: var(--night-text);
+}
+
+/* The list is a reading/navigation surface rather than a mood-board stage.
+   Pantry keeps its warm paper and poppy accents here without placing brown
+   interface copy directly on the plum canvas field. */
+.canvas-list-surface.canvas-appearance-pantry,
+.app-palette-study.canvas-list-surface.canvas-appearance-pantry {
+  --bg: var(--pantry-bg);
+  --bg-sunk: var(--pantry-bg-sunk);
+  --xy-background-color: var(--pantry-bg);
+}
+
+.app-palette-study:is(
+    .canvas-appearance-studio,
+    .canvas-appearance-pantry,
+    .canvas-appearance-night_garden
+  ) {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--canvas-font, var(--font));
+}
+
+.app-palette-study:is(
+    .canvas-appearance-studio,
+    .canvas-appearance-pantry,
+    .canvas-appearance-night_garden
+  ) :is(h1, h2, h3, .brand-word) {
+  font-family: var(--font-display);
 }
 
 @media (prefers-contrast: more) {
