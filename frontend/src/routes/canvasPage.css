@@ -12,6 +12,8 @@
 }
 
 .canvas-appearance-studio {
+  --studio-fill-strength: 18%;
+  --studio-edge-strength: 42%;
   --canvas-font: Candara, "Trebuchet MS", sans-serif;
   --font-display: Constantia, "Palatino Linotype", serif;
   --bg: var(--study-bg);
@@ -37,6 +39,33 @@
   --minimap-mask: var(--study-minimap-mask);
   --minimap-node: var(--study-minimap-node);
   --minimap-node-stroke: var(--study-minimap-node-stroke);
+  /* Studio is the restrained, work-oriented appearance. A chosen colour is
+     a quiet paper tint; its vivid counterpart remains available as an accent. */
+  --fill-avocado: color-mix(in srgb, var(--palette-avocado) var(--studio-fill-strength), var(--study-bg-card));
+  --fill-plum: color-mix(in srgb, var(--palette-plum) var(--studio-fill-strength), var(--study-bg-card));
+  --fill-linen: color-mix(in srgb, var(--palette-linen) var(--studio-fill-strength), var(--study-bg-card));
+  --fill-cement: color-mix(in srgb, var(--palette-cement) var(--studio-fill-strength), var(--study-bg-card));
+  --fill-maple: color-mix(in srgb, var(--palette-maple) var(--studio-fill-strength), var(--study-bg-card));
+  --fill-rust: color-mix(in srgb, var(--palette-rust) var(--studio-fill-strength), var(--study-bg-card));
+  --fill-edge-avocado: color-mix(in srgb, var(--palette-avocado) var(--studio-edge-strength), var(--study-bg-card));
+  --fill-edge-plum: color-mix(in srgb, var(--palette-plum) var(--studio-edge-strength), var(--study-bg-card));
+  --fill-edge-linen: color-mix(in srgb, var(--palette-linen) var(--studio-edge-strength), var(--study-bg-card));
+  --fill-edge-cement: color-mix(in srgb, var(--palette-cement) var(--studio-edge-strength), var(--study-bg-card));
+  --fill-edge-maple: color-mix(in srgb, var(--palette-maple) var(--studio-edge-strength), var(--study-bg-card));
+  --fill-edge-rust: color-mix(in srgb, var(--palette-rust) var(--studio-edge-strength), var(--study-bg-card));
+  --fill-ink-avocado: var(--study-text);
+  --fill-ink-plum: var(--study-text);
+  --fill-ink-linen: var(--study-text);
+  --fill-ink-cement: var(--study-text);
+  --fill-ink-maple: var(--study-text);
+  --fill-ink-rust: var(--study-text);
+}
+
+.theme-dark .canvas-appearance-studio {
+  /* Light pigments close the gap against pale text quickly on Ink. Keep them
+     present as a tint, with their stronger hue carried by the card accent. */
+  --studio-fill-strength: 8%;
+  --studio-edge-strength: 30%;
 }
 
 .canvas-appearance-pantry {
@@ -89,6 +118,7 @@
 }
 
 .canvas-appearance-night_garden {
+  --night-fill-strength: 24%;
   color-scheme: dark;
   --canvas-font: "Palatino Linotype", "Book Antiqua", Palatino, serif;
   --font-display: Constantia, "Palatino Linotype", serif;
@@ -135,14 +165,14 @@
      settle large reading surfaces into the canvas. Every softened fill uses
      the theme's high-contrast foreground; the brightest pair remains near
      7:1 instead of merely clearing the 4.5:1 minimum. */
-  --fill-flare: color-mix(in srgb, var(--palette-flare) 24%, var(--night-bg-card));
-  --fill-sky: color-mix(in srgb, var(--palette-sky) 24%, var(--night-bg-card));
-  --fill-orchid: color-mix(in srgb, var(--palette-orchid) 24%, var(--night-bg-card));
-  --fill-coral: color-mix(in srgb, var(--palette-coral) 24%, var(--night-bg-card));
-  --fill-sprout: color-mix(in srgb, var(--palette-sprout) 24%, var(--night-bg-card));
-  --fill-navy: color-mix(in srgb, var(--palette-navy) 24%, var(--night-bg-card));
-  --fill-mint: color-mix(in srgb, var(--palette-mint) 24%, var(--night-bg-card));
-  --fill-aqua: color-mix(in srgb, var(--palette-aqua) 24%, var(--night-bg-card));
+  --fill-flare: color-mix(in srgb, var(--palette-flare) var(--night-fill-strength), var(--night-bg-card));
+  --fill-sky: color-mix(in srgb, var(--palette-sky) var(--night-fill-strength), var(--night-bg-card));
+  --fill-orchid: color-mix(in srgb, var(--palette-orchid) var(--night-fill-strength), var(--night-bg-card));
+  --fill-coral: color-mix(in srgb, var(--palette-coral) var(--night-fill-strength), var(--night-bg-card));
+  --fill-sprout: color-mix(in srgb, var(--palette-sprout) var(--night-fill-strength), var(--night-bg-card));
+  --fill-navy: color-mix(in srgb, var(--palette-navy) var(--night-fill-strength), var(--night-bg-card));
+  --fill-mint: color-mix(in srgb, var(--palette-mint) var(--night-fill-strength), var(--night-bg-card));
+  --fill-aqua: color-mix(in srgb, var(--palette-aqua) var(--night-fill-strength), var(--night-bg-card));
   --fill-edge-flare: color-mix(in srgb, var(--palette-flare) 48%, var(--night-bg-card));
   --fill-edge-sky: color-mix(in srgb, var(--palette-sky) 48%, var(--night-bg-card));
   --fill-edge-orchid: color-mix(in srgb, var(--palette-orchid) 48%, var(--night-bg-card));
@@ -159,6 +189,38 @@
   --fill-ink-navy: var(--night-text);
   --fill-ink-mint: var(--night-text);
   --fill-ink-aqua: var(--night-text);
+}
+
+@media (prefers-contrast: more) {
+  .theme-light .canvas-appearance-studio,
+  .theme-dark .canvas-appearance-studio {
+    --studio-fill-strength: 0%;
+    --studio-edge-strength: 52%;
+  }
+
+  .canvas-appearance-night_garden {
+    --night-fill-strength: 12%;
+  }
+}
+
+@media (forced-colors: active) {
+  .canvas-page .card-node,
+  .canvas-page .column-node {
+    border-color: CanvasText;
+  }
+
+  .canvas-page .card-node::before,
+  .canvas-page .todo-checkbox[aria-pressed="true"] {
+    background: Highlight;
+  }
+
+  .canvas-page .todo-checkbox {
+    border-color: ButtonText;
+  }
+
+  .canvas-page .todo-checkbox[aria-pressed="true"] {
+    color: HighlightText;
+  }
 }
 
 .canvas-toolbar .tool.is-active {

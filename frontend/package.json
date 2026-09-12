@@ -5,7 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc -b && vite build",
+    "build": "npm run check:contrast && tsc -b && vite build",
+    "check:contrast": "node scripts/check-card-contrast.mjs",
     "preview": "vite preview"
   },
   "dependencies": {
