@@ -32,6 +32,8 @@
   --accent-hover: var(--study-accent-hover);
   --accent-text: var(--study-accent-ink);
   --accent-soft: var(--study-accent-soft);
+  --accent-gradient: var(--study-accent-fill);
+  --ring: var(--study-accent);
   --danger: var(--study-danger);
   --danger-text: var(--study-danger-text);
   --danger-soft: var(--study-danger-soft);
@@ -96,8 +98,14 @@
   --accent-hover: var(--pantry-accent-hover);
   --accent-text: var(--pantry-bg-card);
   --accent-soft: var(--pantry-accent-soft);
+  --accent-gradient: linear-gradient(
+    135deg,
+    var(--pantry-accent),
+    var(--palette-wine)
+  );
+  --ring: var(--pantry-accent);
   --danger: var(--palette-strawberry);
-  --danger-text: var(--pantry-bg-card);
+  --danger-text: var(--hue-ink-strawberry);
   --danger-soft: color-mix(in srgb, var(--palette-strawberry) 16%, transparent);
   --overlay: rgba(30, 23, 29, 0.68);
   --canvas-dots: var(--pantry-canvas-dots);
@@ -144,8 +152,14 @@
   --accent-hover: var(--night-accent-hover);
   --accent-text: var(--night-bg-sunk);
   --accent-soft: var(--night-accent-soft);
+  --accent-gradient: linear-gradient(
+    135deg,
+    var(--palette-coral),
+    var(--palette-orchid)
+  );
+  --ring: var(--palette-coral);
   --danger: var(--palette-flare);
-  --danger-text: var(--night-text);
+  --danger-text: var(--hue-ink-flare);
   --danger-soft: color-mix(in srgb, var(--palette-flare) 18%, transparent);
   --overlay: rgba(4, 8, 18, 0.72);
   --canvas-dots: var(--night-canvas-dots);
