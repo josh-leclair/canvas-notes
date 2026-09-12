@@ -130,6 +130,35 @@
   --cardtype-checklist: var(--palette-flare);
   --cardtype-table: var(--palette-sky);
   --cardtype-column: var(--palette-orchid);
+
+  /* Keep Night Garden's hues vivid for accents and overview landmarks, but
+     settle large reading surfaces into the canvas. Every softened fill uses
+     the theme's high-contrast foreground; the brightest pair remains near
+     7:1 instead of merely clearing the 4.5:1 minimum. */
+  --fill-flare: color-mix(in srgb, var(--palette-flare) 24%, var(--night-bg-card));
+  --fill-sky: color-mix(in srgb, var(--palette-sky) 24%, var(--night-bg-card));
+  --fill-orchid: color-mix(in srgb, var(--palette-orchid) 24%, var(--night-bg-card));
+  --fill-coral: color-mix(in srgb, var(--palette-coral) 24%, var(--night-bg-card));
+  --fill-sprout: color-mix(in srgb, var(--palette-sprout) 24%, var(--night-bg-card));
+  --fill-navy: color-mix(in srgb, var(--palette-navy) 24%, var(--night-bg-card));
+  --fill-mint: color-mix(in srgb, var(--palette-mint) 24%, var(--night-bg-card));
+  --fill-aqua: color-mix(in srgb, var(--palette-aqua) 24%, var(--night-bg-card));
+  --fill-edge-flare: color-mix(in srgb, var(--palette-flare) 48%, var(--night-bg-card));
+  --fill-edge-sky: color-mix(in srgb, var(--palette-sky) 48%, var(--night-bg-card));
+  --fill-edge-orchid: color-mix(in srgb, var(--palette-orchid) 48%, var(--night-bg-card));
+  --fill-edge-coral: color-mix(in srgb, var(--palette-coral) 48%, var(--night-bg-card));
+  --fill-edge-sprout: color-mix(in srgb, var(--palette-sprout) 48%, var(--night-bg-card));
+  --fill-edge-navy: color-mix(in srgb, var(--palette-navy) 48%, var(--night-bg-card));
+  --fill-edge-mint: color-mix(in srgb, var(--palette-mint) 48%, var(--night-bg-card));
+  --fill-edge-aqua: color-mix(in srgb, var(--palette-aqua) 48%, var(--night-bg-card));
+  --fill-ink-flare: var(--night-text);
+  --fill-ink-sky: var(--night-text);
+  --fill-ink-orchid: var(--night-text);
+  --fill-ink-coral: var(--night-text);
+  --fill-ink-sprout: var(--night-text);
+  --fill-ink-navy: var(--night-text);
+  --fill-ink-mint: var(--night-text);
+  --fill-ink-aqua: var(--night-text);
 }
 
 .canvas-toolbar .tool.is-active {

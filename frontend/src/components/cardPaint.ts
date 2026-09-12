@@ -332,6 +332,15 @@ export function lineColour(value: PaintValue): string {
   return isCustom(value) ? value : `var(--hue-${value})`;
 }
 
+/** Foreground placed directly on an accent. It is deliberately independent
+ * of a card fill's ink: an appearance may soften a fill while keeping the
+ * corresponding accent vivid. */
+function accentInk(value: PaintValue): string {
+  if (isCustom(value)) return `var(--fill-ink-${inkFor(value)})`;
+  if (value === "dark" || value === "light") return `var(--fill-ink-${value})`;
+  return `var(--hue-ink-${value})`;
+}
+
 /** The three properties a fill resolves to. A named hue reads all three out
  *  of the palette; a custom one keeps its own colour and has the other two
  *  derived from it. */
@@ -357,7 +366,10 @@ export function fillColours(value: PaintValue): {
  *  chosen are set, so the stylesheet can fall back to the type's own colour. */
 export function paintStyle(paint: Paint): Record<string, string> {
   const style: Record<string, string> = {};
-  if (paint.accent) style["--card-accent"] = lineColour(paint.accent);
+  if (paint.accent) {
+    style["--card-accent"] = lineColour(paint.accent);
+    style["--card-accent-ink"] = accentInk(paint.accent);
+  }
   if (paint.fill) {
     const { fill, edge, ink } = fillColours(paint.fill);
     style["--card-fill"] = fill;

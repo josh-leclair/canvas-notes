@@ -88,6 +88,42 @@
   --hue-mint: var(--palette-mint);
   --hue-aqua: var(--palette-aqua);
 
+  /* Foregrounds for controls drawn directly on the vivid hue. These stay
+     separate from --fill-ink-* because canvas appearances may soften card
+     fills without softening their accent bars and checked controls. */
+  --hue-ink-red: #ffffff;
+  --hue-ink-orange: #1a1814;
+  --hue-ink-yellow: #1a1814;
+  --hue-ink-green: #1a1814;
+  --hue-ink-blue: #ffffff;
+  --hue-ink-purple: #ffffff;
+  --hue-ink-pink: #ffffff;
+  --hue-ink-slate: #ffffff;
+  --hue-ink-avocado: #372f36;
+  --hue-ink-plum: #f2ece5;
+  --hue-ink-linen: #372f36;
+  --hue-ink-cement: #1f1a1f;
+  --hue-ink-maple: #1f1a1f;
+  --hue-ink-rust: #f2ece5;
+  --hue-ink-citrus: #743d1e;
+  --hue-ink-strawberry: #241e23;
+  --hue-ink-chocolate: #f2ece5;
+  --hue-ink-floral: #241e23;
+  --hue-ink-blueberry: #f2ece5;
+  --hue-ink-ferment: #372f36;
+  --hue-ink-wine: #f2ece5;
+  --hue-ink-vanilla: #372f36;
+  --hue-ink-herb: #f2ece5;
+  --hue-ink-bay: #f2ece5;
+  --hue-ink-flare: #1b1118;
+  --hue-ink-sky: #161b2f;
+  --hue-ink-orchid: #25172a;
+  --hue-ink-coral: #2b171a;
+  --hue-ink-sprout: #10261c;
+  --hue-ink-navy: #fff8ee;
+  --hue-ink-mint: #10241e;
+  --hue-ink-aqua: #10232c;
+
   --fill-citrus: var(--palette-citrus);
   --fill-strawberry: var(--palette-strawberry);
   --fill-chocolate: var(--palette-chocolate);

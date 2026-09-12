@@ -58,12 +58,14 @@
   display: none;
 }
 
-/* A painted card is filled, not tinted, and the fill is the same colour in
-   both themes — so it brings its own text colour with it rather than
-   inheriting one that assumes the theme's surface. */
+/* A painted card brings its own solved surface and text colour rather than
+   inheriting a foreground that assumes the theme's default surface. */
 .card-node.is-painted {
   --card-fg: var(--card-ink, var(--card-fill-ink));
-  --card-muted: color-mix(in srgb, var(--card-fg) 72%, transparent);
+  /* A solved fill brings one guaranteed readable foreground. Secondary and
+     completed copy use hierarchy and decoration rather than alpha blending,
+     whose final contrast changes with every possible surface. */
+  --card-muted: var(--card-fg);
   background: var(--card-fill);
   border-color: var(--card-fill-edge);
   color: var(--card-fg);
@@ -267,7 +269,7 @@
   top: 1px;
   width: 4px;
   height: 8px;
-  border: solid var(--bg-card);
+  border: solid var(--card-accent-ink, var(--accent-text));
   border-width: 0 2px 2px 0;
   transform: rotate(45deg);
 }
