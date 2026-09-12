@@ -37,6 +37,37 @@ export const NIGHT_GARDEN_HUES = [
 const ALL_HUES = [...HUES, ...PANTRY_HUES, ...NIGHT_GARDEN_HUES] as const;
 export type Hue = (typeof ALL_HUES)[number];
 
+/** Keep the preset values beside their names so paint chosen for one canvas
+ * appearance can be matched to the closest supplied colour in another. The
+ * rendered values still come from theme.css; these are used only to compare
+ * colours, never to style a card directly. */
+const HUE_HEX: Record<Hue, `#${string}`> = {
+  avocado: "#c0c26b",
+  plum: "#372f36",
+  linen: "#f2ece5",
+  cement: "#8d8c7d",
+  maple: "#b29762",
+  rust: "#9f553c",
+  citrus: "#fec844",
+  strawberry: "#ff5b38",
+  chocolate: "#743d1e",
+  floral: "#c2808e",
+  blueberry: "#2659b1",
+  ferment: "#ccaf29",
+  wine: "#692729",
+  vanilla: "#f99d5e",
+  herb: "#30622d",
+  bay: "#143d37",
+  flare: "#f32d62",
+  sky: "#727bfc",
+  orchid: "#d68ef7",
+  coral: "#ff8584",
+  sprout: "#61db90",
+  navy: "#1b65b9",
+  mint: "#8fdfc8",
+  aqua: "#85daff",
+};
+
 export function huesForAppearance(appearance: CanvasAppearance): readonly Hue[] {
   if (appearance === "pantry") return PANTRY_HUES;
   if (appearance === "night_garden") return NIGHT_GARDEN_HUES;
@@ -45,7 +76,7 @@ export function huesForAppearance(appearance: CanvasAppearance): readonly Hue[] 
 
 /** Existing cards may still carry one of the original preset names. Keep
  * reading those values so adopting the new palette never erases old paint;
- * the picker itself offers only the six current choices above. */
+ * the picker itself offers only the active appearance's choices. */
 const LEGACY_HUES = [
   "red",
   "orange",
@@ -58,10 +89,21 @@ const LEGACY_HUES = [
 ] as const;
 type LegacyHue = (typeof LEGACY_HUES)[number];
 
+const LEGACY_HUE_HEX: Record<LegacyHue, `#${string}`> = {
+  red: "#f4443e",
+  orange: "#cf670c",
+  yellow: "#a5870d",
+  green: "#159e42",
+  blue: "#3584f3",
+  purple: "#ab60f6",
+  pink: "#f33091",
+  slate: "#7685b2",
+};
+
 /** A colour picked off the wheel, stored as a canonical `#aabbcc`.
  *
  * The named hues stay the recommended answer — each is a solved set of fill,
- * border and ink, and is legible on either theme's surface. A custom colour
+ * border and ink, and is legible on the intended canvas surface. A custom colour
  * cannot promise that, so its border and ink are derived at paint time
  * (`lib/colour.ts`) rather than looked up, and how it reads is the user's
  * call. The `#` prefix is what tells the two apart everywhere below. */
@@ -164,6 +206,83 @@ function textTone(value: unknown): TextTone | null {
   return value === "dark" || value === "light" ? value : null;
 }
 
+/** Convert sRGB to Oklab, whose straight-line distance is a useful proxy for
+ * how similar two swatches look. This lets palettes have different lengths
+ * without relying on arbitrary array positions. */
+function oklab(hex: string): [number, number, number] {
+  const packed = Number.parseInt(hex.slice(1), 16);
+  const linear = (channel: number) => {
+    const value = channel / 255;
+    return value <= 0.04045
+      ? value / 12.92
+      : ((value + 0.055) / 1.055) ** 2.4;
+  };
+  const red = linear(packed >> 16);
+  const green = linear((packed >> 8) & 255);
+  const blue = linear(packed & 255);
+  const l = Math.cbrt(
+    0.4122214708 * red + 0.5363325363 * green + 0.0514459929 * blue
+  );
+  const m = Math.cbrt(
+    0.2119034982 * red + 0.6806995451 * green + 0.1073969566 * blue
+  );
+  const s = Math.cbrt(
+    0.0883024619 * red + 0.2817188376 * green + 0.6299787005 * blue
+  );
+  return [
+    0.2104542553 * l + 0.793617785 * m - 0.0040720468 * s,
+    1.9779984951 * l - 2.428592205 * m + 0.4505937099 * s,
+    0.0259040371 * l + 0.7827717662 * m - 0.808675766 * s,
+  ];
+}
+
+const HUE_LAB = Object.fromEntries(
+  Object.entries(HUE_HEX).map(([hue, hex]) => [hue, oklab(hex)])
+) as Record<Hue, [number, number, number]>;
+const APPEARANCE_PRESET_CACHE = new Map<string, Hue>();
+
+function presetForAppearance(
+  value: PaintValue | null,
+  appearance?: CanvasAppearance
+): PaintValue | null {
+  if (
+    !value ||
+    !appearance ||
+    isCustom(value) ||
+    value === "dark" ||
+    value === "light"
+  )
+    return value;
+
+  const targetHues: readonly Hue[] = huesForAppearance(appearance);
+  if ((targetHues as readonly string[]).includes(value)) return value;
+
+  const cacheKey = `${appearance}:${value}`;
+  const cached = APPEARANCE_PRESET_CACHE.get(cacheKey);
+  if (cached) return cached;
+
+  const sourceHex =
+    (HUE_HEX as Partial<Record<string, string>>)[value] ??
+    (LEGACY_HUE_HEX as Partial<Record<string, string>>)[value];
+  if (!sourceHex) return value;
+  const source = oklab(sourceHex);
+  const closest = targetHues.reduce((closest, hue) => {
+    const candidate = HUE_LAB[hue];
+    const distance = candidate.reduce(
+      (sum, channel, index) => sum + (channel - source[index]) ** 2,
+      0
+    );
+    const closestLab = HUE_LAB[closest];
+    const closestDistance = closestLab.reduce(
+      (sum, channel, index) => sum + (channel - source[index]) ** 2,
+      0
+    );
+    return distance < closestDistance ? hue : closest;
+  }, targetHues[0]);
+  APPEARANCE_PRESET_CACHE.set(cacheKey, closest);
+  return closest;
+}
+
 export interface Paint {
   accent: PaintValue | null;
   /** An explicit user choice, distinct from a card with no stored override. */
@@ -175,13 +294,13 @@ export interface Paint {
 
 /** `fill` keeps the old `color` key so cards painted before the axes were
  *  split still come back the colour they were left. */
-export function paintOf(card: Card): Paint {
+export function paintOf(card: Card, appearance?: CanvasAppearance): Paint {
   const payload = card.payload as Record<string, unknown>;
   return {
-    accent: paintValue(payload.accent),
+    accent: presetForAppearance(paintValue(payload.accent), appearance),
     accentDisabled: payload.accent === "none",
-    fill: paintValue(payload.color),
-    header: paintValue(payload.header_color),
+    fill: presetForAppearance(paintValue(payload.color), appearance),
+    header: presetForAppearance(paintValue(payload.header_color), appearance),
     ink: textTone(payload.ink),
   };
 }

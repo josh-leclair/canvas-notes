@@ -16,7 +16,7 @@ import {
 } from "@xyflow/react";
 import { useParams } from "react-router-dom";
 import { api, ApiError } from "../api/client";
-import type { Card, PublicLensPlacement, PublicLensView } from "../api/types";
+import type { CanvasAppearance, Card, PublicLensPlacement, PublicLensView } from "../api/types";
 import CardMarkdown from "../components/CardMarkdown";
 import { LinkCardBody } from "../components/CardNode";
 import Icon from "../components/Icon";
@@ -34,6 +34,7 @@ import "./publicLensPage.css";
 type LensNodeData = {
   card: PublicLensPlacement["card"];
   slug: string;
+  appearance: CanvasAppearance;
   column?: boolean;
   memberCount?: number;
   onReference: (cardId: string) => void;
@@ -78,6 +79,7 @@ function imagePosition(value: unknown) {
 function PublishedCard({
   card,
   slug,
+  appearance,
   selected = false,
   column = false,
   memberCount = 0,
@@ -85,13 +87,14 @@ function PublishedCard({
 }: {
   card: PublicLensPlacement["card"];
   slug: string;
+  appearance: CanvasAppearance;
   selected?: boolean;
   column?: boolean;
   memberCount?: number;
   onReference: (cardId: string) => void;
 }) {
   const fullCard = card as Card;
-  const paint = paintOf(fullCard);
+  const paint = paintOf(fullCard, appearance);
   const isHeading = card.payload.display === "heading";
   const wearsAccent = hasAccent(fullCard, paint.accent);
   const headingFit = isHeading
@@ -219,6 +222,7 @@ function LensCard({ data, selected }: NodeProps<LensNode>) {
       <PublishedCard
         card={data.card}
         slug={data.slug}
+        appearance={data.appearance}
         selected={selected}
         column={data.column}
         memberCount={data.memberCount}
@@ -232,6 +236,7 @@ const nodeTypes = { lensCard: memo(LensCard) };
 
 function buildNodes(view: PublicLensView, onReference: (cardId: string) => void): LensNode[] {
   const placements = view.snapshot.placements;
+  const appearance = normaliseCanvasAppearance(view.snapshot.appearance);
   const members = new Map<string, PublicLensPlacement[]>();
   for (const placement of placements) {
     if (!placement.parent_id) continue;
@@ -263,7 +268,14 @@ function buildNodes(view: PublicLensView, onReference: (cardId: string) => void)
       zIndex: placement.z,
       draggable: false,
       selectable: true,
-      data: { card: placement.card, slug: view.slug, column: isColumn, memberCount: kids.length, onReference },
+      data: {
+        card: placement.card,
+        slug: view.slug,
+        appearance,
+        column: isColumn,
+        memberCount: kids.length,
+        onReference,
+      },
     };
   }).sort((a, b) => Number(Boolean(a.parentId)) - Number(Boolean(b.parentId)) || (a.zIndex ?? 0) - (b.zIndex ?? 0));
 }
@@ -318,6 +330,7 @@ function LensCanvas({ view }: { view: PublicLensView }) {
 }
 
 function GuidedPresentation({ view }: { view: PublicLensView }) {
+  const appearance = normaliseCanvasAppearance(view.snapshot.appearance);
   const byId = useMemo(
     () => new Map(view.snapshot.placements.map((placement) => [placement.id, placement])),
     [view.snapshot.placements]
@@ -365,6 +378,7 @@ function GuidedPresentation({ view }: { view: PublicLensView }) {
             <PublishedCard
               card={placement.card}
               slug={view.slug}
+              appearance={appearance}
               column={placement.card.type === "column"}
               memberCount={memberCount(placement.id)}
               onReference={onReference}
@@ -410,6 +424,7 @@ function GuidedPresentation({ view }: { view: PublicLensView }) {
                   <PublishedCard
                     card={placement.card}
                     slug={view.slug}
+                    appearance={appearance}
                     column={placement.card.type === "column"}
                     memberCount={memberCount(placement.id)}
                     onReference={() => undefined}

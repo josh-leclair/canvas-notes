@@ -241,7 +241,7 @@ function CustomPaint({
  *
  * The named hues come first and are still the answer most of the time: each
  * one is a solved set — a fill, a border one step deeper, and the ink that
- * stays readable on it — fixed across both themes. The wheel at the end of
+ * stays readable on it. The wheel at the end of
  * the row is for when none of the six is the colour you meant. Its border
  * and ink are derived from whatever you pick, so a custom card is still
  * readable; whether the colour itself sits well on both surfaces is then your

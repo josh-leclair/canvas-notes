@@ -50,7 +50,7 @@ function ColumnNodeImpl({ id, data, selected }: NodeProps<CardNodeType>) {
 
   // A column is a container, so its colour goes on bolder than a card's: the
   // header band carries it rather than a thin spine.
-  const paint = paintOf(card);
+  const paint = paintOf(card, canvasAppearance);
   const accent = paintStyle(paint) as React.CSSProperties;
 
   async function setPaint(axis: Axis, next: PaintSelection) {

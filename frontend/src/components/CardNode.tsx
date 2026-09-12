@@ -878,7 +878,7 @@ function CardNodeImpl({ id, data, selected }: NodeProps<CardNodeType>) {
     () => knownAlpha(imageSrcOf(card) ?? "") ?? false
   );
 
-  const paint = paintOf(card);
+  const paint = paintOf(card, canvasAppearance);
   const axes = axesFor(card);
   /* The type's own colour is only a default for the accent, and only for the
    * kinds of card that wear one. A note stays bare until you give it one. */
