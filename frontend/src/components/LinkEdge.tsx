@@ -6,6 +6,10 @@ import {
   type EdgeProps,
 } from "@xyflow/react";
 import type { RevealLink } from "../api/types";
+import {
+  roundedOrthogonalPath,
+  type EdgeRouteGeometry,
+} from "../lib/edgeRouting";
 import { useCanvasStore } from "../store/canvasStore";
 import "./linkEdge.css";
 
@@ -81,7 +85,7 @@ function LinkEdgeImpl({
   const selectedLinkId = useCanvasStore((s) => s.selectedLinkId);
   const link = data?.link as RevealLink | undefined;
 
-  const [path, labelX, labelY] = getBezierPath({
+  const [fallbackPath, fallbackLabelX, fallbackLabelY] = getBezierPath({
     sourceX,
     sourceY,
     targetX,
@@ -89,6 +93,10 @@ function LinkEdgeImpl({
     sourcePosition,
     targetPosition,
   });
+  const route = data?.route as EdgeRouteGeometry | undefined;
+  const path = route ? roundedOrthogonalPath(route.points) : fallbackPath;
+  const labelX = route?.label.x ?? fallbackLabelX;
+  const labelY = route?.label.y ?? fallbackLabelY;
 
   const active = selectedLinkId === id;
   const hop = link?.hop ?? 1;

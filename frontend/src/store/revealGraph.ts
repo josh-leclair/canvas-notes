@@ -1,5 +1,11 @@
 import { MarkerType, type Edge, type Node } from "@xyflow/react";
 import type { RevealLink, RevealOut, Snapshot } from "../api/types";
+import {
+  facingRouteSides,
+  routeOrthogonalEdges,
+  type EdgeRouteRequest,
+  type RouteBox,
+} from "../lib/edgeRouting";
 import type { CardNode } from "./canvasStore";
 
 export interface PortalData extends Record<string, unknown> {
@@ -36,31 +42,6 @@ const PORTAL_HEIGHT = 52;
 const GAP = 72;
 const STACK_GAP = 10;
 
-interface Box {
-  x: number;
-  y: number;
-  w: number;
-  h: number;
-}
-
-function center(box: Box): { x: number; y: number } {
-  return { x: box.x + box.w / 2, y: box.y + box.h / 2 };
-}
-
-/** Pick the handle pair whose geometry points at the other card, so a line
- * always leaves toward its destination instead of looping back under its own
- * endpoints. */
-function facingHandles(source: Box, target: Box): [string, string] {
-  const a = center(source);
-  const b = center(target);
-  const dx = b.x - a.x;
-  const dy = b.y - a.y;
-  if (Math.abs(dx) >= Math.abs(dy)) {
-    return dx >= 0 ? ["right", "left"] : ["left", "right"];
-  }
-  return dy >= 0 ? ["bottom", "top"] : ["top", "bottom"];
-}
-
 function linkColor(link: RevealLink): string {
   return `var(--link-${link.link_type ?? "untyped"})`;
 }
@@ -91,7 +72,7 @@ export function buildRevealGraph(
 ): RevealGraph {
   const placementNodeIds = new Set(nodes.map((n) => n.id));
   const nodeIdForCard = new Map<string, string>();
-  const boxes = new Map<string, Box>();
+  const boxes = new Map<string, RouteBox>();
 
   for (const node of nodes) {
     boxes.set(node.id, {
@@ -264,7 +245,13 @@ export function buildRevealGraph(
     }
   }
 
-  const edges: Edge[] = [];
+  type RoutedLink = {
+    link: RevealLink;
+    sourceId: string;
+    targetId: string;
+    request: EdgeRouteRequest | null;
+  };
+  const routedLinks: RoutedLink[] = [];
   for (const link of reveal.links) {
     const sourceId = link.source_card_id
       ? nodeIdForCard.get(link.source_card_id)
@@ -276,8 +263,32 @@ export function buildRevealGraph(
 
     const sourceBox = boxes.get(sourceId);
     const targetBox = boxes.get(targetId);
-    const [sourceHandle, targetHandle] =
-      sourceBox && targetBox ? facingHandles(sourceBox, targetBox) : ["right", "left"];
+    const request =
+      sourceBox && targetBox
+        ? (() => {
+            const [sourceSide, targetSide] = facingRouteSides(sourceBox, targetBox);
+            return {
+              id: link.id,
+              sourceId,
+              targetId,
+              source: sourceBox,
+              target: targetBox,
+              sourceSide,
+              targetSide,
+            } satisfies EdgeRouteRequest;
+          })()
+        : null;
+    routedLinks.push({ link, sourceId, targetId, request });
+  }
+
+  const routes = routeOrthogonalEdges(
+    routedLinks.flatMap(({ request }) => (request ? [request] : [])),
+    boxes
+  );
+  const edges: Edge[] = [];
+  for (const { link, sourceId, targetId, request } of routedLinks) {
+    const sourceHandle = request?.sourceSide ?? "right";
+    const targetHandle = request?.targetSide ?? "left";
 
     const color = linkColor(link);
     const hop2 = link.hop >= 2;
@@ -295,7 +306,7 @@ export function buildRevealGraph(
         strokeWidth: hop2 ? 1.4 : 2.2,
         opacity: hop2 ? 0.45 : 1,
       },
-      data: { link },
+      data: { link, route: routes.get(link.id) },
     });
   }
 

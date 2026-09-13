@@ -19,6 +19,8 @@
 .react-flow__edge-path.link-draw {
   stroke-dasharray: 1;
   stroke-dashoffset: 0;
+  stroke-linecap: round;
+  stroke-linejoin: round;
   animation: link-draw var(--dur-draw) var(--ease-out) backwards;
 }
 
