@@ -131,7 +131,7 @@ def test_specific_canvas_archive_round_trip_preserves_structure_and_media(
     assert client.get(f"/api/files/{new_file_id}").content == b"\x89PNG-archive"
     assert client.get(f"/api/canvases/{result['root_canvas_id']}/cover").content == b"\x89PNG-cover"
     restored_inbox = client.get(
-        "/api/cards/inbox", params={"canvas_id": result["root_canvas_id"]}
+        "/api/inbox", params={"canvas_id": result["root_canvas_id"]}
     ).json()["items"]
     assert [item["title"] for item in restored_inbox] == ["Waiting"]
 

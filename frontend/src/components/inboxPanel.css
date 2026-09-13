@@ -11,7 +11,7 @@
 }
 
 .inbox-panel.is-open {
-  width: 216px;
+  width: min(360px, calc(100vw - 20px));
 }
 
 .inbox-toggle {
@@ -28,7 +28,7 @@
 }
 
 .inbox-badge {
-  background: var(--accent-gradient);
+  background: var(--accent);
   color: var(--accent-text);
   border-radius: 999px;
   font-size: 11px;
@@ -52,6 +52,280 @@
   flex-direction: column;
   gap: 8px;
   animation: panel-slide var(--dur-slow) var(--ease-out) backwards;
+}
+
+.smart-capture {
+  position: relative;
+  flex: 0 0 auto;
+  border: 1px dashed color-mix(in srgb, var(--accent) 70%, var(--border));
+  border-radius: var(--radius);
+  background: color-mix(in srgb, var(--accent-soft) 45%, var(--bg-card));
+  transition: border-color var(--dur-quick) ease, background var(--dur-quick) ease;
+}
+
+.smart-capture.is-open {
+  border-style: solid;
+  background: var(--bg-card);
+}
+
+.smart-capture.is-dragging {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.smart-capture-launch {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 11px;
+  text-align: left;
+  color: var(--text);
+  background: transparent;
+}
+
+.smart-capture-launch > span:last-child,
+.smart-capture-heading > span {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.smart-capture-launch strong,
+.smart-capture-heading strong {
+  font-size: 13px;
+}
+
+.smart-capture-launch small,
+.smart-capture-heading small {
+  color: var(--text-muted);
+  font-size: 11px;
+  line-height: 1.35;
+}
+
+.smart-capture-mark,
+.smart-capture-type-icon {
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  color: var(--accent);
+  background: var(--accent-soft);
+  border: 1px solid color-mix(in srgb, var(--accent) 45%, var(--border));
+  border-radius: var(--radius-sm);
+}
+
+.smart-capture-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 10px 8px;
+  border-bottom: 1px solid var(--border);
+}
+
+.smart-capture-heading > button,
+.smart-capture-item-head > button {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  color: var(--text-muted);
+  background: transparent;
+  border-radius: var(--radius-sm);
+}
+
+.smart-capture-heading > button:hover,
+.smart-capture-item-head > button:hover {
+  color: var(--danger);
+  background: var(--danger-soft);
+}
+
+.smart-capture-input {
+  padding: 9px;
+}
+
+.smart-capture-input textarea,
+.smart-capture-item input,
+.smart-capture-item textarea,
+.smart-capture-item select {
+  box-sizing: border-box;
+  width: 100%;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text);
+  background: var(--bg-input);
+  font: inherit;
+}
+
+.smart-capture-input textarea {
+  min-height: 68px;
+  padding: 8px;
+  resize: vertical;
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.smart-capture-input > div {
+  display: flex;
+  gap: 6px;
+  margin-top: 6px;
+}
+
+.smart-capture-input button,
+.smart-capture-actions button,
+.smart-capture-destination button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  min-height: 30px;
+  padding: 5px 9px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  color: var(--text);
+  background: var(--bg-panel);
+  font-size: 11px;
+}
+
+.smart-capture-input button:hover,
+.smart-capture-actions button:hover,
+.smart-capture-destination button:hover {
+  border-color: var(--accent);
+}
+
+.smart-capture-input input[type="file"] {
+  display: none;
+}
+
+.smart-capture-drop-message {
+  margin: 0 9px 9px;
+  padding: 10px;
+  border: 1px dashed var(--accent);
+  color: var(--accent);
+  text-align: center;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.smart-capture-review {
+  max-height: min(42vh, 390px);
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  padding: 0 9px 9px;
+}
+
+.smart-capture-item {
+  padding: 8px;
+  border: 1px solid var(--border);
+  background: var(--bg-panel);
+}
+
+.smart-capture-item.is-duplicate {
+  border-color: color-mix(in srgb, var(--danger) 60%, var(--border));
+}
+
+.smart-capture-item-head {
+  display: grid;
+  grid-template-columns: 28px 1fr 26px;
+  align-items: center;
+  gap: 7px;
+  margin-bottom: 7px;
+}
+
+.smart-capture-type-icon {
+  width: 26px;
+  height: 26px;
+}
+
+.smart-capture-item select,
+.smart-capture-item input,
+.smart-capture-item textarea {
+  padding: 6px 7px;
+  font-size: 12px;
+}
+
+.smart-capture-item select {
+  padding: 4px 7px;
+}
+
+.smart-capture-item textarea {
+  min-height: 54px;
+  margin-top: 6px;
+  resize: vertical;
+  line-height: 1.4;
+}
+
+.smart-capture-file-meta,
+.smart-capture-warning,
+.smart-capture-error {
+  display: block;
+  margin-top: 6px;
+  font-size: 10px;
+  line-height: 1.35;
+}
+
+.smart-capture-file-meta { color: var(--text-muted); }
+.smart-capture-warning { color: var(--danger); }
+.smart-capture-error { color: var(--danger); font-weight: 700; }
+
+.smart-capture-destination {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0;
+  padding: 0 9px 7px;
+}
+
+.smart-capture-destination button:first-child {
+  border-radius: var(--radius-sm) 0 0 var(--radius-sm);
+}
+
+.smart-capture-destination button:last-child {
+  margin-left: -1px;
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+}
+
+.smart-capture-destination button.is-active {
+  position: relative;
+  z-index: 1;
+  border-color: var(--accent);
+  color: var(--accent);
+  background: var(--accent-soft);
+  font-weight: 700;
+}
+
+.smart-capture-duplicate-summary {
+  margin: 0;
+  padding: 0 9px 7px;
+  color: var(--danger);
+  font-size: 10px;
+}
+
+.smart-capture-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 6px;
+  padding: 0 9px 9px;
+}
+
+.smart-capture-actions button.primary {
+  border-color: var(--accent);
+  color: var(--accent-text);
+  background: var(--accent);
+}
+
+.smart-capture button:disabled,
+.smart-capture textarea:disabled,
+.smart-capture input:disabled,
+.smart-capture select:disabled {
+  cursor: wait;
+  opacity: 0.58;
 }
 
 .inbox-section-label {

@@ -26,12 +26,17 @@ import type {
   Card,
   CardPlacementInfo,
   CardType,
+  Placement,
 } from "../api/types";
 import { URL_PATTERN, YOUTUBE_PATTERN } from "../lib/urls";
 import {
   INBOX_TOUCH_DROP_EVENT,
   type InboxTouchDropDetail,
 } from "../lib/inboxTouchDrag";
+import {
+  SMART_CAPTURE_PLACE_EVENT,
+  type SmartCapturePlaceDetail,
+} from "../lib/smartCapture";
 import {
   MAX_CANVAS_TEXT_SIZE,
   MIN_CANVAS_TEXT_SIZE,
@@ -1877,6 +1882,62 @@ function CanvasInner({ canvasId }: { canvasId: string }) {
     return () => window.removeEventListener(INBOX_TOUCH_DROP_EVENT, onInboxTouchDrop);
   }, [readOnly, placeInboxCard, screenToFlowPosition]);
 
+  useEffect(() => {
+    async function onSmartCapturePlace(event: Event) {
+      if (readOnly) return;
+      const { cardIds, organize } = (event as CustomEvent<SmartCapturePlaceDetail>).detail;
+      const uniqueIds = [...new Set(cardIds)];
+      if (uniqueIds.length === 0) return;
+
+      const center = screenToFlowPosition(centerOfWrapper());
+      const columns = Math.min(3, Math.max(1, Math.ceil(Math.sqrt(uniqueIds.length))));
+      const rows = Math.ceil(uniqueIds.length / columns);
+      const stepX = 320;
+      const stepY = 230;
+      const left = center.x - ((columns - 1) * stepX) / 2 - 140;
+      const top = center.y - ((rows - 1) * stepY) / 2 - 90;
+      const placementIds: string[] = [];
+
+      for (const [index, cardId] of uniqueIds.entries()) {
+        try {
+          const placement = await api.post<Placement>(
+            `/api/canvases/${canvasId}/placements`,
+            {
+              card_id: cardId,
+              x: left + (index % columns) * stepX,
+              y: top + Math.floor(index / columns) * stepY,
+            }
+          );
+          placementIds.push(placement.id);
+        } catch {
+          // Continue placing the rest of a mixed batch. The failed card stays
+          // safely in its inbox and the refresh below makes that visible.
+        }
+      }
+
+      await Promise.all([loadCanvas(canvasId), loadInbox()]);
+      if (placementIds.length === 0) {
+        showToast("Could not place the captured items; they are still in your inbox");
+        return;
+      }
+
+      setSelection(placementIds);
+      const liveNodes = useCanvasStore.getState().nodes;
+      const placed = liveNodes.filter((node) => placementIds.includes(node.id));
+      if (organize && placed.length >= 2) {
+        startMagicOrganizer(placed, true, liveNodes);
+      } else {
+        focusCards(placed.map((node) => node.data.card.id));
+        if (placementIds.length !== uniqueIds.length) {
+          showToast(`Placed ${placementIds.length}; ${uniqueIds.length - placementIds.length} stayed in the inbox`);
+        }
+      }
+    }
+
+    window.addEventListener(SMART_CAPTURE_PLACE_EVENT, onSmartCapturePlace);
+    return () => window.removeEventListener(SMART_CAPTURE_PLACE_EVENT, onSmartCapturePlace);
+  }, [canvasId, focusCards, loadCanvas, loadInbox, readOnly, screenToFlowPosition, setSelection, showToast]);
+
   /** Everything the toolbar can drop, and what it starts life as.
    *
    * Dragging rather than clicking is the point: a card made from a button has
@@ -1974,10 +2035,14 @@ function CanvasInner({ canvasId }: { canvasId: string }) {
     composeCards(cardIds, { x: right + 70, y: top });
   }
 
-  function placeMagicPlan(items: OrganizeItem[], mode: OrganizeMode): OrganizePlan {
+  function placeMagicPlan(
+    items: OrganizeItem[],
+    mode: OrganizeMode,
+    sourceNodes = nodes
+  ): OrganizePlan {
     const local = createOrganizePlan(items, mode);
     const wanted = new Set(items.map((item) => item.id));
-    const obstacles = nodes
+    const obstacles = sourceNodes
       .filter((node) => !wanted.has(node.id) && !node.data.parentId)
       .map((node) => {
         const size = effectiveSize(node);
@@ -2036,11 +2101,11 @@ function CanvasInner({ canvasId }: { canvasId: string }) {
     });
   }
 
-  function openMagicOrganizer() {
-    const freeStanding = nodes.filter((node) => !node.data.parentId);
-    const selected = freeStanding.filter((node) => selection.includes(node.id));
-    const selectedScope = selected.length >= 2;
-    const target = selectedScope ? selected : freeStanding;
+  function startMagicOrganizer(
+    target: CardNodeType[],
+    selectedScope: boolean,
+    sourceNodes = nodes
+  ) {
     if (target.length < 2) {
       showToast("Add at least two free-standing cards to organize");
       return;
@@ -2062,9 +2127,16 @@ function CanvasInner({ canvasId }: { canvasId: string }) {
       { x: node.position.x, y: node.position.y, w: node.data.w, h: node.data.h },
     ]));
     const mode: OrganizeMode = "cluster";
-    const plan = placeMagicPlan(items, mode);
+    const plan = placeMagicPlan(items, mode, sourceNodes);
     setMagicSession({ items, original, selectedScope, mode, plan, addZones: true });
     showMagicPreview(plan, items.map((item) => item.id));
+  }
+
+  function openMagicOrganizer() {
+    const freeStanding = nodes.filter((node) => !node.data.parentId);
+    const selected = freeStanding.filter((node) => selection.includes(node.id));
+    const selectedScope = selected.length >= 2;
+    startMagicOrganizer(selectedScope ? selected : freeStanding, selectedScope);
   }
 
   function changeMagicMode(mode: OrganizeMode) {

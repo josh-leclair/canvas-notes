@@ -8,6 +8,7 @@ import {
   type InboxTouchDropDetail,
 } from "../lib/inboxTouchDrag";
 import Icon from "./Icon";
+import SmartCapture from "./SmartCapture";
 import "./inboxPanel.css";
 
 function generatedBy(card: Card): GeneratedBy | null {
@@ -53,6 +54,7 @@ export default function InboxPanel() {
   const setOpen = useCanvasStore((s) => s.setInboxOpen);
   const canvasId = useCanvasStore((s) => s.canvasId);
   const canvasName = useCanvasStore((s) => s.canvasName);
+  const nodes = useCanvasStore((s) => s.nodes);
   const discardBatch = useCanvasStore((s) => s.discardBatch);
   const [triage, setTriage] = useState<Record<string, CanvasSuggestion[]>>({});
   const [touchPreview, setTouchPreview] = useState<{
@@ -259,6 +261,16 @@ export default function InboxPanel() {
 
       {open && (
         <div className="inbox-list">
+          {canvasId && (
+            <SmartCapture
+              canvasId={canvasId}
+              canvasName={canvasName}
+              existingCards={[
+                ...inbox,
+                ...nodes.map((node) => node.data.card),
+              ]}
+            />
+          )}
           {visibleInbox.length > 0 && (
             <div className="inbox-head">
               <span className="inbox-head-count">
