@@ -5,6 +5,7 @@ import {
   routeOrthogonalEdges,
   type EdgeRouteRequest,
   type RouteBox,
+  type RouteSide,
 } from "../lib/edgeRouting";
 import type { CardNode } from "./canvasStore";
 
@@ -32,6 +33,8 @@ export interface RevealGraph {
   ghosts: PortalNode[];
   tombstones: TombstoneNode[];
   edges: Edge[];
+  /** The real mid-edge handles currently occupied by a revealed link. */
+  handleSides: Map<string, Set<RouteSide>>;
   /** Node ids that are part of the reveal; everything else dims. */
   revealedNodeIds: Set<string>;
 }
@@ -285,10 +288,18 @@ export function buildRevealGraph(
     routedLinks.flatMap(({ request }) => (request ? [request] : [])),
     boxes
   );
+  const handleSides = new Map<string, Set<RouteSide>>();
+  const markHandle = (nodeId: string, side: RouteSide) => {
+    const sides = handleSides.get(nodeId) ?? new Set<RouteSide>();
+    sides.add(side);
+    handleSides.set(nodeId, sides);
+  };
   const edges: Edge[] = [];
   for (const { link, sourceId, targetId, request } of routedLinks) {
     const sourceHandle = request?.sourceSide ?? "right";
     const targetHandle = request?.targetSide ?? "left";
+    markHandle(sourceId, sourceHandle);
+    markHandle(targetId, targetHandle);
 
     const color = linkColor(link);
     const hop2 = link.hop >= 2;
@@ -315,5 +326,5 @@ export function buildRevealGraph(
     ...tombstones.map((t) => t.id),
   ]);
 
-  return { ghosts, tombstones, edges, revealedNodeIds };
+  return { ghosts, tombstones, edges, handleSides, revealedNodeIds };
 }

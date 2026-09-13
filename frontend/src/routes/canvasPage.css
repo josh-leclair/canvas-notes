@@ -139,19 +139,18 @@
   --canvas-font: "Bookman Old Style", Bookman, Georgia, serif;
   --font: var(--canvas-font);
   --font-display: "Bookman Old Style", Bookman, Georgia, serif;
-  /* Pantry's cream belongs on the objects, not across the entire workspace.
-     The dark plum field is what gives the paper cards and warm dot grid room
-     to read without turning a large canvas into a light source. */
-  --bg: var(--palette-plum);
-  --bg-sunk: #292329;
+  /* Pantry is the bright, mood-board appearance. Its warm paper canvas keeps
+     the poppy card colours playful without turning the workspace into the
+     dark stage already supplied by Night Garden. */
+  --bg: var(--pantry-bg);
+  --bg-sunk: var(--pantry-bg-sunk);
   --bg-panel: var(--pantry-bg-panel);
   --bg-card: var(--pantry-bg-card);
   --bg-hover: var(--pantry-bg-hover);
   --bg-input: var(--pantry-bg-panel);
   --text: var(--palette-chocolate);
   --text-muted: var(--pantry-text-muted);
-  /* Icon cards sit directly on the plum canvas rather than on cream paper. */
-  --canvas-icon-name: var(--pantry-bg-card);
+  --canvas-icon-name: var(--text);
   --border: var(--pantry-border);
   --border-strong: var(--palette-strawberry);
   --accent: var(--pantry-accent);
@@ -165,7 +164,7 @@
   --danger-soft: color-mix(in srgb, var(--palette-strawberry) 16%, transparent);
   --overlay: rgba(30, 23, 29, 0.68);
   --canvas-dots: var(--pantry-canvas-dots);
-  --xy-background-color: var(--palette-plum);
+  --xy-background-color: var(--pantry-bg);
   --minimap-bg: var(--pantry-minimap-bg);
   --minimap-mask: var(--pantry-minimap-mask);
   --minimap-node: var(--pantry-minimap-node);

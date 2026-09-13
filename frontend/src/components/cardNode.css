@@ -794,6 +794,16 @@
   opacity: 1;
 }
 
+/* A revealed relationship lands on the same handle used to draw it. Keep
+   only that occupied handle visible on the other cards, so the route teaches
+   the manual gesture without lighting all four anchors everywhere. */
+.react-flow__node.has-link-top .react-flow__handle-top.card-handle:not(.card-handle-target),
+.react-flow__node.has-link-right .react-flow__handle-right.card-handle:not(.card-handle-target),
+.react-flow__node.has-link-bottom .react-flow__handle-bottom.card-handle:not(.card-handle-target),
+.react-flow__node.has-link-left .react-flow__handle-left.card-handle:not(.card-handle-target) {
+  opacity: 1;
+}
+
 .react-flow__node:hover .card-handle-target,
 .react-flow__node.selected .card-handle-target {
   opacity: 0;

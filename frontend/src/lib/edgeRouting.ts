@@ -27,8 +27,6 @@ export interface EdgeRouteGeometry {
   label: RoutePoint;
 }
 
-const PORT_PADDING = 26;
-const PORT_GAP = 34;
 const ESCAPE = 20;
 const OBSTACLE_GAP = 14;
 const LANE_STEP = 14;
@@ -96,14 +94,6 @@ export function facingRouteSides(
   return dy >= 0 ? ["bottom", "top"] : ["top", "bottom"];
 }
 
-function portRange(box: RouteBox, side: RouteSide): [number, number] {
-  const vertical = side === "left" || side === "right";
-  const start = vertical ? box.y : box.x;
-  const length = vertical ? box.h : box.w;
-  const padding = Math.min(PORT_PADDING, Math.max(8, length * 0.22));
-  return [start + padding, start + length - padding];
-}
-
 function portPoint(box: RouteBox, side: RouteSide, axis: number): RoutePoint {
   if (side === "top") return { x: axis, y: box.y };
   if (side === "bottom") return { x: axis, y: box.y + box.h };
@@ -111,42 +101,13 @@ function portPoint(box: RouteBox, side: RouteSide, axis: number): RoutePoint {
   return { x: box.x + box.w, y: axis };
 }
 
-function desiredPortAxis(box: RouteBox, other: RouteBox, side: RouteSide): number {
-  const vertical = side === "left" || side === "right";
-  const ownStart = vertical ? box.y : box.x;
-  const ownEnd = ownStart + (vertical ? box.h : box.w);
-  const otherStart = vertical ? other.y : other.x;
-  const otherEnd = otherStart + (vertical ? other.h : other.w);
-  const overlapStart = Math.max(ownStart, otherStart);
-  const overlapEnd = Math.min(ownEnd, otherEnd);
-
-  // When the rectangles overlap along this edge, aim through the centre of
-  // that overlap. This is especially important for a heading spanning all of
-  // its children: both ends then line up above the child instead of every
-  // child reaching back toward the heading's distant centre.
-  if (overlapStart <= overlapEnd) return (overlapStart + overlapEnd) / 2;
-  return vertical ? center(other).y : center(other).x;
-}
-
-function distribute(values: number[], min: number, max: number): number[] {
-  if (values.length === 0) return [];
-  if (values.length === 1 || max <= min) {
-    return values.map((value) => Math.max(min, Math.min(max, value)));
-  }
-  const gap = Math.min(PORT_GAP, (max - min) / (values.length - 1));
-  const out = values.map((value) => Math.max(min, Math.min(max, value)));
-  for (let i = 1; i < out.length; i++) out[i] = Math.max(out[i], out[i - 1] + gap);
-  if (out[out.length - 1] > max) {
-    out[out.length - 1] = max;
-    for (let i = out.length - 2; i >= 0; i--) {
-      out[i] = Math.min(out[i], out[i + 1] - gap);
-    }
-  }
-  if (out[0] < min) {
-    out[0] = min;
-    for (let i = 1; i < out.length; i++) out[i] = out[i - 1] + gap;
-  }
-  return out;
+function centrePort(box: RouteBox, side: RouteSide): RoutePoint {
+  const boxCenter = center(box);
+  return portPoint(
+    box,
+    side,
+    side === "left" || side === "right" ? boxCenter.y : boxCenter.x
+  );
 }
 
 function escapePoint(point: RoutePoint, side: RouteSide): RoutePoint {
@@ -330,8 +291,6 @@ function candidatesFor(
 
 function routeScore(
   points: RoutePoint[],
-  request: EdgeRouteRequest,
-  boxes: Map<string, RouteBox>,
   occupied: Segment[]
 ): number {
   const routeSegments = segments(points);
@@ -342,11 +301,6 @@ function routeScore(
 
   for (let i = 0; i < routeSegments.length; i++) {
     const segment = routeSegments[i];
-    for (const [nodeId, rawBox] of boxes) {
-      if (nodeId === request.sourceId && i === 0) continue;
-      if (nodeId === request.targetId && i === routeSegments.length - 1) continue;
-      if (segmentHitsBox(segment.a, segment.b, inflate(rawBox))) score += 100_000;
-    }
     for (const used of occupied) {
       score += sharedLength(segment, used) * 6;
       if (crosses(segment, used)) score += 600;
@@ -355,22 +309,40 @@ function routeScore(
   return score;
 }
 
-function nearbyBoxes(
+function routeIsClear(
+  points: RoutePoint[],
   request: EdgeRouteRequest,
   boxes: Map<string, RouteBox>
+): boolean {
+  const routeSegments = segments(points);
+  for (let index = 0; index < routeSegments.length; index++) {
+    const segment = routeSegments[index];
+    for (const [nodeId, box] of boxes) {
+      if (nodeId === request.sourceId && index === 0) continue;
+      if (nodeId === request.targetId && index === routeSegments.length - 1) continue;
+      if (segmentHitsBox(segment.a, segment.b, inflate(box))) return false;
+    }
+  }
+  return true;
+}
+
+function nearbyBoxes(
+  request: EdgeRouteRequest,
+  boxes: Map<string, RouteBox>,
+  margin = ROUTE_SEARCH_MARGIN
 ): Map<string, RouteBox> {
-  const left = Math.min(request.source.x, request.target.x) - ROUTE_SEARCH_MARGIN;
-  const top = Math.min(request.source.y, request.target.y) - ROUTE_SEARCH_MARGIN;
+  const left = Math.min(request.source.x, request.target.x) - margin;
+  const top = Math.min(request.source.y, request.target.y) - margin;
   const right =
     Math.max(
       request.source.x + request.source.w,
       request.target.x + request.target.w
-    ) + ROUTE_SEARCH_MARGIN;
+    ) + margin;
   const bottom =
     Math.max(
       request.source.y + request.source.h,
       request.target.y + request.target.h
-    ) + ROUTE_SEARCH_MARGIN;
+    ) + margin;
   return new Map(
     [...boxes].filter(([, box]) => {
       return (
@@ -383,94 +355,206 @@ function nearbyBoxes(
   );
 }
 
-/** Route a set together so shared card edges can fan their ports out and each
- * successive line can avoid lanes already occupied by an earlier one. */
+function pointInsideBox(point: RoutePoint, box: RouteBox): boolean {
+  return (
+    point.x > box.x + EPSILON &&
+    point.x < box.x + box.w - EPSILON &&
+    point.y > box.y + EPSILON &&
+    point.y < box.y + box.h - EPSILON
+  );
+}
+
+/** A compressed rectilinear grid is the correctness fallback for layouts
+ * that need more than one detour. Its rows and columns come only from card
+ * boundaries, so it can walk around staggered obstacles without scanning the
+ * canvas pixel by pixel. */
+function gridRoute(
+  start: RoutePoint,
+  end: RoutePoint,
+  boxes: Map<string, RouteBox>,
+  occupied: Segment[]
+): RoutePoint[] | null {
+  const obstacles = [...boxes.values()].map(inflate);
+  const unique = (values: number[]) =>
+    [...new Set(values.map((value) => Math.round(value * 10) / 10))].sort(
+      (a, b) => a - b
+    );
+  const xs = unique([
+    start.x,
+    end.x,
+    ...obstacles.flatMap((box) => [box.x, box.x + box.w]),
+  ]);
+  const ys = unique([
+    start.y,
+    end.y,
+    ...obstacles.flatMap((box) => [box.y, box.y + box.h]),
+  ]);
+  const xIndex = new Map(xs.map((value, index) => [value, index]));
+  const yIndex = new Map(ys.map((value, index) => [value, index]));
+  const startX = xIndex.get(Math.round(start.x * 10) / 10);
+  const startY = yIndex.get(Math.round(start.y * 10) / 10);
+  const endX = xIndex.get(Math.round(end.x * 10) / 10);
+  const endY = yIndex.get(Math.round(end.y * 10) / 10);
+  if (startX === undefined || startY === undefined || endX === undefined || endY === undefined) {
+    return null;
+  }
+
+  type Direction = "none" | "horizontal" | "vertical";
+  type State = { x: number; y: number; direction: Direction };
+  type QueueItem = State & { cost: number };
+  const keyOf = ({ x, y, direction }: State) => `${x}:${y}:${direction}`;
+  const queue: QueueItem[] = [];
+  const push = (item: QueueItem) => {
+    queue.push(item);
+    let index = queue.length - 1;
+    while (index > 0) {
+      const parent = Math.floor((index - 1) / 2);
+      if (queue[parent].cost <= item.cost) break;
+      queue[index] = queue[parent];
+      index = parent;
+    }
+    queue[index] = item;
+  };
+  const pop = (): QueueItem | undefined => {
+    const first = queue[0];
+    const last = queue.pop();
+    if (!first || !last || queue.length === 0) return first;
+    let index = 0;
+    while (true) {
+      const left = index * 2 + 1;
+      const right = left + 1;
+      if (left >= queue.length) break;
+      const child = right < queue.length && queue[right].cost < queue[left].cost ? right : left;
+      if (queue[child].cost >= last.cost) break;
+      queue[index] = queue[child];
+      index = child;
+    }
+    queue[index] = last;
+    return first;
+  };
+
+  const distances = new Map<string, number>();
+  const previous = new Map<string, string>();
+  const states = new Map<string, State>();
+  const initial: State = { x: startX, y: startY, direction: "none" };
+  distances.set(keyOf(initial), 0);
+  states.set(keyOf(initial), initial);
+  push({ ...initial, cost: 0 });
+  let finishKey: string | null = null;
+
+  while (queue.length > 0) {
+    const current = pop()!;
+    const currentKey = keyOf(current);
+    if (current.cost !== distances.get(currentKey)) continue;
+    if (current.x === endX && current.y === endY) {
+      finishKey = currentKey;
+      break;
+    }
+    const neighbours = [
+      { x: current.x - 1, y: current.y, direction: "horizontal" as const },
+      { x: current.x + 1, y: current.y, direction: "horizontal" as const },
+      { x: current.x, y: current.y - 1, direction: "vertical" as const },
+      { x: current.x, y: current.y + 1, direction: "vertical" as const },
+    ];
+    const from = { x: xs[current.x], y: ys[current.y] };
+    for (const neighbour of neighbours) {
+      if (
+        neighbour.x < 0 ||
+        neighbour.x >= xs.length ||
+        neighbour.y < 0 ||
+        neighbour.y >= ys.length
+      ) {
+        continue;
+      }
+      const to = { x: xs[neighbour.x], y: ys[neighbour.y] };
+      if (obstacles.some((box) => pointInsideBox(to, box))) continue;
+      if (obstacles.some((box) => segmentHitsBox(from, to, box))) continue;
+      const segment = { a: from, b: to };
+      let step = segmentLength(from, to);
+      if (current.direction !== "none" && current.direction !== neighbour.direction) {
+        step += 18;
+      }
+      for (const used of occupied) {
+        step += sharedLength(segment, used) * 6;
+        if (crosses(segment, used)) step += 600;
+      }
+      const next: State = neighbour;
+      const nextKey = keyOf(next);
+      const cost = current.cost + step;
+      if (cost >= (distances.get(nextKey) ?? Number.POSITIVE_INFINITY)) continue;
+      distances.set(nextKey, cost);
+      previous.set(nextKey, currentKey);
+      states.set(nextKey, next);
+      push({ ...next, cost });
+    }
+  }
+
+  if (!finishKey) return null;
+  const reversed: RoutePoint[] = [];
+  for (let key: string | undefined = finishKey; key; key = previous.get(key)) {
+    const state = states.get(key);
+    if (!state) break;
+    reversed.push({ x: xs[state.x], y: ys[state.y] });
+  }
+  return simplify(reversed.reverse());
+}
+
+/** Route a set together so links may share the short stem at a real card
+ * handle, then choose separate clear lanes after they leave it. */
 export function routeOrthogonalEdges(
   requests: EdgeRouteRequest[],
   boxes: Map<string, RouteBox>
 ): Map<string, EdgeRouteGeometry> {
-  type Endpoint = {
-    request: EdgeRouteRequest;
-    role: "source" | "target";
-    nodeId: string;
-    side: RouteSide;
-    box: RouteBox;
-    other: RouteBox;
-  };
-  const endpointGroups = new Map<string, Endpoint[]>();
-  for (const request of requests) {
-    const endpoints: Endpoint[] = [
-      {
-        request,
-        role: "source",
-        nodeId: request.sourceId,
-        side: request.sourceSide,
-        box: request.source,
-        other: request.target,
-      },
-      {
-        request,
-        role: "target",
-        nodeId: request.targetId,
-        side: request.targetSide,
-        box: request.target,
-        other: request.source,
-      },
-    ];
-    for (const endpoint of endpoints) {
-      const key = `${endpoint.nodeId}:${endpoint.side}`;
-      (endpointGroups.get(key) ?? endpointGroups.set(key, []).get(key)!).push(endpoint);
-    }
-  }
-
-  const ports = new Map<string, RoutePoint>();
-  for (const endpoints of endpointGroups.values()) {
-    endpoints.sort((a, b) => {
-      const axis =
-        desiredPortAxis(a.box, a.other, a.side) -
-        desiredPortAxis(b.box, b.other, b.side);
-      return axis || a.request.id.localeCompare(b.request.id) || a.role.localeCompare(b.role);
-    });
-    const [min, max] = portRange(endpoints[0].box, endpoints[0].side);
-    const desired = endpoints.map((endpoint) =>
-      desiredPortAxis(endpoint.box, endpoint.other, endpoint.side)
-    );
-    const axes = distribute(desired, min, max);
-    endpoints.forEach((endpoint, index) => {
-      ports.set(`${endpoint.request.id}:${endpoint.role}`, portPoint(endpoint.box, endpoint.side, axes[index]));
-    });
-  }
-
   const ordered = [...requests].sort((a, b) => {
     const source = a.sourceId.localeCompare(b.sourceId);
     if (source) return source;
     const side = a.sourceSide.localeCompare(b.sourceSide);
     if (side) return side;
+    const aTarget = center(a.target);
+    const bTarget = center(b.target);
     const axis =
-      desiredPortAxis(a.source, a.target, a.sourceSide) -
-      desiredPortAxis(b.source, b.target, b.sourceSide);
+      a.sourceSide === "left" || a.sourceSide === "right"
+        ? aTarget.y - bTarget.y
+        : aTarget.x - bTarget.x;
     return axis || a.id.localeCompare(b.id);
   });
   const occupied: Segment[] = [];
   const routed = new Map<string, EdgeRouteGeometry>();
 
   for (const request of ordered) {
-    const start = ports.get(`${request.id}:source`) ?? center(request.source);
-    const end = ports.get(`${request.id}:target`) ?? center(request.target);
+    // These are the same four mid-edge anchors shown on the card and used by
+    // a manual drag. Routing may share the short escape stem, but it never
+    // invents a hidden attachment point elsewhere on the card.
+    const start = centrePort(request.source, request.sourceSide);
+    const end = centrePort(request.target, request.targetSide);
     const sourceOut = escapePoint(start, request.sourceSide);
     const targetOut = escapePoint(end, request.targetSide);
     const localBoxes = nearbyBoxes(request, boxes);
     const obstacles = [...localBoxes.values()].map(inflate);
     const candidates = candidatesFor(start, sourceOut, targetOut, end, obstacles);
-    let best = candidates[0];
-    let bestScore = routeScore(best, request, localBoxes, occupied);
-    for (const candidate of candidates.slice(1)) {
-      const score = routeScore(candidate, request, localBoxes, occupied);
+    const clearCandidates = candidates.filter((candidate) =>
+      routeIsClear(candidate, request, boxes)
+    );
+    let best = clearCandidates[0] ?? null;
+    let bestScore = best ? routeScore(best, occupied) : Number.POSITIVE_INFINITY;
+    for (const candidate of clearCandidates.slice(1)) {
+      const score = routeScore(candidate, occupied);
       if (score < bestScore) {
         best = candidate;
         bestScore = score;
       }
     }
+    if (!best) {
+      const middle = gridRoute(sourceOut, targetOut, boxes, occupied);
+      if (middle) {
+        const fallback = simplify([start, ...middle, end]);
+        if (routeIsClear(fallback, request, boxes)) best = fallback;
+      }
+    }
+    // Overlapping endpoint cards can make a collision-free route
+    // geometrically impossible. Preserve a visible connection in that one
+    // case; ordinary non-overlapping layouts always take a clear path above.
+    if (!best) best = candidates[0];
     const points = simplify(best);
     occupied.push(...segments(points));
     routed.set(request.id, { points, label: midpoint(points) });

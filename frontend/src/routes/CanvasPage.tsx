@@ -79,7 +79,6 @@ import { confirmDialog, promptDialog } from "../store/dialogStore";
 import { buildRevealGraph } from "../store/revealGraph";
 import { spreadExpandedChildren } from "../store/expandedChildLayout";
 import Icon, { type IconName } from "../components/Icon";
-import { cycleTheme } from "../theme";
 import { timeLensBucket } from "../lib/cardTiming";
 import { applyCanvasSurfaceAppearance } from "../lib/canvasAppearance";
 import { exportCanvasArchive } from "../lib/canvasArchive";
@@ -625,14 +624,6 @@ function CanvasInner({ canvasId }: { canvasId: string }) {
     [nodes, expandedChildPositions]
   );
 
-  const graph = useMemo(
-    () =>
-      reveal && revealAnchor
-        ? buildRevealGraph(reveal, revealAnchor, visuallyPositionedNodes)
-        : null,
-    [reveal, revealAnchor, visuallyPositionedNodes]
-  );
-
   /** Who each card on this canvas is already linked to, by card id.
    *
    * Keyed by card rather than by placement deliberately: `nodes` is rebuilt
@@ -737,6 +728,34 @@ function CanvasInner({ canvasId }: { canvasId: string }) {
       return { w: drawn?.width ?? node.data.w, h: drawn?.height ?? node.data.h };
     },
     [collapsedCardIds, columns]
+  );
+
+  /** The link router must see the rectangles that are actually painted, not
+   * merely the placement values saved in the database. Column members use
+   * parent-relative render positions, and folded cards or column previews can
+   * have a different live height. Feeding those stale values to avoidance is
+   * what made an otherwise valid route occasionally disappear under a card. */
+  const routingNodes = useMemo(() => {
+    const byId = new Map(nodes.map((node) => [node.id, node]));
+    return nodes.map((node) => {
+      const position = worldPosition(node, byId);
+      const size = effectiveSize(node);
+      return {
+        ...node,
+        position,
+        width: size.w,
+        height: size.h,
+        data: { ...node.data, w: size.w, h: size.h },
+      };
+    });
+  }, [nodes, worldPosition, effectiveSize]);
+
+  const graph = useMemo(
+    () =>
+      reveal && revealAnchor
+        ? buildRevealGraph(reveal, revealAnchor, routingNodes)
+        : null,
+    [reveal, revealAnchor, routingNodes]
   );
 
   /** Apply column membership: a column becomes a parent node sized to its
@@ -854,6 +873,7 @@ function CanvasInner({ canvasId }: { canvasId: string }) {
     const decorate = (node: Node, className?: string): Node => {
       const data = node.data as CardNodeType["data"];
       const timeBucket = timeLensOpen ? timeLensBucket(data.card) : null;
+      const occupiedHandles = graph?.handleSides.get(node.id);
       const next =
         [
           className,
@@ -864,6 +884,7 @@ function CanvasInner({ canvasId }: { canvasId: string }) {
           node.id === linkCandidate ? "is-link-candidate" : null,
           node.id === linkTarget ? "is-link-target" : null,
           node.id === columnTarget?.id ? "is-column-target" : null,
+          ...[...(occupiedHandles ?? [])].map((side) => `has-link-${side}`),
         ]
           .filter(Boolean)
           .join(" ") || undefined;
@@ -2570,13 +2591,6 @@ function CanvasInner({ canvasId }: { canvasId: string }) {
             title="Gestures and shortcuts (?)"
           >
             <span aria-hidden="true">?</span> Help
-          </button>
-          <button
-            className="tool"
-            onClick={() => cycleTheme()}
-            title="Switch theme"
-          >
-            <Icon name="theme" /> Theme
           </button>
         </div>
       </header>

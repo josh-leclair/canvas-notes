@@ -9,6 +9,7 @@ import type { RevealLink } from "../api/types";
 import {
   roundedOrthogonalPath,
   type EdgeRouteGeometry,
+  type RoutePoint,
 } from "../lib/edgeRouting";
 import { useCanvasStore } from "../store/canvasStore";
 import "./linkEdge.css";
@@ -32,6 +33,32 @@ const TYPE_LABEL: Record<string, string> = {
   follows_from: "follows from",
   related: "related",
 };
+
+/** React Flow owns the actual handle coordinates. The router normally arrives
+ * at the same values from the card rectangles, but snapping the first and
+ * last legs to these authoritative points keeps a line attached during live
+ * measurement and parent/column layout changes too. */
+function snapToHandles(
+  points: RoutePoint[],
+  source: RoutePoint,
+  target: RoutePoint
+): RoutePoint[] {
+  if (points.length < 2) return [source, target];
+  const next = points.map((point) => ({ ...point }));
+  const oldStart = next[0];
+  const oldStartOut = next[1];
+  next[0] = source;
+  if (Math.abs(oldStart.x - oldStartOut.x) < 0.01) next[1].x = source.x;
+  else next[1].y = source.y;
+
+  const lastIndex = next.length - 1;
+  const oldEnd = next[lastIndex];
+  const oldEndOut = next[lastIndex - 1];
+  next[lastIndex] = target;
+  if (Math.abs(oldEnd.x - oldEndOut.x) < 0.01) next[lastIndex - 1].x = target.x;
+  else next[lastIndex - 1].y = target.y;
+  return next;
+}
 
 /** Whether the line should draw itself on at all.
  *
@@ -94,7 +121,14 @@ function LinkEdgeImpl({
     targetPosition,
   });
   const route = data?.route as EdgeRouteGeometry | undefined;
-  const path = route ? roundedOrthogonalPath(route.points) : fallbackPath;
+  const routedPoints = route
+    ? snapToHandles(
+        route.points,
+        { x: sourceX, y: sourceY },
+        { x: targetX, y: targetY }
+      )
+    : null;
+  const path = routedPoints ? roundedOrthogonalPath(routedPoints) : fallbackPath;
   const labelX = route?.label.x ?? fallbackLabelX;
   const labelY = route?.label.y ?? fallbackLabelY;
 
