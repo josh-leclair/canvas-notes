@@ -32,6 +32,12 @@
   --palette-navy: #1b65b9;
   --palette-mint: #8fdfc8;
   --palette-aqua: #85daff;
+  --palette-indigo: #4f5f8f;
+  --palette-teal: #39766f;
+  --palette-ochre: #a97826;
+  --palette-terracotta: #a55742;
+  --palette-mulberry: #7c4f6d;
+  --palette-graphite: #626a73;
 
   --pantry-bg: #fff4df;
   --pantry-bg-sunk: #f3dfbd;
@@ -87,6 +93,12 @@
   --hue-navy: var(--palette-navy);
   --hue-mint: var(--palette-mint);
   --hue-aqua: var(--palette-aqua);
+  --hue-indigo: var(--palette-indigo);
+  --hue-teal: var(--palette-teal);
+  --hue-ochre: var(--palette-ochre);
+  --hue-terracotta: var(--palette-terracotta);
+  --hue-mulberry: var(--palette-mulberry);
+  --hue-graphite: var(--palette-graphite);
 
   /* Foregrounds for controls drawn directly on the vivid hue. These stay
      separate from --fill-ink-* because canvas appearances may soften card
@@ -123,6 +135,12 @@
   --hue-ink-navy: #fff8ee;
   --hue-ink-mint: #10241e;
   --hue-ink-aqua: #10232c;
+  --hue-ink-indigo: #fff9f2;
+  --hue-ink-teal: #fff9f2;
+  --hue-ink-ochre: #1f1a1f;
+  --hue-ink-terracotta: #fff9f2;
+  --hue-ink-mulberry: #fff9f2;
+  --hue-ink-graphite: #fff9f2;
 
   --fill-citrus: var(--palette-citrus);
   --fill-strawberry: var(--palette-strawberry);
@@ -142,6 +160,12 @@
   --fill-navy: var(--palette-navy);
   --fill-mint: var(--palette-mint);
   --fill-aqua: var(--palette-aqua);
+  --fill-indigo: var(--palette-indigo);
+  --fill-teal: var(--palette-teal);
+  --fill-ochre: var(--palette-ochre);
+  --fill-terracotta: var(--palette-terracotta);
+  --fill-mulberry: var(--palette-mulberry);
+  --fill-graphite: var(--palette-graphite);
 
   --fill-edge-citrus: #b87c00;
   --fill-edge-strawberry: #b9361e;
@@ -161,6 +185,12 @@
   --fill-edge-navy: #0d3e78;
   --fill-edge-mint: #3d947e;
   --fill-edge-aqua: #327fa4;
+  --fill-edge-indigo: #344369;
+  --fill-edge-teal: #24534e;
+  --fill-edge-ochre: #765014;
+  --fill-edge-terracotta: #703727;
+  --fill-edge-mulberry: #533247;
+  --fill-edge-graphite: #414850;
 
   --fill-ink-citrus: var(--palette-chocolate);
   --fill-ink-strawberry: var(--fill-edge-plum);
@@ -180,6 +210,12 @@
   --fill-ink-navy: #fff8ee;
   --fill-ink-mint: #10241e;
   --fill-ink-aqua: #10232c;
+  --fill-ink-indigo: #fff9f2;
+  --fill-ink-teal: #fff9f2;
+  --fill-ink-ochre: #1f1a1f;
+  --fill-ink-terracotta: #fff9f2;
+  --fill-ink-mulberry: #fff9f2;
+  --fill-ink-graphite: #fff9f2;
 }
 
 .theme-light {
@@ -203,9 +239,9 @@
   --accent-gradient: linear-gradient(135deg, #6d5ce0 0%, #a855c4 100%);
   --ring: #5b4bd6;
 
-  /* Reversible canvas study, derived from the editorial palette. The raw
-     avocado remains the filled accent; a darker leaf variant carries small
-     text and strokes against Linen at 4.67:1. */
+  /* Studio uses a cool editorial blue for interface emphasis. Card colour
+     still carries meaning, but the toolbar no longer competes with Pantry's
+     warmer, food-and-mood-board palette. */
   --study-bg: #f2ece5;
   --study-bg-sunk: #e7ded3;
   --study-bg-panel: #faf6f0;
@@ -216,11 +252,11 @@
   --study-text-muted: #665b63;
   --study-border: #c8bdae;
   --study-border-strong: #8d8c7d;
-  --study-accent: #6b6d1d;
-  --study-accent-hover: #555713;
-  --study-accent-fill: #c0c26b;
-  --study-accent-ink: #372f36;
-  --study-accent-soft: rgba(107, 109, 29, 0.14);
+  --study-accent: #4f5f8f;
+  --study-accent-hover: #3e4c78;
+  --study-accent-fill: #4f5f8f;
+  --study-accent-ink: #fff9f2;
+  --study-accent-soft: rgba(79, 95, 143, 0.16);
   --study-canvas-dots: #b8aa9a;
   --study-minimap-bg: #eee6dc;
   --study-minimap-mask: rgba(231, 222, 211, 0.66);
@@ -301,11 +337,11 @@
   --study-text-muted: #d0c4ba;
   --study-border: #675c64;
   --study-border-strong: #8d8c7d;
-  --study-accent: #c0c26b;
-  --study-accent-hover: #d0d27a;
-  --study-accent-fill: #c0c26b;
-  --study-accent-ink: #372f36;
-  --study-accent-soft: rgba(192, 194, 107, 0.18);
+  --study-accent: #9bafe0;
+  --study-accent-hover: #b2c2e8;
+  --study-accent-fill: #9bafe0;
+  --study-accent-ink: #242230;
+  --study-accent-soft: rgba(155, 175, 224, 0.2);
   --study-canvas-dots: #877985;
   --study-minimap-bg: #30292f;
   --study-minimap-mask: rgba(41, 35, 41, 0.7);

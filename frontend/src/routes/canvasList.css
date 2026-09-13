@@ -260,9 +260,10 @@
 
 .appearance-studio {
   --mood-1: var(--palette-linen);
-  --mood-2: var(--palette-plum);
-  --mood-3: var(--palette-avocado);
-  --mood-4: var(--palette-maple);
+  --mood-2: var(--palette-indigo);
+  --mood-3: var(--palette-teal);
+  --mood-4: var(--palette-terracotta);
+  --appearance-cover: var(--palette-indigo);
 }
 
 .appearance-pantry {

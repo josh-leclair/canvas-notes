@@ -12,14 +12,14 @@ export const THEMES: ThemeOption[] = [
   {
     id: "light",
     label: "Paper",
-    hint: "Linen and avocado.",
-    swatch: ["#f2ece5", "#faf6f0", "#c0c26b"],
+    hint: "Linen and editorial blue.",
+    swatch: ["#f2ece5", "#faf6f0", "#4f5f8f"],
   },
   {
     id: "dark",
     label: "Ink",
-    hint: "Plum and avocado.",
-    swatch: ["#372f36", "#433a42", "#c0c26b"],
+    hint: "Plum and soft blue.",
+    swatch: ["#372f36", "#433a42", "#9bafe0"],
   },
 ];
 

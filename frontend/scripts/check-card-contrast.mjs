@@ -10,7 +10,7 @@ const canvasCss = readFileSync(
   "utf8"
 );
 
-const STUDIO = ["avocado", "plum", "linen", "cement", "maple", "rust"];
+const STUDIO = ["indigo", "teal", "ochre", "terracotta", "mulberry", "graphite"];
 const PANTRY = [
   "citrus",
   "strawberry",

@@ -56,8 +56,8 @@ function seedOf(axis: Axis, value: PaintValue | null): string {
   return (
     (value && isCustom(value) ? value : null) ??
     (value ? tokenColour(`${prefix}${value}`) : null) ??
-    tokenColour(`${prefix}avocado`) ??
-    "#c0c26b"
+    tokenColour(`${prefix}indigo`) ??
+    "#4f5f8f"
   );
 }
 

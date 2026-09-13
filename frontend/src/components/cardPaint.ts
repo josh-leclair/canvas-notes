@@ -2,12 +2,12 @@ import { inkFor, normaliseHex, shade } from "../lib/colour";
 import type { CanvasAppearance, Card } from "../api/types";
 
 export const HUES = [
-  "avocado",
-  "plum",
-  "linen",
-  "cement",
-  "maple",
-  "rust",
+  "indigo",
+  "teal",
+  "ochre",
+  "terracotta",
+  "mulberry",
+  "graphite",
 ] as const;
 
 export const PANTRY_HUES = [
@@ -42,12 +42,12 @@ export type Hue = (typeof ALL_HUES)[number];
  * rendered values still come from theme.css; these are used only to compare
  * colours, never to style a card directly. */
 const HUE_HEX: Record<Hue, `#${string}`> = {
-  avocado: "#c0c26b",
-  plum: "#372f36",
-  linen: "#f2ece5",
-  cement: "#8d8c7d",
-  maple: "#b29762",
-  rust: "#9f553c",
+  indigo: "#4f5f8f",
+  teal: "#39766f",
+  ochre: "#a97826",
+  terracotta: "#a55742",
+  mulberry: "#7c4f6d",
+  graphite: "#626a73",
   citrus: "#fec844",
   strawberry: "#ff5b38",
   chocolate: "#743d1e",
@@ -86,6 +86,12 @@ const LEGACY_HUES = [
   "purple",
   "pink",
   "slate",
+  "avocado",
+  "plum",
+  "linen",
+  "cement",
+  "maple",
+  "rust",
 ] as const;
 type LegacyHue = (typeof LEGACY_HUES)[number];
 
@@ -98,6 +104,12 @@ const LEGACY_HUE_HEX: Record<LegacyHue, `#${string}`> = {
   purple: "#ab60f6",
   pink: "#f33091",
   slate: "#7685b2",
+  avocado: "#c0c26b",
+  plum: "#372f36",
+  linen: "#f2ece5",
+  cement: "#8d8c7d",
+  maple: "#b29762",
+  rust: "#9f553c",
 };
 
 /** A colour picked off the wheel, stored as a canonical `#aabbcc`.
