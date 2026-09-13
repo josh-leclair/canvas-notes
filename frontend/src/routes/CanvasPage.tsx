@@ -49,6 +49,7 @@ import LinkPanel from "../components/LinkPanel";
 import Lightbox from "../components/Lightbox";
 import LinkEdge from "../components/LinkEdge";
 import LinkPicker from "../components/LinkPicker";
+import MagicOrganizePanel from "../components/MagicOrganizePanel";
 import Logo from "../components/Logo";
 import SearchOverlay from "../components/SearchOverlay";
 import SuggestionsPanel from "../components/SuggestionsPanel";
@@ -76,6 +77,14 @@ import { cycleTheme } from "../theme";
 import { timeLensBucket } from "../lib/cardTiming";
 import { applyCanvasSurfaceAppearance } from "../lib/canvasAppearance";
 import { exportCanvasArchive } from "../lib/canvasArchive";
+import {
+  createOrganizePlan,
+  modeSupportsZones,
+  translateOrganizePlan,
+  type OrganizeItem,
+  type OrganizeMode,
+  type OrganizePlan,
+} from "../lib/magicOrganize";
 import "./canvasPage.css";
 
 const nodeTypes = {
@@ -138,6 +147,15 @@ interface Rect {
   y: number;
   w: number;
   h: number;
+}
+
+interface MagicSession {
+  items: OrganizeItem[];
+  original: Record<string, { x: number; y: number; w: number; h: number }>;
+  selectedScope: boolean;
+  mode: OrganizeMode;
+  plan: OrganizePlan;
+  addZones: boolean;
 }
 
 interface AlignmentGuides {
@@ -254,6 +272,7 @@ function CanvasInner({ canvasId }: { canvasId: string }) {
   const [cheatOpen, setCheatOpen] = useState(false);
   const [publicLensOpen, setPublicLensOpen] = useState(false);
   const [timeLensOpen, setTimeLensOpen] = useState(false);
+  const [magicSession, setMagicSession] = useState<MagicSession | null>(null);
   const [portalAt, setPortalAt] = useState<{ x: number; y: number } | null>(null);
   const [canvasMenuAt, setCanvasMenuAt] = useState<{
     screenX: number;
@@ -361,7 +380,9 @@ function CanvasInner({ canvasId }: { canvasId: string }) {
   // Finite boards are really auto-growing workspaces. Approaching either far
   // edge adds one modest strip; leaving ample breathing room stops growth.
   useEffect(() => {
-    if (canvasInfinite) return;
+    // A Magic Organize preview is intentionally non-persistent. Do not grow a
+    // finite canvas until the proposed positions are accepted.
+    if (canvasInfinite || magicSession) return;
     let right = 0;
     let bottom = 0;
     for (const node of nodes) {
@@ -374,7 +395,7 @@ function CanvasInner({ canvasId }: { canvasId: string }) {
       bottom = Math.max(bottom, zone.y + zone.h);
     }
     growCanvasForContent(right, bottom);
-  }, [canvasInfinite, nodes, zones, growCanvasForContent]);
+  }, [canvasInfinite, nodes, zones, growCanvasForContent, magicSession]);
 
   // Boards this one sits inside. A canvas can be placed on more than one, so
   // this is a set of ways in rather than a single path.
@@ -1953,6 +1974,178 @@ function CanvasInner({ canvasId }: { canvasId: string }) {
     composeCards(cardIds, { x: right + 70, y: top });
   }
 
+  function placeMagicPlan(items: OrganizeItem[], mode: OrganizeMode): OrganizePlan {
+    const local = createOrganizePlan(items, mode);
+    const wanted = new Set(items.map((item) => item.id));
+    const obstacles = nodes
+      .filter((node) => !wanted.has(node.id) && !node.data.parentId)
+      .map((node) => {
+        const size = effectiveSize(node);
+        return { x: node.position.x, y: node.position.y, w: size.w, h: size.h };
+      });
+    const desired = {
+      x: Math.min(...items.map((item) => item.x)),
+      y: Math.min(...items.map((item) => item.y)),
+    };
+    const padding = 28;
+    const clampAnchor = (x: number, y: number) => canvasInfinite
+      ? { x, y }
+      : {
+          x: Math.max(padding, Math.min(x, Math.max(padding, canvasWidth - local.width - padding))),
+          y: Math.max(padding, Math.min(y, Math.max(padding, canvasHeight - local.height - padding))),
+        };
+    const overlaps = (left: Rect, right: Rect) =>
+      left.x < right.x + right.w + padding &&
+      left.x + left.w + padding > right.x &&
+      left.y < right.y + right.h + padding &&
+      left.y + left.h + padding > right.y;
+    const clear = (anchor: { x: number; y: number }) => {
+      const footprint = { x: anchor.x, y: anchor.y, w: local.width, h: local.height };
+      return obstacles.every((obstacle) => !overlaps(footprint, obstacle));
+    };
+
+    const candidates: Array<{ x: number; y: number; distance: number }> = [];
+    const seen = new Set<string>();
+    for (let dx = -18; dx <= 18; dx += 1) {
+      for (let dy = -18; dy <= 18; dy += 1) {
+        const candidate = clampAnchor(desired.x + dx * 72, desired.y + dy * 72);
+        const key = `${Math.round(candidate.x)}:${Math.round(candidate.y)}`;
+        if (seen.has(key)) continue;
+        seen.add(key);
+        candidates.push({ ...candidate, distance: dx * dx + dy * dy });
+      }
+    }
+    candidates.sort((left, right) => left.distance - right.distance);
+    const anchor = candidates.find(clear) ?? clampAnchor(desired.x, desired.y);
+    return translateOrganizePlan(local, anchor.x, anchor.y);
+  }
+
+  function showMagicPreview(plan: OrganizePlan, itemIds: string[]) {
+    const positions = plan.positions;
+    setNodes((current) => current.map((node) => {
+      const position = positions[node.id];
+      return position ? { ...node, position } : node;
+    }));
+    window.requestAnimationFrame(() => {
+      fitView({
+        nodes: itemIds.map((id) => ({ id })),
+        padding: 0.16,
+        duration: 520,
+        maxZoom: 1.08,
+      });
+    });
+  }
+
+  function openMagicOrganizer() {
+    const freeStanding = nodes.filter((node) => !node.data.parentId);
+    const selected = freeStanding.filter((node) => selection.includes(node.id));
+    const selectedScope = selected.length >= 2;
+    const target = selectedScope ? selected : freeStanding;
+    if (target.length < 2) {
+      showToast("Add at least two free-standing cards to organize");
+      return;
+    }
+    clearReveal();
+    const items: OrganizeItem[] = target.map((node) => {
+      const size = effectiveSize(node);
+      return {
+        id: node.id,
+        card: node.data.card,
+        x: node.position.x,
+        y: node.position.y,
+        w: Math.max(node.data.w, size.w),
+        h: Math.max(node.data.h, size.h),
+      };
+    });
+    const original = Object.fromEntries(target.map((node) => [
+      node.id,
+      { x: node.position.x, y: node.position.y, w: node.data.w, h: node.data.h },
+    ]));
+    const mode: OrganizeMode = "cluster";
+    const plan = placeMagicPlan(items, mode);
+    setMagicSession({ items, original, selectedScope, mode, plan, addZones: true });
+    showMagicPreview(plan, items.map((item) => item.id));
+  }
+
+  function changeMagicMode(mode: OrganizeMode) {
+    if (!magicSession) return;
+    const plan = placeMagicPlan(magicSession.items, mode);
+    setMagicSession({
+      ...magicSession,
+      mode,
+      plan,
+      addZones: modeSupportsZones(mode),
+    });
+    showMagicPreview(plan, magicSession.items.map((item) => item.id));
+  }
+
+  function cancelMagicOrganizer() {
+    if (!magicSession) return;
+    const original = magicSession.original;
+    setNodes((current) => current.map((node) => {
+      const geometry = original[node.id];
+      return geometry ? { ...node, position: { x: geometry.x, y: geometry.y } } : node;
+    }));
+    const ids = magicSession.items.map((item) => ({ id: item.id }));
+    setMagicSession(null);
+    window.requestAnimationFrame(() => {
+      fitView({ nodes: ids, padding: 0.2, duration: 360, maxZoom: 1.08 });
+    });
+  }
+
+  async function applyMagicOrganizer() {
+    if (!magicSession) return;
+    const session = magicSession;
+    const right = Math.max(
+      ...session.items.map((item) => session.plan.positions[item.id].x + item.w),
+      ...session.plan.groups.map((group) => group.x + group.w)
+    );
+    const bottom = Math.max(
+      ...session.items.map((item) => session.plan.positions[item.id].y + item.h),
+      ...session.plan.groups.map((group) => group.y + group.h)
+    );
+    growCanvasForContent(right, bottom);
+
+    const zoneIds: string[] = [];
+    let zoneFailure = false;
+    if (session.addZones && modeSupportsZones(session.mode)) {
+      for (const group of session.plan.groups) {
+        try {
+          const zone = await createZone({
+            name: group.name,
+            x: group.x,
+            y: group.y,
+            w: group.w,
+            h: group.h,
+          });
+          if (zone) zoneIds.push(zone.id);
+        } catch {
+          zoneFailure = true;
+        }
+      }
+    }
+
+    const undoItems = session.items.map((item) => {
+      const geometry = session.original[item.id];
+      return {
+        kind: "geometry" as const,
+        placementId: item.id,
+        x: geometry.x,
+        y: geometry.y,
+        w: geometry.w,
+        h: geometry.h,
+      };
+    });
+    pushUndo({ kind: "organize", items: undoItems, zoneIds });
+    session.items.forEach((item) => savePlacement(item.id));
+    setMagicSession(null);
+    showToast(
+      zoneFailure
+        ? "Layout applied; one or more zones could not be created"
+        : `Organized ${session.items.length} cards — undo is available`
+    );
+  }
+
   function tidySelection() {
     const selectedIds = new Set(selection);
     const selected = nodes
@@ -2076,7 +2269,7 @@ function CanvasInner({ canvasId }: { canvasId: string }) {
       ref={wrapperRef}
       className={`canvas-page canvas-appearance-${canvasAppearance} ${
         CONTAINER_LAYOUT_STUDY ? "container-layout-study" : ""
-      } ${dragging ? "is-dragging" : ""}`}
+      } ${dragging ? "is-dragging" : ""} ${magicSession ? "is-magic-preview" : ""}`}
       style={
         {
           "--card-copy-size": `${canvasTextSize}px`,
@@ -2214,6 +2407,18 @@ function CanvasInner({ canvasId }: { canvasId: string }) {
 
         {!readOnly && (
           <div className="toolbar-group">
+            <button
+              className="tool magic-organize-tool"
+              onClick={openMagicOrganizer}
+              disabled={nodes.filter((node) => !node.data.parentId).length < 2}
+              title={
+                selection.filter((id) => nodes.some((node) => node.id === id && !node.data.parentId)).length >= 2
+                  ? "Organize the selected cards"
+                  : "Organize the free-standing cards on this canvas"
+              }
+            >
+              <Icon name="sparkles" /> Magic
+            </button>
             {selection.filter((id) => {
               const node = nodes.find((candidate) => candidate.id === id);
               return node && !node.data.parentId;
@@ -2377,6 +2582,21 @@ function CanvasInner({ canvasId }: { canvasId: string }) {
           onClose={() => setTimeLensOpen(false)}
         />
       )}
+      {magicSession && (
+        <MagicOrganizePanel
+          mode={magicSession.mode}
+          count={magicSession.items.length}
+          selectedScope={magicSession.selectedScope}
+          groups={magicSession.plan.groups}
+          addZones={magicSession.addZones}
+          onMode={changeMagicMode}
+          onAddZones={(addZones) => setMagicSession((current) =>
+            current ? { ...current, addZones } : current
+          )}
+          onCancel={cancelMagicOrganizer}
+          onApply={applyMagicOrganizer}
+        />
+      )}
       {!readOnly && <InboxPanel />}
       <FocusShelf />
       <SearchOverlay />
@@ -2536,6 +2756,20 @@ function CanvasInner({ canvasId }: { canvasId: string }) {
               style={{ width: canvasWidth, height: canvasHeight }}
               aria-hidden="true"
             />
+          </ViewportPortal>
+        )}
+        {magicSession && magicSession.plan.groups.length > 0 && (
+          <ViewportPortal>
+            {magicSession.plan.groups.map((group, index) => (
+              <div
+                key={`${group.name}:${index}`}
+                className={`magic-preview-zone tone-${group.tone}`}
+                style={{ left: group.x, top: group.y, width: group.w, height: group.h }}
+              >
+                <strong>{group.name}</strong>
+                <span>{group.count}</span>
+              </div>
+            ))}
           </ViewportPortal>
         )}
         {zones.length > 0 && (

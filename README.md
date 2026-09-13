@@ -14,6 +14,9 @@ folder tree.
 
 - **Spatial canvases** — arrange, resize, group, and reuse cards on an
   auto-growing surface with placement undo.
+- **Magic Organize** — preview topic clusters, project lanes, timelines,
+  mood boards, or compact layouts for selected cards or an entire canvas,
+  with optional named zones and one-step undo.
 - **Connected notes** — give links a direction, relationship type, and note,
   then reveal a focused two-hop neighborhood around any card.
 - **Flexible card types** — notes, rich documents, to-dos, tables, links,

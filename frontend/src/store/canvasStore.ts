@@ -38,8 +38,8 @@ import type {
   Zone,
 } from "../api/types";
 
-/** Undo covers placement geometry only: the things free placement makes easy
- * to do by accident. Content edits and deletions are not undoable. */
+/** Undo covers placement geometry and the zones created with an organized
+ * layout. Content edits and deletions are not undoable. */
 type GeometryUndo = {
   kind: "geometry";
   placementId: string;
@@ -52,6 +52,7 @@ type GeometryUndo = {
 type UndoOp =
   | GeometryUndo
   | { kind: "geometry-group"; items: GeometryUndo[] }
+  | { kind: "organize"; items: GeometryUndo[]; zoneIds: string[] }
   | { kind: "removed"; cardId: string; x: number; y: number; w: number; h: number };
 
 const UNDO_LIMIT = 50;
@@ -223,7 +224,7 @@ interface CanvasState {
   updateCanvasAppearance: (appearance: CanvasAppearance) => Promise<void>;
   updateCanvasTextSize: (size: CanvasTextSize) => void;
   growCanvasForContent: (right: number, bottom: number) => void;
-  createZone: (zone: { name: string; x: number; y: number; w?: number; h?: number }) => Promise<void>;
+  createZone: (zone: { name: string; x: number; y: number; w?: number; h?: number }) => Promise<Zone | undefined>;
   updateZone: (zoneId: string, patch: Partial<Pick<Zone, "name" | "x" | "y" | "w" | "h" | "sort">>) => Promise<void>;
   setZoneGeometry: (zoneId: string, patch: Partial<Pick<Zone, "x" | "y" | "w" | "h">>) => void;
   deleteZone: (zoneId: string) => Promise<void>;
@@ -499,6 +500,7 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
     };
     const created = await api.post<Zone>(`/api/canvases/${canvasId}/zones`, bounded);
     set({ zones: [...get().zones, created] });
+    return created;
   },
 
   updateZone: async (zoneId, patch) => {
@@ -1603,7 +1605,7 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
       return;
     }
 
-    if (op.kind === "geometry-group") {
+    if (op.kind === "geometry-group" || op.kind === "organize") {
       const byId = new Map(op.items.map((item) => [item.placementId, item]));
       set({
         nodes: get().nodes.map((node) => {
@@ -1618,19 +1620,27 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
               }
             : node;
         }),
+        ...(op.kind === "organize"
+          ? { zones: get().zones.filter((zone) => !op.zoneIds.includes(zone.id)) }
+          : {}),
       });
       try {
         await Promise.all(
-          op.items.map((item) =>
-            api.patch(`/api/placements/${item.placementId}`, {
+          [
+            ...op.items.map((item) => api.patch(`/api/placements/${item.placementId}`, {
               x: item.x,
               y: item.y,
               w: item.w,
               h: item.h,
-            })
-          )
+            })),
+            ...(op.kind === "organize"
+              ? op.zoneIds.map((zoneId) => api.delete(`/api/zones/${zoneId}`))
+              : []),
+          ]
         );
       } catch {
+        const { canvasId } = get();
+        if (canvasId) await get().loadCanvas(canvasId);
         get().showToast("Could not undo that arrangement");
       }
       return;
