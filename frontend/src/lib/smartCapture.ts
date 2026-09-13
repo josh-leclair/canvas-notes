@@ -12,6 +12,14 @@ export interface CaptureDraft {
   title: string;
   body: string;
   file?: File;
+  crop?: ImageCrop;
+}
+
+export interface ImageCrop {
+  x: number;
+  y: number;
+  w: number;
+  h: number;
 }
 
 export const SMART_CAPTURE_PLACE_EVENT = "canvas-notes:smart-capture-place";
@@ -73,17 +81,22 @@ export function captureDraftsFromText(value: string): CaptureDraft[] {
 }
 
 export function captureDraftsFromFiles(files: Iterable<File>): CaptureDraft[] {
-  return Array.from(files).map((file) => ({
-    id: id(),
-    type: file.type.startsWith("image/")
+  return Array.from(files).map((file) => {
+    const type = file.type.startsWith("image/")
       ? "image"
       : file.type.startsWith("audio/")
         ? "audio"
-        : "file",
-    title: file.name,
-    body: "",
-    file,
-  }));
+        : "file";
+    return {
+      id: id(),
+      type,
+      // The filename remains visible beside the preview. An image title is
+      // editorial metadata, so choosing a file must not silently invent one.
+      title: type === "image" ? "" : file.name,
+      body: "",
+      file,
+    };
+  });
 }
 
 function normal(value: string | null | undefined): string {

@@ -1663,6 +1663,10 @@ function CanvasInner({ canvasId }: { canvasId: string }) {
       const target = e.target as HTMLElement;
       if (target.closest("input, textarea, [contenteditable]")) return;
       if (useCanvasStore.getState().role === "viewer") return;
+      // An expanded Inbox owns unclaimed paste. SmartCapture reviews it
+      // before anything is persisted; the canvas only keeps its immediate
+      // paste shortcut while the Inbox is collapsed.
+      if (useCanvasStore.getState().inboxOpen) return;
       const at = lastPointer.current;
       const pos = at
         ? screenToFlowPosition(at)

@@ -1,18 +1,71 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type CSSProperties } from "react";
 import { api } from "../api/client";
-import type { CanvasSuggestion, Card, GeneratedBy } from "../api/types";
+import type { CanvasSuggestion, Card, CardType, GeneratedBy } from "../api/types";
 import { useCanvasStore } from "../store/canvasStore";
 import { confirmDialog } from "../store/dialogStore";
 import {
   INBOX_TOUCH_DROP_EVENT,
   type InboxTouchDropDetail,
 } from "../lib/inboxTouchDrag";
-import Icon from "./Icon";
+import Icon, { type IconName } from "./Icon";
 import SmartCapture from "./SmartCapture";
 import "./inboxPanel.css";
 
 function generatedBy(card: Card): GeneratedBy | null {
   return (card.payload as { generated_by?: GeneratedBy }).generated_by ?? null;
+}
+
+const CARD_IDENTITY: Record<CardType, { label: string; icon: IconName }> = {
+  text: { label: "Note", icon: "note" },
+  link: { label: "Link", icon: "note" },
+  youtube: { label: "YouTube", icon: "play" },
+  audio: { label: "Audio", icon: "audio" },
+  image: { label: "Image", icon: "image" },
+  board: { label: "Board", icon: "board" },
+  column: { label: "Column", icon: "column" },
+  file: { label: "File", icon: "file" },
+  checklist: { label: "To-do", icon: "checklist" },
+  table: { label: "Table", icon: "table" },
+  document: { label: "Document", icon: "document" },
+  portal: { label: "Portal", icon: "portal" },
+  timer: { label: "Timer", icon: "clock" },
+};
+
+function inboxPreview(card: Card): string {
+  if (card.body?.trim()) return card.body.trim();
+  if (card.type === "link" || card.type === "youtube") {
+    return typeof card.payload.url === "string" ? card.payload.url : "";
+  }
+  if (card.type === "file") {
+    return typeof card.payload.file_name === "string" ? card.payload.file_name : "";
+  }
+  if (card.type === "audio" && typeof card.payload.transcript === "string") {
+    return card.payload.transcript;
+  }
+  if (card.type === "checklist" && Array.isArray(card.payload.items)) {
+    return `${card.payload.items.length} item${card.payload.items.length === 1 ? "" : "s"}`;
+  }
+  return "";
+}
+
+function InboxImagePreview({ card }: { card: Card }) {
+  const fileId = card.payload.image_file_id;
+  if (typeof fileId !== "string") return null;
+  const crop = card.payload.crop as
+    | { x: number; y: number; w: number; h: number }
+    | undefined;
+  const style: CSSProperties | undefined = crop ? {
+    position: "absolute",
+    width: `${100 / crop.w}%`,
+    height: `${100 / crop.h}%`,
+    left: `${(-crop.x * 100) / crop.w}%`,
+    top: `${(-crop.y * 100) / crop.h}%`,
+  } : undefined;
+  return (
+    <div className="inbox-card-image">
+      <img src={`/api/files/${fileId}`} alt={card.title ?? "Inbox image"} style={style} />
+    </div>
+  );
 }
 
 type Row =
@@ -210,6 +263,9 @@ export default function InboxPanel() {
 
   const renderCard = (card: Card) => {
     const hint = triage[card.id]?.[0];
+    const identity = CARD_IDENTITY[card.type];
+    const preview = inboxPreview(card);
+    const showPreview = preview && preview !== card.title;
     return (
       <div
         key={card.id}
@@ -231,8 +287,13 @@ export default function InboxPanel() {
           e.dataTransfer.effectAllowed = "move";
         }}
       >
+        <div className="inbox-card-kind">
+          <Icon name={identity.icon} />
+          <span>{identity.label}</span>
+        </div>
+        {card.type === "image" && <InboxImagePreview card={card} />}
         {card.title && <div className="inbox-card-title">{card.title}</div>}
-        <div className="inbox-card-body">{card.body ?? ""}</div>
+        {showPreview && <div className="inbox-card-body">{preview}</div>}
         {hint && hint.canvas_id !== canvasId && (
           <div className="inbox-hint">maybe “{hint.canvas_name}”</div>
         )}

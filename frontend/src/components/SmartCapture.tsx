@@ -5,6 +5,7 @@ import {
   useState,
   type ClipboardEvent,
   type DragEvent,
+  type PointerEvent as ReactPointerEvent,
 } from "react";
 import { api } from "../api/client";
 import type { Card } from "../api/types";
@@ -17,6 +18,7 @@ import {
   duplicateForDraft,
   type CaptureDraft,
   type CaptureDraftType,
+  type ImageCrop,
   type SmartCapturePlaceDetail,
 } from "../lib/smartCapture";
 import { URL_PATTERN } from "../lib/urls";
@@ -25,6 +27,149 @@ import Icon from "./Icon";
 
 const TEXT_TYPES: CaptureDraftType[] = ["text", "document", "checklist", "link", "youtube"];
 const FILE_TYPES: CaptureDraftType[] = ["image", "audio", "file"];
+const FULL_CROP: ImageCrop = { x: 0, y: 0, w: 1, h: 1 };
+const MIN_CROP = 0.08;
+
+type CropHandle = "nw" | "ne" | "sw" | "se" | "move";
+
+function clamp(value: number, low: number, high: number): number {
+  return Math.min(high, Math.max(low, value));
+}
+
+function InlineImageCrop({
+  file,
+  crop,
+  onChange,
+}: {
+  file: File;
+  crop?: ImageCrop;
+  onChange: (crop: ImageCrop | undefined) => void;
+}) {
+  const src = useMemo(() => URL.createObjectURL(file), [file]);
+  const [aspect, setAspect] = useState(16 / 9);
+  const frameRef = useRef<HTMLDivElement>(null);
+  const dragRef = useRef<{
+    handle: CropHandle;
+    startX: number;
+    startY: number;
+    from: ImageCrop;
+  } | null>(null);
+  const value = crop ?? FULL_CROP;
+
+  useEffect(() => () => URL.revokeObjectURL(src), [src]);
+
+  useEffect(() => {
+    function onMove(event: PointerEvent) {
+      const drag = dragRef.current;
+      const frame = frameRef.current;
+      if (!drag || !frame) return;
+      const bounds = frame.getBoundingClientRect();
+      const dx = (event.clientX - drag.startX) / bounds.width;
+      const dy = (event.clientY - drag.startY) / bounds.height;
+      const from = drag.from;
+
+      if (drag.handle === "move") {
+        onChange({
+          ...from,
+          x: clamp(from.x + dx, 0, 1 - from.w),
+          y: clamp(from.y + dy, 0, 1 - from.h),
+        });
+        return;
+      }
+
+      let { x, y, w, h } = from;
+      if (drag.handle === "nw" || drag.handle === "sw") {
+        const nextX = clamp(from.x + dx, 0, from.x + from.w - MIN_CROP);
+        w = from.x + from.w - nextX;
+        x = nextX;
+      } else {
+        w = clamp(from.w + dx, MIN_CROP, 1 - from.x);
+      }
+      if (drag.handle === "nw" || drag.handle === "ne") {
+        const nextY = clamp(from.y + dy, 0, from.y + from.h - MIN_CROP);
+        h = from.y + from.h - nextY;
+        y = nextY;
+      } else {
+        h = clamp(from.h + dy, MIN_CROP, 1 - from.y);
+      }
+      onChange({ x, y, w, h });
+    }
+
+    function onUp() {
+      dragRef.current = null;
+    }
+
+    window.addEventListener("pointermove", onMove);
+    window.addEventListener("pointerup", onUp);
+    return () => {
+      window.removeEventListener("pointermove", onMove);
+      window.removeEventListener("pointerup", onUp);
+    };
+  }, [onChange]);
+
+  function start(handle: CropHandle, event: ReactPointerEvent) {
+    event.preventDefault();
+    event.stopPropagation();
+    dragRef.current = {
+      handle,
+      startX: event.clientX,
+      startY: event.clientY,
+      from: value,
+    };
+  }
+
+  const box = {
+    left: `${value.x * 100}%`,
+    top: `${value.y * 100}%`,
+    width: `${value.w * 100}%`,
+    height: `${value.h * 100}%`,
+  };
+
+  return (
+    <div className="smart-capture-image-preview">
+      <div
+        ref={frameRef}
+        className="smart-capture-crop-frame"
+        style={{
+          aspectRatio: String(aspect),
+          width: aspect < 1 ? `min(100%, ${Math.round(220 * aspect)}px)` : "100%",
+        }}
+      >
+        <img
+          src={src}
+          alt="Preview to crop"
+          draggable={false}
+          onLoad={(event) => {
+            const image = event.currentTarget;
+            if (image.naturalWidth > 0 && image.naturalHeight > 0) {
+              setAspect(image.naturalWidth / image.naturalHeight);
+            }
+          }}
+        />
+        <span className="smart-capture-crop-shade is-top" style={{ height: `${value.y * 100}%` }} />
+        <span className="smart-capture-crop-shade is-bottom" style={{ top: `${(value.y + value.h) * 100}%` }} />
+        <span className="smart-capture-crop-shade is-left" style={{ top: `${value.y * 100}%`, width: `${value.x * 100}%`, height: `${value.h * 100}%` }} />
+        <span className="smart-capture-crop-shade is-right" style={{ top: `${value.y * 100}%`, left: `${(value.x + value.w) * 100}%`, height: `${value.h * 100}%` }} />
+        <span className="smart-capture-crop-box" style={box} onPointerDown={(event) => start("move", event)}>
+          <i className="is-v1" /><i className="is-v2" /><i className="is-h1" /><i className="is-h2" />
+          {(["nw", "ne", "sw", "se"] as const).map((handle) => (
+            <button
+              type="button"
+              key={handle}
+              className={`smart-capture-crop-handle is-${handle}`}
+              aria-label={`Crop ${handle} corner`}
+              onPointerDown={(event) => start(handle, event)}
+            />
+          ))}
+        </span>
+      </div>
+      <div className="smart-capture-crop-hint">
+        <span>Drag the corners to crop; drag the frame to reposition.</span>
+        {crop && <button type="button" onClick={() => onChange(undefined)}>Reset</button>}
+      </div>
+    </div>
+  );
+}
 
 function fileSize(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`;
@@ -57,11 +202,13 @@ async function createCapturedCard(
     if (items.length === 0) throw new Error("Add at least one to-do item");
     payload = { items };
     body = null;
+  } else if (draft.type === "image" && draft.crop) {
+    payload = { crop: draft.crop };
   }
 
   const created = await api.post<{ card: Card }>("/api/cards", {
     type: draft.type,
-    title: draft.title.trim() || (draft.file?.name ?? null),
+    title: draft.title.trim() || null,
     body,
     payload,
     inbox_canvas_id: inboxCanvasId,
@@ -108,6 +255,30 @@ export default function SmartCapture({
   useEffect(() => {
     if (composerOpen && drafts.length === 0) textRef.current?.focus();
   }, [composerOpen, drafts.length]);
+
+  // When this Inbox is visible, an otherwise unclaimed paste belongs here.
+  // Inputs and editors retain normal paste behaviour; this only intercepts
+  // the paste that CanvasPage would otherwise turn straight into a card.
+  useEffect(() => {
+    function onWindowPaste(event: globalThis.ClipboardEvent) {
+      if (event.defaultPrevented) return;
+      const target = event.target;
+      if (target instanceof Element && target.closest("input, textarea, [contenteditable]")) return;
+      const clipboard = event.clipboardData;
+      if (!clipboard) return;
+      const files = captureDraftsFromFiles(clipboard.files);
+      const pasted = clipboard.getData("text/uri-list") || clipboard.getData("text/plain");
+      const next = files.length > 0 ? files : captureDraftsFromText(pasted);
+      if (next.length === 0) return;
+      event.preventDefault();
+      setComposerOpen(true);
+      setDrafts((current) => [...current, ...next]);
+      setErrors({});
+    }
+
+    window.addEventListener("paste", onWindowPaste);
+    return () => window.removeEventListener("paste", onWindowPaste);
+  }, []);
 
   const duplicateIds = useMemo(() => new Set(
     drafts
@@ -303,9 +474,16 @@ export default function SmartCapture({
                       value={draft.title}
                       disabled={saving}
                       aria-label="Card title"
-                      placeholder={draft.file ? draft.file.name : "Title (optional)"}
+                      placeholder="Title (optional)"
                       onChange={(event) => patchDraft(draft.id, { title: event.target.value })}
                     />
+                    {draft.file && draft.type === "image" && (
+                      <InlineImageCrop
+                        file={draft.file}
+                        crop={draft.crop}
+                        onChange={(crop) => patchDraft(draft.id, { crop })}
+                      />
+                    )}
                     {!draft.file && (
                       <textarea
                         value={draft.body}
