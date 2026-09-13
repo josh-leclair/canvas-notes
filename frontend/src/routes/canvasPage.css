@@ -98,11 +98,7 @@
   --accent-hover: var(--pantry-accent-hover);
   --accent-text: var(--pantry-bg-card);
   --accent-soft: var(--pantry-accent-soft);
-  --accent-gradient: linear-gradient(
-    135deg,
-    var(--pantry-accent),
-    var(--palette-wine)
-  );
+  --accent-gradient: var(--pantry-accent);
   --ring: var(--pantry-accent);
   --danger: var(--palette-strawberry);
   --danger-text: var(--hue-ink-strawberry);
@@ -152,11 +148,7 @@
   --accent-hover: var(--night-accent-hover);
   --accent-text: var(--night-bg-sunk);
   --accent-soft: var(--night-accent-soft);
-  --accent-gradient: linear-gradient(
-    135deg,
-    var(--palette-coral),
-    var(--palette-orchid)
-  );
+  --accent-gradient: var(--palette-coral);
   --ring: var(--palette-coral);
   --danger: var(--palette-flare);
   --danger-text: var(--hue-ink-flare);

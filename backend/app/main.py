@@ -9,6 +9,7 @@ from app.errors import ApiError
 from app.jobs import start_inline_worker
 from app.routers import auth as auth_router
 from app.routers import (
+    archives,
     canvases,
     cards,
     files,
@@ -53,6 +54,7 @@ async def validation_error_handler(request: Request, exc: RequestValidationError
 
 
 app.include_router(auth_router.router)
+app.include_router(archives.router)
 app.include_router(invites.router)
 app.include_router(canvases.router)
 app.include_router(links.router)

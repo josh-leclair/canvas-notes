@@ -7,14 +7,12 @@ export function hueFor(id: string): number {
 }
 
 export function tintGradient(id: string): string {
-  const pairs = [
-    ["avocado", "maple"],
-    ["maple", "rust"],
-    ["cement", "maple"],
-    ["plum", "rust"],
-    ["maple", "avocado"],
-    ["cement", "avocado"],
+  const colours = [
+    "avocado",
+    "maple",
+    "cement",
+    "plum",
+    "rust",
   ] as const;
-  const [from, to] = pairs[hueFor(id) % pairs.length];
-  return `linear-gradient(135deg, var(--hue-${from}) 0%, var(--hue-${to}) 100%)`;
+  return `var(--hue-${colours[hueFor(id) % colours.length]})`;
 }

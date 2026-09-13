@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useState, type FormEvent } from "react";
+import { useEffect, useLayoutEffect, useRef, useState, type FormEvent } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { api } from "../api/client";
 import type { CanvasAppearance, CanvasSummary, Invite } from "../api/types";
@@ -6,6 +6,7 @@ import { useAuth } from "../auth";
 import Logo from "../components/Logo";
 import ShareDialog from "../components/ShareDialog";
 import { tintGradient } from "../lib/tint";
+import { exportCanvasArchive, importCanvasArchive } from "../lib/canvasArchive";
 import {
   initialCanvasSize,
 } from "../lib/canvasBounds";
@@ -53,6 +54,9 @@ export default function CanvasList() {
   const [sharing, setSharing] = useState<CanvasSummary | null>(null);
   const [error, setError] = useState("");
   const [showNested, setShowNested] = useState(false);
+  const [archiveBusy, setArchiveBusy] = useState(false);
+  const [archiveNotice, setArchiveNotice] = useState("");
+  const archiveInputRef = useRef<HTMLInputElement>(null);
 
   // Boards that live inside another board are reachable from it, so they stay
   // out of the top level unless asked for — otherwise the list becomes every
@@ -60,8 +64,12 @@ export default function CanvasList() {
   const topLevel = canvases.filter((c) => !c.is_nested);
   const nested = canvases.filter((c) => c.is_nested);
 
+  async function refreshCanvases() {
+    setCanvases(await api.get<CanvasSummary[]>("/api/canvases"));
+  }
+
   useEffect(() => {
-    api.get<CanvasSummary[]>("/api/canvases").then(setCanvases);
+    void refreshCanvases();
   }, []);
 
   useLayoutEffect(() => {
@@ -176,6 +184,64 @@ export default function CanvasList() {
     setUser(null);
   }
 
+  function archiveError(cause: unknown): string {
+    return cause instanceof Error ? cause.message : "The archive operation failed";
+  }
+
+  async function exportAllCanvases() {
+    setArchiveBusy(true);
+    setArchiveNotice("Preparing workspace archive…");
+    setError("");
+    try {
+      await exportCanvasArchive(canvases.map((canvas) => canvas.id));
+      setArchiveNotice("Workspace archive downloaded.");
+    } catch (cause) {
+      setArchiveNotice("");
+      setError(archiveError(cause));
+    } finally {
+      setArchiveBusy(false);
+    }
+  }
+
+  async function exportOneCanvas(canvas: CanvasSummary) {
+    setArchiveBusy(true);
+    setArchiveNotice(`Preparing “${canvas.name}”…`);
+    setError("");
+    try {
+      await exportCanvasArchive(canvases.map((item) => item.id), canvas.id);
+      setArchiveNotice(`“${canvas.name}” archive downloaded.`);
+    } catch (cause) {
+      setArchiveNotice("");
+      setError(archiveError(cause));
+    } finally {
+      setArchiveBusy(false);
+    }
+  }
+
+  async function importArchive(file: File) {
+    setArchiveBusy(true);
+    setArchiveNotice("Importing archive…");
+    setError("");
+    try {
+      const result = await importCanvasArchive(file);
+      if (result.scope === "canvas" && result.root_canvas_id) {
+        navigate(`/c/${result.root_canvas_id}`);
+        return;
+      }
+      await refreshCanvases();
+      const canvasLabel = result.canvases.length === 1 ? "canvas" : "canvases";
+      const cardLabel = result.card_count === 1 ? "card" : "cards";
+      setArchiveNotice(
+        `Imported ${result.canvases.length} ${canvasLabel} and ${result.card_count} ${cardLabel}.`
+      );
+    } catch (cause) {
+      setArchiveNotice("");
+      setError(archiveError(cause));
+    } finally {
+      setArchiveBusy(false);
+    }
+  }
+
   return (
     <div className={`list-page canvas-appearance-${listAppearance}`}>
       <header className="list-header">
@@ -209,6 +275,44 @@ export default function CanvasList() {
                 </span>
               </button>
             ))}
+          </div>
+        </details>
+        <details className="list-transfer-picker">
+          <summary title="Import or export Canvas Notes archives">Transfer</summary>
+          <div className="list-transfer-menu">
+            <button
+              type="button"
+              disabled={archiveBusy}
+              onClick={(event) => {
+                event.currentTarget.closest("details")?.removeAttribute("open");
+                void exportAllCanvases();
+              }}
+            >
+              <strong>Export all canvases</strong>
+              <small>Includes cards, layouts, links, covers, and attachments.</small>
+            </button>
+            <button
+              type="button"
+              disabled={archiveBusy}
+              onClick={(event) => {
+                event.currentTarget.closest("details")?.removeAttribute("open");
+                archiveInputRef.current?.click();
+              }}
+            >
+              <strong>Import an archive</strong>
+              <small>Adds new copies without replacing existing canvases.</small>
+            </button>
+            <input
+              ref={archiveInputRef}
+              className="list-archive-input"
+              type="file"
+              accept=".zip,.canvas-notes.zip,application/zip"
+              onChange={(event) => {
+                const file = event.target.files?.[0];
+                if (file) void importArchive(file);
+                event.target.value = "";
+              }}
+            />
           </div>
         </details>
         <button
@@ -308,6 +412,7 @@ export default function CanvasList() {
       </form>
 
       {error && <p className="auth-error">{error}</p>}
+      {archiveNotice && <p className="list-notice">{archiveNotice}</p>}
 
       <div className="canvas-grid">
         {canvases.length === 0 && (
@@ -336,7 +441,7 @@ export default function CanvasList() {
                       background:
                         appearanceOf(canvas) === "studio"
                           ? tintGradient(canvas.id)
-                          : "var(--appearance-gradient)",
+                          : "var(--appearance-cover)",
                     }
               }
               aria-label={`Open ${canvas.name}`}
@@ -395,6 +500,12 @@ export default function CanvasList() {
                 <>
                   <button onClick={() => setSharing(canvas)}>Share</button>
                   <button onClick={() => renameCanvas(canvas)}>Rename</button>
+                  <button
+                    disabled={archiveBusy}
+                    onClick={() => void exportOneCanvas(canvas)}
+                  >
+                    Export
+                  </button>
                   <button className="warn" onClick={() => deleteCanvas(canvas)}>
                     Delete
                   </button>
@@ -421,7 +532,10 @@ export default function CanvasList() {
           {showNested && (
             <div className="canvas-grid nested-grid">
               {nested.map((canvas) => (
-                <article key={canvas.id} className="canvas-tile is-nested">
+                <article
+                  key={canvas.id}
+                  className={`canvas-tile is-nested appearance-${appearanceOf(canvas)}`}
+                >
                   <Link
                     to={`/c/${canvas.id}`}
                     className={`tile-lid ${canvas.has_cover ? "has-cover" : ""}`}
@@ -430,7 +544,12 @@ export default function CanvasList() {
                         ? {
                             backgroundImage: `url(/api/canvases/${canvas.id}/cover?v=${canvas.updated_at})`,
                           }
-                        : { background: tintGradient(canvas.id) }
+                        : {
+                            background:
+                              appearanceOf(canvas) === "studio"
+                                ? tintGradient(canvas.id)
+                                : "var(--appearance-cover)",
+                          }
                     }
                     aria-label={`Open ${canvas.name}`}
                   />

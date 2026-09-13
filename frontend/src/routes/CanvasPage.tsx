@@ -75,6 +75,7 @@ import Icon, { type IconName } from "../components/Icon";
 import { cycleTheme } from "../theme";
 import { timeLensBucket } from "../lib/cardTiming";
 import { applyCanvasSurfaceAppearance } from "../lib/canvasAppearance";
+import { exportCanvasArchive } from "../lib/canvasArchive";
 import "./canvasPage.css";
 
 const nodeTypes = {
@@ -2177,14 +2178,37 @@ function CanvasInner({ canvasId }: { canvasId: string }) {
           </div>
           {readOnly && <span className="role-badge">view only</span>}
           {role === "owner" && (
-            <button
-              className="tool icon-only"
-              onClick={() => setPublicLensOpen(true)}
-              title="Share a public view"
-              aria-label="Share a public view"
-            >
-              <Icon name="share" />
-            </button>
+            <>
+              <button
+                className="tool icon-only"
+                onClick={() => setPublicLensOpen(true)}
+                title="Share a public view"
+                aria-label="Share a public view"
+              >
+                <Icon name="share" />
+              </button>
+              <button
+                className="tool icon-only"
+                onClick={async () => {
+                  try {
+                    const available = await api.get<CanvasSummary[]>("/api/canvases");
+                    await exportCanvasArchive(
+                      available.map((canvas) => canvas.id),
+                      canvasId
+                    );
+                    showToast("Canvas archive downloaded");
+                  } catch (cause) {
+                    showToast(
+                      cause instanceof Error ? cause.message : "Could not export this canvas"
+                    );
+                  }
+                }}
+                title="Export this canvas"
+                aria-label="Export this canvas"
+              >
+                <Icon name="download" />
+              </button>
+            </>
           )}
         </div>
 

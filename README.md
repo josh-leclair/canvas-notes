@@ -32,6 +32,9 @@ folder tree.
 - **Documents and portable exports** — write rich documents directly or draft
   them from selected cards, then export Markdown, DOCX, or PDF with the option
   to include the cited cards.
+- **Portable canvas archives** — export one canvas or every owned canvas with
+  layouts, links, nested boards, covers, and attachments, then import the ZIP
+  as new copies without replacing live work.
 - **Private collaboration and publishing** — share canvases with viewer or
   editor roles, or publish a reviewed, frozen public lens that can be updated
   or revoked without exposing later private edits.
@@ -161,6 +164,13 @@ reachable from the containers; `localhost` inside a container refers to that
 container.
 
 ## Backups and updates
+
+The **Transfer** menu on the canvas list exports or imports portable Canvas
+Notes archives. A canvas can also be exported from its tile or its toolbar.
+These archives are useful for moving work between instances; imports allocate
+new IDs and never overwrite existing canvases. For disaster recovery of the
+entire service—including accounts and server settings—continue to use the
+database and file-directory backup below.
 
 Back up both PostgreSQL and uploaded files. With the bundled database:
 
