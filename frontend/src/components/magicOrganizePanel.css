@@ -130,6 +130,46 @@
   line-height: 1.35;
 }
 
+.magic-organize-explanations {
+  margin: 0 12px 12px;
+  padding: 10px 11px;
+  border: 1px solid var(--border);
+  background: var(--bg-sunk);
+}
+
+.magic-organize-explanations > strong {
+  display: block;
+  margin-bottom: 7px;
+  font-size: 11px;
+}
+
+.magic-organize-explanations ul {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.magic-organize-explanations li {
+  display: grid;
+  gap: 1px;
+}
+
+.magic-organize-explanations li > span {
+  overflow: hidden;
+  font-size: 11px;
+  font-weight: 700;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.magic-organize-explanations small {
+  color: var(--text-muted);
+  font-size: 10px;
+  line-height: 1.3;
+}
+
 .magic-mode-diagram {
   position: relative;
   display: block;

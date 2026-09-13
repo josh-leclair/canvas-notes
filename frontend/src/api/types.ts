@@ -82,6 +82,7 @@ export interface Placement {
   h: number;
   z: number;
   is_hub: boolean;
+  magic_fixed?: boolean;
   parent_id: string | null;
   sort: number;
   updated_at: string;
@@ -95,6 +96,7 @@ export interface PlacementWithCard {
   h: number;
   z: number;
   is_hub: boolean;
+  magic_fixed?: boolean;
   parent_id: string | null;
   sort: number;
   card: Card;

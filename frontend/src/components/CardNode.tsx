@@ -2,7 +2,7 @@ import { memo, useCallback, useEffect, useRef, useState } from "react";
 import { NodeResizer, useStore, type NodeProps } from "@xyflow/react";
 import { useNavigate } from "react-router-dom";
 import { api } from "../api/client";
-import type { Card, CardPlacementInfo, CardType } from "../api/types";
+import type { Card, CardPlacementInfo, CardType, Placement } from "../api/types";
 import { taskProgress, toggleTaskLine } from "../lib/tasks";
 import { tintGradient } from "../lib/tint";
 import {
@@ -862,6 +862,7 @@ function CardNodeImpl({ id, data, selected }: NodeProps<CardNodeType>) {
   // card the user has painted overrides its type colour, since a deliberate
   // choice should win over a default.
   const isHeading = card.payload.display === "heading";
+  const magicFixed = data.magicFixed === true;
   const isDocument = card.type === "document";
   /* A heading is sized against the card, but a long title at the same size as
    * a one-word one wraps to four lines and stops being a heading. Shrink it
@@ -1009,6 +1010,24 @@ function CardNodeImpl({ id, data, selected }: NodeProps<CardNodeType>) {
       await updateCard(card.id, { payload });
     } catch {
       showToast("Could not change that card");
+    }
+  }
+
+  async function toggleMagicFixed() {
+    closeMenu();
+    try {
+      const placement = await api.patch<Placement>(`/api/placements/${id}`, {
+        magic_fixed: !magicFixed,
+      });
+      setNodes((nodes) =>
+        nodes.map((node) =>
+          node.id === id
+            ? { ...node, data: { ...node.data, magicFixed: placement.magic_fixed } }
+            : node
+        )
+      );
+    } catch {
+      showToast("Could not change the Magic position setting");
     }
   }
 
@@ -1243,6 +1262,11 @@ function CardNodeImpl({ id, data, selected }: NodeProps<CardNodeType>) {
             >
               {focused ? "Remove from focus" : "Add to focus"}
             </button>
+            {!readOnly && !inColumn && (
+              <button onClick={toggleMagicFixed}>
+                {magicFixed ? "Allow Magic to move" : "Keep in place for Magic"}
+              </button>
+            )}
             {!readOnly && card.type !== "timer" && (
               <button
                 onClick={() => {
@@ -1452,13 +1476,18 @@ function CardNodeImpl({ id, data, selected }: NodeProps<CardNodeType>) {
           (data.childCount ?? 0) > 0 ? "has-pip" : ""
         } ${previewInColumn ? "is-preview" : ""} ${
           isDocument ? "is-document" : ""
-        }`}
+        } ${magicFixed ? "is-magic-fixed" : ""}`}
         style={
           headingFit === null
             ? accent
             : ({ ...accent, "--heading-fit": headingFit } as React.CSSProperties)
         }
       >
+      {magicFixed && (
+        <span className="magic-fixed-badge" title="Magic organize will leave this card here">
+          Fixed
+        </span>
+      )}
       {(data.childCount ?? 0) > 0 && (
         <button
           className={`hub-pip nodrag ${data.isHub ? "is-hub" : ""}`}

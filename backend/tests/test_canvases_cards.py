@@ -123,6 +123,33 @@ def test_placement_position_survives(client, admin):
     assert p["x"] == 123.5 and p["y"] == -44.25
 
 
+def test_magic_fixed_is_per_placement(client, admin):
+    first = client.post("/api/canvases", json={"name": "First"}).json()
+    second = client.post("/api/canvases", json={"name": "Second"}).json()
+    created = client.post(
+        "/api/cards",
+        json={"title": "Anchor", "canvas_id": first["id"], "x": 0, "y": 0},
+    ).json()
+    other = client.post(
+        f"/api/canvases/{second['id']}/placements",
+        json={"card_id": created["card"]["id"], "x": 10, "y": 10},
+    ).json()
+
+    fixed = client.patch(
+        f"/api/placements/{created['placement']['id']}",
+        json={"magic_fixed": True},
+    )
+    assert fixed.status_code == 200, fixed.text
+    assert fixed.json()["magic_fixed"] is True
+    assert other["magic_fixed"] is False
+    assert client.get(f"/api/canvases/{first['id']}").json()["placements"][0][
+        "magic_fixed"
+    ] is True
+    assert client.get(f"/api/canvases/{second['id']}").json()["placements"][0][
+        "magic_fixed"
+    ] is False
+
+
 def test_duplicate_placement_is_409(client, admin):
     canvas = client.post("/api/canvases", json={"name": "Board"}).json()
     created = client.post(

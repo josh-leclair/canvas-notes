@@ -106,6 +106,7 @@ class ArchivePlacement(StrictModel):
     h: float = Field(gt=0)
     z: int = Field(ge=INT32_MIN, le=INT32_MAX)
     is_hub: bool = False
+    magic_fixed: bool = False
     parent_id: uuid.UUID | None = None
     sort: int = Field(default=0, ge=INT32_MIN, le=INT32_MAX)
 
@@ -468,6 +469,7 @@ def export_archive(
                 h=item.h,
                 z=item.z,
                 is_hub=item.is_hub,
+                magic_fixed=item.magic_fixed,
                 parent_id=item.parent_id,
                 sort=item.sort,
             )
@@ -655,6 +657,7 @@ def import_archive(
                     h=item.h,
                     z=item.z,
                     is_hub=item.is_hub,
+                    magic_fixed=item.magic_fixed,
                     parent_id=None,
                     sort=item.sort,
                 )

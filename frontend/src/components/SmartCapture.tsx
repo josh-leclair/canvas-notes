@@ -40,10 +40,12 @@ function InlineImageCrop({
   file,
   crop,
   onChange,
+  onDimensions,
 }: {
   file: File;
   crop?: ImageCrop;
   onChange: (crop: ImageCrop | undefined) => void;
+  onDimensions: (width: number, height: number) => void;
 }) {
   const src = useMemo(() => URL.createObjectURL(file), [file]);
   const [aspect, setAspect] = useState(16 / 9);
@@ -143,6 +145,7 @@ function InlineImageCrop({
             const image = event.currentTarget;
             if (image.naturalWidth > 0 && image.naturalHeight > 0) {
               setAspect(image.naturalWidth / image.naturalHeight);
+              onDimensions(image.naturalWidth, image.naturalHeight);
             }
           }}
         />
@@ -202,8 +205,13 @@ async function createCapturedCard(
     if (items.length === 0) throw new Error("Add at least one to-do item");
     payload = { items };
     body = null;
-  } else if (draft.type === "image" && draft.crop) {
-    payload = { crop: draft.crop };
+  } else if (draft.type === "image") {
+    payload = {
+      ...(draft.crop ? { crop: draft.crop } : {}),
+      ...(draft.imageWidth && draft.imageHeight
+        ? { image_width: draft.imageWidth, image_height: draft.imageHeight }
+        : {}),
+    };
   }
 
   const created = await api.post<{ card: Card }>("/api/cards", {
@@ -243,6 +251,7 @@ export default function SmartCapture({
   const setInboxOpen = useCanvasStore((state) => state.setInboxOpen);
   const showToast = useCanvasStore((state) => state.showToast);
   const [composerOpen, setComposerOpen] = useState(false);
+  const [sourceOpen, setSourceOpen] = useState(true);
   const [drafts, setDrafts] = useState<CaptureDraft[]>([]);
   const [text, setText] = useState("");
   const [destination, setDestination] = useState<"board" | "general">("board");
@@ -253,8 +262,8 @@ export default function SmartCapture({
   const fileRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    if (composerOpen && drafts.length === 0) textRef.current?.focus();
-  }, [composerOpen, drafts.length]);
+    if (composerOpen && sourceOpen) textRef.current?.focus();
+  }, [composerOpen, sourceOpen]);
 
   // When this Inbox is visible, an otherwise unclaimed paste belongs here.
   // Inputs and editors retain normal paste behaviour; this only intercepts
@@ -272,6 +281,7 @@ export default function SmartCapture({
       if (next.length === 0) return;
       event.preventDefault();
       setComposerOpen(true);
+      setSourceOpen(false);
       setDrafts((current) => [...current, ...next]);
       setErrors({});
     }
@@ -289,6 +299,7 @@ export default function SmartCapture({
   function addDrafts(next: CaptureDraft[]) {
     if (next.length === 0) return;
     setComposerOpen(true);
+    setSourceOpen(false);
     setDrafts((current) => [...current, ...next]);
     setErrors({});
   }
@@ -359,6 +370,7 @@ export default function SmartCapture({
 
     if (failed.length === 0) {
       setComposerOpen(false);
+      setSourceOpen(true);
       setText("");
       showToast(
         action === "inbox"
@@ -388,7 +400,10 @@ export default function SmartCapture({
       onDrop={handleDrop}
     >
       {!composerOpen ? (
-        <button className="smart-capture-launch" type="button" onClick={() => setComposerOpen(true)}>
+        <button className="smart-capture-launch" type="button" onClick={() => {
+          setComposerOpen(true);
+          setSourceOpen(true);
+        }}>
           <span className="smart-capture-mark"><Icon name="sparkles" /></span>
           <span>
             <strong>Capture anything</strong>
@@ -408,6 +423,7 @@ export default function SmartCapture({
               disabled={saving}
               onClick={() => {
                 setComposerOpen(false);
+                setSourceOpen(true);
                 setDrafts([]);
                 setText("");
                 setErrors({});
@@ -415,34 +431,48 @@ export default function SmartCapture({
             ><Icon name="close" /></button>
           </div>
 
-          <div className="smart-capture-input">
-            <textarea
-              ref={textRef}
-              value={text}
-              disabled={saving}
-              placeholder="Write a note, paste a URL, or paste a bulleted list…"
-              onChange={(event) => setText(event.target.value)}
-              onPaste={handlePaste}
-              onKeyDown={(event) => {
-                if ((event.metaKey || event.ctrlKey) && event.key === "Enter") addText();
-              }}
-            />
-            <div>
-              <button type="button" disabled={!text.trim() || saving} onClick={addText}>Add text</button>
-              <button type="button" disabled={saving} onClick={() => fileRef.current?.click()}>
-                <Icon name="file" /> Choose files
-              </button>
-              <input
-                ref={fileRef}
-                type="file"
-                multiple
-                onChange={(event) => {
-                  if (event.target.files) addDrafts(captureDraftsFromFiles(event.target.files));
-                  event.target.value = "";
+          {(drafts.length === 0 || sourceOpen) ? (
+            <div className="smart-capture-input">
+              <textarea
+                ref={textRef}
+                value={text}
+                disabled={saving}
+                placeholder="Write a note, paste a URL, or paste a bulleted list…"
+                onChange={(event) => setText(event.target.value)}
+                onPaste={handlePaste}
+                onKeyDown={(event) => {
+                  if ((event.metaKey || event.ctrlKey) && event.key === "Enter") addText();
                 }}
               />
+              <div>
+                <button type="button" disabled={!text.trim() || saving} onClick={addText}>Add text</button>
+                <button type="button" disabled={saving} onClick={() => fileRef.current?.click()}>
+                  <Icon name="file" /> Choose files
+                </button>
+                {drafts.length > 0 && (
+                  <button type="button" disabled={saving} onClick={() => setSourceOpen(false)}>Done</button>
+                )}
+              </div>
             </div>
-          </div>
+          ) : (
+            <div className="smart-capture-add-another">
+              <span>Add another</span>
+              <button type="button" disabled={saving} onClick={() => setSourceOpen(true)}>+ Text</button>
+              <button type="button" disabled={saving} onClick={() => fileRef.current?.click()}>
+                <Icon name="file" /> Files
+              </button>
+            </div>
+          )}
+          <input
+            ref={fileRef}
+            className="smart-capture-file-input"
+            type="file"
+            multiple
+            onChange={(event) => {
+              if (event.target.files) addDrafts(captureDraftsFromFiles(event.target.files));
+              event.target.value = "";
+            }}
+          />
 
           {dragging && <div className="smart-capture-drop-message">Drop to add to this batch</div>}
 
@@ -482,6 +512,11 @@ export default function SmartCapture({
                         file={draft.file}
                         crop={draft.crop}
                         onChange={(crop) => patchDraft(draft.id, { crop })}
+                        onDimensions={(imageWidth, imageHeight) => {
+                          if (draft.imageWidth !== imageWidth || draft.imageHeight !== imageHeight) {
+                            patchDraft(draft.id, { imageWidth, imageHeight });
+                          }
+                        }}
                       />
                     )}
                     {!draft.file && (

@@ -13,6 +13,8 @@ export interface CaptureDraft {
   body: string;
   file?: File;
   crop?: ImageCrop;
+  imageWidth?: number;
+  imageHeight?: number;
 }
 
 export interface ImageCrop {

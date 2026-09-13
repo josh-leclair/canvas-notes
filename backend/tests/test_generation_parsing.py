@@ -10,6 +10,7 @@ from app.generate import (
     coerce_cards,
     coerce_document,
     compose_document,
+    document_source,
     parse_document_response,
     splittable_text,
 )
@@ -443,6 +444,31 @@ def test_the_schema_example_shows_more_than_one_card():
 
 
 # --- document composition ------------------------------------------------
+
+
+def test_link_cards_supply_clipped_and_structured_content_to_a_draft():
+    card = FakeCard(
+        body="The extension's simplified article text.",
+        payload={
+            "url": "https://recipes.example/pasta",
+            "unfurl": {
+                "description": "A quick tomato pasta.",
+                "recipe": {
+                    "yield": "4 servings",
+                    "ingredients": ["12 oz pasta", "2 cups tomatoes"],
+                    "instructions": ["Boil the pasta.", "Simmer the tomatoes."],
+                },
+            },
+        },
+    )
+
+    source = document_source(card)
+    assert "The extension's simplified article text." in source
+    assert "A quick tomato pasta." in source
+    assert "Yield: 4 servings" in source
+    assert "- 12 oz pasta" in source
+    assert "1. Boil the pasta." in source
+    assert "Source URL: https://recipes.example/pasta" in source
 
 
 def test_document_aliases_are_coerced_and_empty_results_rejected():

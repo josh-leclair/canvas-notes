@@ -436,15 +436,76 @@ DOCUMENT_SYSTEM_PROMPT = (
 
 
 def document_source(card: Card) -> str:
-    """The human-readable material from a selected card, without UI metadata."""
+    """The useful source material from a selected card, without UI metadata.
+
+    Link cards can contain either a full article captured by the extension or
+    only structured unfurl data. Both forms need to remain useful when a mixed
+    selection is drafted into a document.
+    """
     unfurl = card.payload.get("unfurl") or {}
-    parts = [
-        card.body or "",
-        str(card.payload.get("transcript") or ""),
-        str(unfurl.get("description") or ""),
-        str(card.payload.get("url") or ""),
-    ]
-    return "\n\n".join(part for part in parts if part.strip()).strip()
+    parts: list[str] = []
+
+    def add(value: object) -> None:
+        text = str(value or "").strip()
+        if text and text not in parts:
+            parts.append(text)
+
+    add(card.body)
+    add(card.payload.get("transcript"))
+    add(unfurl.get("description"))
+
+    recipe = unfurl.get("recipe")
+    if isinstance(recipe, dict):
+        details = []
+        for label, key in (
+            ("Author", "author"),
+            ("Yield", "yield"),
+            ("Prep time", "prep_time"),
+            ("Cook time", "cook_time"),
+            ("Total time", "total_time"),
+            ("Category", "category"),
+            ("Cuisine", "cuisine"),
+        ):
+            value = str(recipe.get(key) or "").strip()
+            if value:
+                details.append(f"{label}: {value}")
+        ingredients = recipe.get("ingredients")
+        if isinstance(ingredients, list):
+            values = [str(value).strip() for value in ingredients if str(value).strip()]
+            if values:
+                details.append("Ingredients:\n" + "\n".join(f"- {value}" for value in values))
+        instructions = recipe.get("instructions")
+        if isinstance(instructions, list):
+            values = [str(value).strip() for value in instructions if str(value).strip()]
+            if values:
+                details.append(
+                    "Instructions:\n"
+                    + "\n".join(f"{index}. {value}" for index, value in enumerate(values, 1))
+                )
+        if details:
+            add("Recipe details:\n" + "\n".join(details))
+
+    product = unfurl.get("product")
+    if isinstance(product, dict):
+        details = []
+        for label, key in (
+            ("Brand", "brand"),
+            ("Price", "price"),
+            ("Currency", "currency"),
+            ("Availability", "availability"),
+            ("Rating", "rating"),
+            ("Rating count", "rating_count"),
+        ):
+            value = str(product.get(key) or "").strip()
+            if value:
+                details.append(f"{label}: {value}")
+        if details:
+            add("Product details:\n" + "\n".join(details))
+
+    url = card.payload.get("url") or unfurl.get("final_url")
+    if url:
+        add(f"Source URL: {url}")
+    return "\n\n".join(parts).strip()
 
 
 def coerce_document(data: object) -> dict | None:

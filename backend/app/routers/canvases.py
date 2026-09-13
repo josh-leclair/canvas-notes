@@ -147,6 +147,7 @@ def get_canvas(
                 h=p.h,
                 z=p.z,
                 is_hub=p.is_hub,
+                magic_fixed=p.magic_fixed,
                 parent_id=p.parent_id,
                 sort=p.sort,
                 card=CardOut.model_validate(p.card).model_copy(

@@ -126,6 +126,7 @@ class PlacementOut(BaseModel):
     h: float
     z: int
     is_hub: bool = False
+    magic_fixed: bool = False
     parent_id: uuid.UUID | None = None
     sort: int = 0
     updated_at: datetime
@@ -139,6 +140,7 @@ class PlacementWithCard(BaseModel):
     h: float
     z: int
     is_hub: bool = False
+    magic_fixed: bool = False
     parent_id: uuid.UUID | None = None
     sort: int = 0
     card: CardOut
@@ -266,6 +268,7 @@ class PlacementPatchIn(BaseModel):
     h: float | None = Field(default=None, gt=0)
     z: int | None = None
     is_hub: bool | None = None
+    magic_fixed: bool | None = None
     # Explicit null means "take it out of its column", so this field has to
     # distinguish unset from null.
     parent_id: uuid.UUID | None = None

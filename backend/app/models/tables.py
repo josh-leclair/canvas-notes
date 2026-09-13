@@ -390,6 +390,11 @@ class Placement(Base):
     is_hub: Mapped[bool] = mapped_column(
         Boolean, nullable=False, server_default=text("false")
     )
+    # Magic organize leaves this placement where the user put it. This is a
+    # placement property because the same card can appear on several canvases.
+    magic_fixed: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, server_default=text("false")
+    )
     # Set when this card sits inside a column on this canvas. The column is
     # itself a placement, so a column can be moved and shared like any card.
     parent_id: Mapped[uuid.UUID | None] = mapped_column(

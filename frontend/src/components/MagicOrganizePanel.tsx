@@ -9,10 +9,10 @@ const MODES: Array<{
   name: string;
   description: string;
 }> = [
-  { id: "cluster", name: "Cluster", description: "Group related ideas and name each area." },
+  { id: "cluster", name: "Cluster", description: "Use headings, links, topics, and nearby placement." },
   { id: "project", name: "Project", description: "Sort active work, next steps, references, and done." },
   { id: "timeline", name: "Timeline", description: "Arrange dated work from overdue to upcoming." },
-  { id: "moodboard", name: "Mood board", description: "Build a loose, image-forward composition." },
+  { id: "moodboard", name: "Mood board", description: "Build image-forward sections with loose rhythm." },
   { id: "compact", name: "Compact", description: "Clean up spacing while keeping reading order." },
 ];
 
@@ -27,6 +27,7 @@ function ModeDiagram({ mode }: { mode: OrganizeMode }) {
 export default function MagicOrganizePanel({
   mode,
   count,
+  fixedCount,
   selectedScope,
   groups,
   addZones,
@@ -37,6 +38,7 @@ export default function MagicOrganizePanel({
 }: {
   mode: OrganizeMode;
   count: number;
+  fixedCount: number;
   selectedScope: boolean;
   groups: OrganizeGroup[];
   addZones: boolean;
@@ -83,6 +85,7 @@ export default function MagicOrganizePanel({
             <strong id="magic-organize-title">Magic organize</strong>
             <small>
               Previewing {count} {selectedScope ? "selected" : "free-standing"} card{count === 1 ? "" : "s"}
+              {fixedCount > 0 ? ` · leaving ${fixedCount} fixed` : ""}
             </small>
           </span>
           <button
@@ -97,7 +100,7 @@ export default function MagicOrganizePanel({
         </header>
 
         <p className="magic-organize-intro">
-          Try a shape. The canvas preview is temporary until you apply it.
+          Try a shape. The preview is temporary. Names come from headings or repeated card words.
         </p>
 
         <div className="magic-organize-modes">
@@ -118,6 +121,20 @@ export default function MagicOrganizePanel({
             </button>
           ))}
         </div>
+
+        {groups.length > 0 && (
+          <section className="magic-organize-explanations" aria-label="Why cards were grouped">
+            <strong>Why this layout</strong>
+            <ul>
+              {groups.map((group, index) => (
+                <li key={`${group.name}:${index}`}>
+                  <span>{group.name}</span>
+                  <small>{group.reason}</small>
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
 
         {modeSupportsZones(mode) && groups.length > 0 && (
           <label className="magic-organize-zone-toggle">

@@ -49,7 +49,7 @@ def test_specific_canvas_archive_round_trip_preserves_structure_and_media(
     old_file_id = uploaded.json()["payload"]["image_file_id"]
     client.patch(
         f"/api/placements/{first['placement']['id']}",
-        json={"w": 410, "h": 230, "z": 7, "is_hub": True},
+        json={"w": 410, "h": 230, "z": 7, "is_hub": True, "magic_fixed": True},
     )
     assert client.post(
         f"/api/canvases/{canvas['id']}/zones",
@@ -123,6 +123,7 @@ def test_specific_canvas_archive_round_trip_preserves_structure_and_media(
     )
     assert restored_first["w"] == 410
     assert restored_first["is_hub"] is True
+    assert restored_first["magic_fixed"] is True
     restored_image = next(
         item for item in detail["placements"] if item["card"]["type"] == "image"
     )

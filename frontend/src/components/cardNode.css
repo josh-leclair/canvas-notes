@@ -58,6 +58,29 @@
   display: none;
 }
 
+.magic-fixed-badge {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  z-index: 6;
+  padding: 2px 5px;
+  border: 1px solid currentColor;
+  background: var(--bg-panel);
+  color: var(--text-muted);
+  font-size: 8px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  line-height: 1;
+  text-transform: uppercase;
+  pointer-events: none;
+}
+
+.card-node.is-heading .magic-fixed-badge,
+.card-node.is-painted .magic-fixed-badge {
+  background: var(--card-fill, var(--bg-panel));
+  color: var(--card-ink, var(--text));
+}
+
 /* A painted card brings its own solved surface and text colour rather than
    inheriting a foreground that assumes the theme's default surface. */
 .card-node.is-painted {
@@ -834,7 +857,7 @@
 }
 
 .hub-pip.is-hub {
-  background: var(--accent-gradient);
+  background: var(--accent);
   color: var(--accent-text);
 }
 

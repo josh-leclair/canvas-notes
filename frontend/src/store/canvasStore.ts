@@ -18,6 +18,10 @@ import {
   CANVAS_GROW_WIDTH,
   initialCanvasSize,
 } from "../lib/canvasBounds";
+import {
+  fittedImageCardHeight,
+  fittedImageCardHeightFromPayload,
+} from "../lib/imageSizing";
 import type {
   BatchStatus,
   CanvasDetail,
@@ -56,11 +60,6 @@ type UndoOp =
   | { kind: "removed"; cardId: string; x: number; y: number; w: number; h: number };
 
 const UNDO_LIMIT = 50;
-
-/** A tall photo should not become a tower, and a panorama should not become a
- * sliver, so the fitted height is clamped at both ends. */
-const IMAGE_MIN_HEIGHT = 120;
-const IMAGE_MAX_HEIGHT = 460;
 
 /** The picture's own proportions, read before it is uploaded. Returns null if
  * the browser cannot decode it, in which case the default box is used. */
@@ -104,6 +103,8 @@ export interface CardNodeData extends Record<string, unknown> {
   collapsed?: boolean;
   /** This card folds its own children away. */
   isHub?: boolean;
+  /** Magic organize treats this placement as an obstacle and leaves it put. */
+  magicFixed?: boolean;
   childCount?: number;
   /** Direct-child timing, summarized by the canvas without changing cards. */
   timingRollup?: TimingRollup | null;
@@ -147,6 +148,7 @@ function toNode(p: PlacementWithCard): CardNode {
       h: p.h,
       placementId: p.id,
       isHub: p.is_hub,
+      magicFixed: p.magic_fixed ?? false,
       parentId: p.parent_id,
       sort: p.sort,
     },
@@ -1094,6 +1096,7 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
     try {
       const resp = await api.post<{ card: Card; placement: Placement }>("/api/cards", {
         type: "image",
+        payload: shape ? { image_width: shape.width, image_height: shape.height } : {},
         canvas_id: canvasId,
         x,
         y,
@@ -1115,12 +1118,7 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
       const card = (await upload.json()) as Card;
       const width = resp.placement.w;
       const height = shape
-        ? Math.round(
-            Math.min(
-              IMAGE_MAX_HEIGHT,
-              Math.max(IMAGE_MIN_HEIGHT, (width * shape.height) / shape.width)
-            )
-          )
+        ? fittedImageCardHeight(width, shape.width, shape.height) ?? resp.placement.h
         : resp.placement.h;
       set({
         nodes: [
@@ -1156,10 +1154,18 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
     // Optimistic: leave the panel immediately, return on failure.
     set({ inbox: inbox.filter((c) => c.id !== cardId) });
     try {
-      const placement = await api.post<Placement>(
+      let placement = await api.post<Placement>(
         `/api/canvases/${canvasId}/placements`,
         { card_id: cardId, x, y }
       );
+      if (card.type === "image") {
+        const fittedHeight = fittedImageCardHeightFromPayload(placement.w, card.payload);
+        if (fittedHeight !== null && fittedHeight !== placement.h) {
+          placement = await api.patch<Placement>(`/api/placements/${placement.id}`, {
+            h: fittedHeight,
+          }).catch(() => placement);
+        }
+      }
       set({
         nodes: [
           ...get().nodes,

@@ -92,7 +92,7 @@ def _text(value: object) -> str | None:
     if isinstance(value, (int, float)):
         return str(value)
     if isinstance(value, dict):
-        for key in ("name", "@id", "url", "value"):
+        for key in ("text", "name", "@id", "url", "value"):
             if key in value:
                 return _text(value[key])
         return None
@@ -104,13 +104,39 @@ def _text(value: object) -> str | None:
     return None
 
 
-def parse_ld(blocks: list[str]) -> dict[str, str]:
-    """Pull product-ish detail out of the JSON-LD on the page.
+def _text_list(value: object) -> list[str]:
+    """Return the ordered human-readable entries from a JSON-LD list."""
+    values = value if isinstance(value, list) else [value]
+    found: list[str] = []
+    for item in values:
+        text = _text(item)
+        if text and text not in found:
+            found.append(text)
+    return found
+
+
+def _recipe_instructions(value: object) -> list[str]:
+    """Flatten Recipe instructions, including nested HowToSection objects."""
+    values = value if isinstance(value, list) else [value]
+    found: list[str] = []
+    for item in values:
+        if isinstance(item, dict) and item.get("itemListElement"):
+            nested = _recipe_instructions(item["itemListElement"])
+            found.extend(step for step in nested if step not in found)
+            continue
+        text = _text(item)
+        if text and text not in found:
+            found.append(text)
+    return found
+
+
+def parse_ld(blocks: list[str]) -> dict[str, object]:
+    """Pull useful card and document detail out of the page's JSON-LD.
 
     Everything here is best-effort: a page that ships broken JSON, or none at
     all, simply contributes nothing rather than failing the unfurl.
     """
-    found: dict[str, str] = {}
+    found: dict[str, object] = {}
     for block in blocks:
         try:
             document = json.loads(block)
@@ -131,6 +157,38 @@ def parse_ld(blocks: list[str]) -> dict[str, str]:
                     value = _text(node.get(source))
                     if value and key not in found:
                         found[key] = value
+
+            if "recipe" in kinds:
+                for key, source in (
+                    ("title", "name"),
+                    ("description", "description"),
+                    ("image", "image"),
+                ):
+                    value = _text(node.get(source))
+                    if value and key not in found:
+                        found[key] = value
+
+                recipe: dict[str, object] = {}
+                for key, source in (
+                    ("author", "author"),
+                    ("yield", "recipeYield"),
+                    ("prep_time", "prepTime"),
+                    ("cook_time", "cookTime"),
+                    ("total_time", "totalTime"),
+                    ("category", "recipeCategory"),
+                    ("cuisine", "recipeCuisine"),
+                ):
+                    value = _text(node.get(source))
+                    if value:
+                        recipe[key] = value
+                ingredients = _text_list(node.get("recipeIngredient"))
+                if ingredients:
+                    recipe["ingredients"] = ingredients
+                instructions = _recipe_instructions(node.get("recipeInstructions"))
+                if instructions:
+                    recipe["instructions"] = instructions
+                if recipe and "recipe" not in found:
+                    found["recipe"] = recipe
 
             if "offer" in kinds or "aggregateoffer" in kinds:
                 price = _text(node.get("price") or node.get("lowPrice"))
@@ -294,4 +352,8 @@ def parse_unfurl(html: str, url: str | None = None) -> dict[str, object]:
         # Only present when the page actually described a product, so the card
         # can decide whether it has anything worth a second line.
         "product": product or None,
+        # Recipe detail is primarily useful when this link participates in a
+        # generated document. Keeping it structured avoids flattening a full
+        # ingredient list into the small card preview.
+        "recipe": ld.get("recipe"),
     }

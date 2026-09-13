@@ -37,6 +37,7 @@ import {
   SMART_CAPTURE_PLACE_EVENT,
   type SmartCapturePlaceDetail,
 } from "../lib/smartCapture";
+import { fittedImageCardHeightFromPayload } from "../lib/imageSizing";
 import {
   MAX_CANVAS_TEXT_SIZE,
   MIN_CANVAS_TEXT_SIZE,
@@ -158,6 +159,7 @@ interface MagicSession {
   items: OrganizeItem[];
   original: Record<string, { x: number; y: number; w: number; h: number }>;
   selectedScope: boolean;
+  fixedCount: number;
   mode: OrganizeMode;
   plan: OrganizePlan;
   addZones: boolean;
@@ -1901,6 +1903,9 @@ function CanvasInner({ canvasId }: { canvasId: string }) {
       const left = center.x - ((columns - 1) * stepX) / 2 - 140;
       const top = center.y - ((rows - 1) * stepY) / 2 - 90;
       const placementIds: string[] = [];
+      const capturedCards = new Map(
+        useCanvasStore.getState().inbox.map((card) => [card.id, card])
+      );
 
       for (const [index, cardId] of uniqueIds.entries()) {
         try {
@@ -1913,6 +1918,18 @@ function CanvasInner({ canvasId }: { canvasId: string }) {
             }
           );
           placementIds.push(placement.id);
+          const card = capturedCards.get(cardId);
+          if (card?.type === "image") {
+            const fittedHeight = fittedImageCardHeightFromPayload(
+              placement.w,
+              card.payload
+            );
+            if (fittedHeight !== null && fittedHeight !== placement.h) {
+              await api.patch<Placement>(`/api/placements/${placement.id}`, {
+                h: fittedHeight,
+              }).catch(() => undefined);
+            }
+          }
         } catch {
           // Continue placing the rest of a mixed batch. The failed card stays
           // safely in its inbox and the refresh below makes that visible.
@@ -2044,7 +2061,7 @@ function CanvasInner({ canvasId }: { canvasId: string }) {
     mode: OrganizeMode,
     sourceNodes = nodes
   ): OrganizePlan {
-    const local = createOrganizePlan(items, mode);
+    const local = createOrganizePlan(items, mode, { links: canvasLinks });
     const wanted = new Set(items.map((item) => item.id));
     const obstacles = sourceNodes
       .filter((node) => !wanted.has(node.id) && !node.data.parentId)
@@ -2091,9 +2108,18 @@ function CanvasInner({ canvasId }: { canvasId: string }) {
 
   function showMagicPreview(plan: OrganizePlan, itemIds: string[]) {
     const positions = plan.positions;
+    const sizes = plan.sizes;
     setNodes((current) => current.map((node) => {
       const position = positions[node.id];
-      return position ? { ...node, position } : node;
+      const size = sizes[node.id];
+      return position
+        ? {
+            ...node,
+            position,
+            ...(size ? { width: size.w, height: size.h } : {}),
+            data: size ? { ...node.data, w: size.w, h: size.h } : node.data,
+          }
+        : node;
     }));
     window.requestAnimationFrame(() => {
       fitView({
@@ -2108,7 +2134,8 @@ function CanvasInner({ canvasId }: { canvasId: string }) {
   function startMagicOrganizer(
     target: CardNodeType[],
     selectedScope: boolean,
-    sourceNodes = nodes
+    sourceNodes = nodes,
+    fixedCount = 0
   ) {
     if (target.length < 2) {
       showToast("Add at least two free-standing cards to organize");
@@ -2132,15 +2159,27 @@ function CanvasInner({ canvasId }: { canvasId: string }) {
     ]));
     const mode: OrganizeMode = "cluster";
     const plan = placeMagicPlan(items, mode, sourceNodes);
-    setMagicSession({ items, original, selectedScope, mode, plan, addZones: true });
+    setMagicSession({
+      items,
+      original,
+      selectedScope,
+      fixedCount,
+      mode,
+      plan,
+      addZones: true,
+    });
     showMagicPreview(plan, items.map((item) => item.id));
   }
 
   function openMagicOrganizer() {
     const freeStanding = nodes.filter((node) => !node.data.parentId);
     const selected = freeStanding.filter((node) => selection.includes(node.id));
-    const selectedScope = selected.length >= 2;
-    startMagicOrganizer(selectedScope ? selected : freeStanding, selectedScope);
+    const movableSelected = selected.filter((node) => !node.data.magicFixed);
+    const movable = freeStanding.filter((node) => !node.data.magicFixed);
+    const selectedScope = movableSelected.length >= 2;
+    const target = selectedScope ? movableSelected : movable;
+    const fixedCount = (selectedScope ? selected : freeStanding).length - target.length;
+    startMagicOrganizer(target, selectedScope, nodes, fixedCount);
   }
 
   function changeMagicMode(mode: OrganizeMode) {
@@ -2160,7 +2199,15 @@ function CanvasInner({ canvasId }: { canvasId: string }) {
     const original = magicSession.original;
     setNodes((current) => current.map((node) => {
       const geometry = original[node.id];
-      return geometry ? { ...node, position: { x: geometry.x, y: geometry.y } } : node;
+      return geometry
+        ? {
+            ...node,
+            position: { x: geometry.x, y: geometry.y },
+            width: geometry.w,
+            height: geometry.h,
+            data: { ...node.data, w: geometry.w, h: geometry.h },
+          }
+        : node;
     }));
     const ids = magicSession.items.map((item) => ({ id: item.id }));
     setMagicSession(null);
@@ -2173,11 +2220,17 @@ function CanvasInner({ canvasId }: { canvasId: string }) {
     if (!magicSession) return;
     const session = magicSession;
     const right = Math.max(
-      ...session.items.map((item) => session.plan.positions[item.id].x + item.w),
+      ...session.items.map((item) => {
+        const size = session.plan.sizes[item.id] ?? item;
+        return session.plan.positions[item.id].x + size.w;
+      }),
       ...session.plan.groups.map((group) => group.x + group.w)
     );
     const bottom = Math.max(
-      ...session.items.map((item) => session.plan.positions[item.id].y + item.h),
+      ...session.items.map((item) => {
+        const size = session.plan.sizes[item.id] ?? item;
+        return session.plan.positions[item.id].y + size.h;
+      }),
       ...session.plan.groups.map((group) => group.y + group.h)
     );
     growCanvasForContent(right, bottom);
@@ -2220,124 +2273,6 @@ function CanvasInner({ canvasId }: { canvasId: string }) {
         ? "Layout applied; one or more zones could not be created"
         : `Organized ${session.items.length} cards — undo is available`
     );
-  }
-
-  function tidySelection() {
-    const selectedIds = new Set(selection);
-    const selected = nodes
-      .filter((node) => selectedIds.has(node.id) && !node.data.parentId)
-      .sort((a, b) => a.position.y - b.position.y || a.position.x - b.position.x);
-    if (selected.length < 2) return;
-
-    const gap = 32;
-    const obstacleGap = 20;
-    const left = Math.min(...selected.map((node) => node.position.x));
-    const top = Math.min(...selected.map((node) => node.position.y));
-    const area = selected.reduce((total, node) => {
-      const size = effectiveSize(node);
-      return total + (size.w + gap) * (size.h + gap);
-    }, 0);
-    // A slightly landscape packing target suits the canvas and avoids a tall
-    // single-file result when cards have very different shapes.
-    const targetWidth = Math.max(360, Math.sqrt(area * 1.55));
-    const local = new Map<string, { x: number; y: number; w: number; h: number }>();
-    let x = 0;
-    let y = 0;
-    let rowHeight = 0;
-
-    for (const node of selected) {
-      const size = effectiveSize(node);
-      if (x > 0 && x + size.w > targetWidth) {
-        x = 0;
-        y += rowHeight + gap;
-        rowHeight = 0;
-      }
-      local.set(node.id, { x, y, w: size.w, h: size.h });
-      x += size.w + gap;
-      rowHeight = Math.max(rowHeight, size.h);
-    }
-
-    const byId = new Map(nodes.map((node) => [node.id, node]));
-    const obstacles = nodes
-      .filter((node) => !selectedIds.has(node.id) && !node.data.parentId)
-      .map((node) => {
-        const size = effectiveSize(node);
-        const at = worldPosition(node, byId);
-        return { x: at.x, y: at.y, w: size.w, h: size.h };
-      });
-    const overlaps = (
-      a: { x: number; y: number; w: number; h: number },
-      b: { x: number; y: number; w: number; h: number }
-    ) =>
-      a.x < b.x + b.w + obstacleGap &&
-      a.x + a.w + obstacleGap > b.x &&
-      a.y < b.y + b.h + obstacleGap &&
-      a.y + a.h + obstacleGap > b.y;
-    const clearAt = (anchorX: number, anchorY: number) => {
-      for (const item of local.values()) {
-        const placed = {
-          x: anchorX + item.x,
-          y: anchorY + item.y,
-          w: item.w,
-          h: item.h,
-        };
-        if (obstacles.some((obstacle) => overlaps(placed, obstacle))) return false;
-      }
-      return true;
-    };
-
-    // Search outward from the selection's current corner. Tidy stays local,
-    // but will move the group as a unit rather than laying it over cards that
-    // were deliberately left out of the selection.
-    const step = 48;
-    const candidates: { x: number; y: number; distance: number }[] = [];
-    for (let dx = -20; dx <= 20; dx++) {
-      for (let dy = -20; dy <= 20; dy++) {
-        candidates.push({
-          x: left + dx * step,
-          y: top + dy * step,
-          distance: dx * dx + dy * dy,
-        });
-      }
-    }
-    candidates.sort((a, b) => a.distance - b.distance);
-    const anchor = candidates.find((candidate) => clearAt(candidate.x, candidate.y));
-    if (!anchor) {
-      showToast("Could not find clear space near those cards");
-      return;
-    }
-
-    const positions = new Map<string, { x: number; y: number }>();
-    for (const [id, item] of local) {
-      positions.set(id, { x: anchor.x + item.x, y: anchor.y + item.y });
-    }
-
-    const moved = selected.filter((node) => {
-      const next = positions.get(node.id)!;
-      return node.position.x !== next.x || node.position.y !== next.y;
-    });
-    if (moved.length === 0) return;
-    const undoItems = moved.map((node) => ({
-        kind: "geometry",
-        placementId: node.id,
-        x: node.position.x,
-        y: node.position.y,
-        w: node.data.w,
-        h: node.data.h,
-      }) as const);
-    pushUndo(
-      undoItems.length === 1
-        ? undoItems[0]
-        : { kind: "geometry-group", items: undoItems }
-    );
-    setNodes((current) =>
-      current.map((node) => {
-        const position = positions.get(node.id);
-        return position ? { ...node, position } : node;
-      })
-    );
-    moved.forEach((node) => savePlacement(node.id));
-    showToast(`Tidied ${moved.length} card${moved.length === 1 ? "" : "s"}`);
   }
 
   return (
@@ -2486,32 +2421,29 @@ function CanvasInner({ canvasId }: { canvasId: string }) {
             <button
               className="tool magic-organize-tool"
               onClick={openMagicOrganizer}
-              disabled={nodes.filter((node) => !node.data.parentId).length < 2}
+              disabled={
+                nodes.filter(
+                  (node) => !node.data.parentId && !node.data.magicFixed
+                ).length < 2
+              }
               title={
-                selection.filter((id) => nodes.some((node) => node.id === id && !node.data.parentId)).length >= 2
+                selection.filter((id) => nodes.some(
+                  (node) =>
+                    node.id === id &&
+                    !node.data.parentId &&
+                    !node.data.magicFixed
+                )).length >= 2
                   ? "Organize the selected cards"
-                  : "Organize the free-standing cards on this canvas"
+                  : "Organize movable free-standing cards; fixed cards stay put"
               }
             >
               <Icon name="sparkles" /> Magic
             </button>
-            {selection.filter((id) => {
-              const node = nodes.find((candidate) => candidate.id === id);
-              return node && !node.data.parentId;
-            }).length >= 2 && (
-              <button
-                className="tool"
-                onClick={tidySelection}
-                title="Arrange selected cards into a compact grid"
-              >
-                <Icon name="table" /> Tidy
-              </button>
-            )}
             {generationAvailable && selection.length >= 2 && (
               <button
                 className="tool"
                 onClick={composeSelection}
-                title="Draft a document from the selected cards"
+                title="Draft a document from selected notes, links, and other cards"
               >
                 <Icon name="document" /> Draft selected
               </button>
@@ -2662,6 +2594,7 @@ function CanvasInner({ canvasId }: { canvasId: string }) {
         <MagicOrganizePanel
           mode={magicSession.mode}
           count={magicSession.items.length}
+          fixedCount={magicSession.fixedCount}
           selectedScope={magicSession.selectedScope}
           groups={magicSession.plan.groups}
           addZones={magicSession.addZones}

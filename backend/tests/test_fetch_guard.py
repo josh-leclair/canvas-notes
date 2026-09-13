@@ -158,6 +158,33 @@ def test_a_page_with_no_product_reports_none():
     assert data["product"] is None
 
 
+def test_recipe_json_ld_is_kept_as_structured_drafting_material():
+    html = """
+    <html><body><script type="application/ld+json">
+    {"@context":"https://schema.org","@type":"Recipe",
+     "name":"Weeknight Tomato Pasta","author":{"@type":"Person","name":"A. Cook"},
+     "recipeYield":"4 servings","prepTime":"PT10M","cookTime":"PT20M",
+     "recipeIngredient":["12 oz pasta","2 cups tomatoes"],
+     "recipeInstructions":[
+       {"@type":"HowToStep","text":"Boil the pasta."},
+       {"@type":"HowToSection","name":"Sauce","itemListElement":[
+         {"@type":"HowToStep","text":"Simmer the tomatoes."}
+       ]}
+     ]}
+    </script></body></html>
+    """
+    data = parse_unfurl(html)
+    assert data["title"] == "Weeknight Tomato Pasta"
+    assert data["recipe"] == {
+        "author": "A. Cook",
+        "yield": "4 servings",
+        "prep_time": "PT10M",
+        "cook_time": "PT20M",
+        "ingredients": ["12 oz pasta", "2 cups tomatoes"],
+        "instructions": ["Boil the pasta.", "Simmer the tomatoes."],
+    }
+
+
 def test_the_fetcher_asks_for_the_page_a_browser_would_get():
     """Unknown user agents get a stripped placeholder from large sites, which
     is what left shopping links showing nothing but a site name."""
