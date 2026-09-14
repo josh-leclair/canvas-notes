@@ -10,7 +10,7 @@
     "build": "web-ext build --overwrite-dest"
   },
   "devDependencies": {
-    "web-ext": "10.5.0"
+    "web-ext": "10.6.0"
   },
   "engines": {
     "node": ">=20"

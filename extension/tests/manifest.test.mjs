@@ -16,6 +16,7 @@ test("manifest is a signed-ready Firefox Manifest V3 extension", () => {
     manifest.browser_specific_settings.gecko.data_collection_permissions.required.sort(),
     ["authenticationInfo", "browsingActivity", "websiteContent"].sort()
   );
+  assert.ok(manifest.background.scripts.includes("lib/select-region.js"));
 });
 
 test("manifest does not request persistent page or browsing-history access", () => {

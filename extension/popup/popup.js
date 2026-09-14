@@ -30,6 +30,7 @@
     $("clip-page").hidden = true;
     $("clip-selection").hidden = true;
     $("clip-article").hidden = true;
+    $("clip-screenshot-area").hidden = true;
     $("loading").hidden = true;
     $("unsupported").hidden = true;
     $("clip-form").hidden = false;
@@ -41,6 +42,17 @@
     $("status").textContent = "Saving…";
     try {
       const title = CanvasNotes.titleOverride($("title").value, page.title);
+      if (kind === "screenshot-area") {
+        browser.runtime.sendMessage({
+          type: "capture-screenshot-area",
+          title: title || `Screenshot of ${page.title || page.host}`,
+          text: $("note").value.trim() || undefined,
+        }).catch(() => {});
+        $("status").className = "status success";
+        $("status").textContent = "Drag over the page to select an area. Press Esc to cancel.";
+        setTimeout(() => window.close(), 80);
+        return;
+      }
       if (kind === "screenshot") {
         const dataUrl = await browser.tabs.captureVisibleTab(activeTab.windowId, { format: "png" });
         const blob = await (await fetch(dataUrl)).blob();
@@ -81,6 +93,7 @@
   $("clip-selection").addEventListener("click", () => save("selection"));
   $("clip-article").addEventListener("click", () => save("article"));
   $("clip-screenshot").addEventListener("click", () => save("screenshot"));
+  $("clip-screenshot-area").addEventListener("click", () => save("screenshot-area"));
 
   try {
     connection = await CanvasNotes.loadConnection();

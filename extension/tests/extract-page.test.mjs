@@ -63,6 +63,19 @@ test("article structured data wins over incidental video metadata", () => {
   }), true);
 });
 
+test("content-first recipes ignore embedded video players", () => {
+  assert.equal(classify({
+    mode: "video-decision",
+    host: "github.com",
+    pathname: "/canvas-notes/canvas-notes",
+    contentFirstRecipe: true,
+    openGraphType: "",
+    structuredAsArticle: false,
+    hasVideoMetadata: true,
+    prominentNativeVideo: true,
+  }), false);
+});
+
 test("recipe structured data becomes concise useful Markdown", () => {
   const result = classify({
     mode: "structured-details",

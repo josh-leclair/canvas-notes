@@ -22,7 +22,9 @@ remain active for the review period.
    **Clip selection**, and **Clip simplified article**.
 4. Right-click selected text, a link, and an image to test the corresponding
    **Canvas Notes** commands. Use **Clip visible area as screenshot** from the
-   popup or page context menu to create an image card.
+   popup or page context menu to create an image card. Use **Select area to
+   screenshot**, drag over part of the page, and confirm that only that region
+   is uploaded.
 5. Open a YouTube watch URL and select **Clip video**. The server returns a
    YouTube card through its existing `/api/capture` URL classifier.
 6. Open the supplied Canvas Notes inbox; all created cards appear unplaced.
@@ -32,8 +34,8 @@ remain active for the review period.
 - `GET {configured server}/api/me` occurs only when saving/testing setup.
 - `POST {configured server}/api/capture` occurs only after a clip command.
 - `POST {configured server}/api/capture/file` occurs for **Clip image** and screenshots.
-- A screenshot is captured locally from the active tab and does not make a
-  request to the page.
+- A full or selected-area screenshot is captured and, when applicable, cropped
+  locally from the active tab; it does not make a request to the page.
 - An image GET goes to the explicitly chosen image URL before upload. The
   extension requests that exact image origin at that time and omits credentials.
 

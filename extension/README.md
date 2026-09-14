@@ -5,10 +5,13 @@ extracted articles, screenshots, links, and images to a self-hosted Canvas Notes
 
 ## Features
 
-- Toolbar popup for page, rich selection, article, video-page, and visible-area screenshot captures
+- Toolbar popup for page, rich selection, article, video-page, visible-area screenshot,
+  and drag-to-select screenshot captures
 - Optional note attached above the clipped content
 - Scored article extraction with structured recipes for recipes, products, papers,
   Wikipedia, GitHub documents, Stack Exchange Q&A, Medium, and Substack
+- Content-first recipes keep GitHub READMEs and similar documents from being
+  mislabeled when they contain embedded videos
 - Right-click capture for pages, selected text, links, and images
 - `Ctrl+Shift+Y` page capture shortcut
 - Configurable self-hosted Canvas Notes URL and revocable API token

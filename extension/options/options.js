@@ -29,14 +29,17 @@
     event.preventDefault();
     busy(true);
     setStatus("Requesting access to your server…");
+    let newlyGrantedOrigin = null;
     try {
       const clean = {
         serverUrl: CanvasNotes.normalizeServerUrl(server.value),
         apiToken: CanvasNotes.normalizeToken(token.value),
       };
       const origin = CanvasNotes.originPattern(clean.serverUrl);
-      const permitted = await browser.permissions.request({ origins: [origin] });
+      const alreadyPermitted = await browser.permissions.contains({ origins: [origin] });
+      const permitted = alreadyPermitted || await browser.permissions.request({ origins: [origin] });
       if (!permitted) throw new Error("Firefox did not grant access to that server.");
+      if (!alreadyPermitted) newlyGrantedOrigin = origin;
 
       setStatus("Testing connection…");
       const user = await CanvasNotes.testConnection(clean);
@@ -46,8 +49,12 @@
         if (oldOrigin !== origin) await browser.permissions.remove({ origins: [oldOrigin] });
       }
       previousConnection = clean;
+      newlyGrantedOrigin = null;
       setStatus(`Connected as ${user.display_name || user.email}. Clips will go to your inbox.`, "success");
     } catch (error) {
+      if (newlyGrantedOrigin) {
+        await browser.permissions.remove({ origins: [newlyGrantedOrigin] }).catch(() => {});
+      }
       setStatus(error?.message || "Could not connect to Canvas Notes.", "error");
     } finally {
       busy(false);

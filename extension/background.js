@@ -9,6 +9,7 @@
     link: "canvas-notes-link",
     image: "canvas-notes-image",
     screenshot: "canvas-notes-screenshot",
+    screenshotArea: "canvas-notes-screenshot-area",
   };
 
   async function configuredConnection() {
@@ -89,17 +90,58 @@
     );
   }
 
-  async function clipScreenshot(tab, connection) {
+  async function selectScreenshotRegion(tabId) {
+    const result = await browser.scripting.executeScript({
+      target: { tabId },
+      func: canvasNotesSelectRegion,
+    });
+    return result?.[0]?.result || null;
+  }
+
+  async function screenshotBlob(tab, region) {
     const dataUrl = await browser.tabs.captureVisibleTab(tab.windowId, { format: "png" });
     const response = await fetch(dataUrl);
     const blob = await response.blob();
+    if (!region) return blob;
+
+    const bitmap = await createImageBitmap(blob);
+    const scaleX = bitmap.width / Math.max(1, region.viewportWidth);
+    const scaleY = bitmap.height / Math.max(1, region.viewportHeight);
+    const sourceX = Math.max(0, Math.floor(region.x * scaleX));
+    const sourceY = Math.max(0, Math.floor(region.y * scaleY));
+    const sourceWidth = Math.max(1, Math.min(bitmap.width - sourceX, Math.round(region.width * scaleX)));
+    const sourceHeight = Math.max(1, Math.min(bitmap.height - sourceY, Math.round(region.height * scaleY)));
+    const canvas = new OffscreenCanvas(sourceWidth, sourceHeight);
+    const context = canvas.getContext("2d");
+    if (!context) throw new Error("This browser could not crop the screenshot.");
+    context.drawImage(
+      bitmap,
+      sourceX, sourceY, sourceWidth, sourceHeight,
+      0, 0, sourceWidth, sourceHeight
+    );
+    bitmap.close?.();
+    return canvas.convertToBlob({ type: "image/png" });
+  }
+
+  async function clipScreenshot(tab, connection, { region, title, text } = {}) {
+    const blob = await screenshotBlob(tab, region);
     const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
     return CanvasNotes.captureFile(
       connection,
       blob,
       `screenshot-${timestamp}.png`,
-      tab.title ? `Screenshot of ${tab.title}` : "Web page screenshot"
+      title || (tab.title ? `Screenshot of ${tab.title}` : "Web page screenshot"),
+      text
     );
+  }
+
+  async function clipSelectedScreenshot(tab, connection, details = {}) {
+    const region = await selectScreenshotRegion(tab.id);
+    if (!region) return false;
+    // Give Firefox a frame to repaint after removing the selection overlay.
+    await new Promise((resolve) => setTimeout(resolve, 80));
+    await clipScreenshot(tab, connection, { ...details, region });
+    return true;
   }
 
   async function handleMenu(info, tab) {
@@ -131,6 +173,8 @@
         await clipImage(info, tab, connection);
       } else if (info.menuItemId === MENU.screenshot) {
         await clipScreenshot(tab, connection);
+      } else if (info.menuItemId === MENU.screenshotArea) {
+        if (!(await clipSelectedScreenshot(tab, connection))) return;
       } else return;
       showBadge(tab.id, true, "Saved to the Canvas Notes inbox");
     } catch (error) {
@@ -151,6 +195,7 @@
       browser.contextMenus.create({ id: MENU.page, parentId: MENU.root, title: "Clip page", contexts: ["page"] });
       browser.contextMenus.create({ id: MENU.article, parentId: MENU.root, title: "Clip simplified article", contexts: ["page"] });
       browser.contextMenus.create({ id: MENU.screenshot, parentId: MENU.root, title: "Clip visible area as screenshot", contexts: ["page"] });
+      browser.contextMenus.create({ id: MENU.screenshotArea, parentId: MENU.root, title: "Select area to screenshot", contexts: ["page"] });
       browser.contextMenus.create({ id: MENU.selection, parentId: MENU.root, title: "Clip selection", contexts: ["selection"] });
       browser.contextMenus.create({ id: MENU.link, parentId: MENU.root, title: "Clip link", contexts: ["link"] });
       browser.contextMenus.create({ id: MENU.image, parentId: MENU.root, title: "Clip image", contexts: ["image"] });
@@ -163,6 +208,25 @@
   });
   browser.runtime.onStartup.addListener(installMenus);
   browser.contextMenus.onClicked.addListener(handleMenu);
+  browser.runtime.onMessage.addListener((message) => {
+    if (message?.type !== "capture-screenshot-area") return undefined;
+    return (async () => {
+      const [tab] = await browser.tabs.query({ active: true, currentWindow: true });
+      if (!tab?.id) throw new Error("No active page was found.");
+      const connection = await configuredConnection();
+      const saved = await clipSelectedScreenshot(tab, connection, {
+        title: message.title,
+        text: message.text,
+      });
+      if (saved) showBadge(tab.id, true, "Screenshot saved to the Canvas Notes inbox");
+      return { saved };
+    })().catch((error) => {
+      browser.tabs.query({ active: true, currentWindow: true }).then(([tab]) => {
+        if (tab?.id) showBadge(tab.id, false, error?.message || "Could not save this screenshot");
+      });
+      return { saved: false, error: error?.message || "Could not save this screenshot" };
+    });
+  });
   browser.commands.onCommand.addListener(async (command) => {
     if (command !== "clip-page") return;
     const [tab] = await browser.tabs.query({ active: true, currentWindow: true });

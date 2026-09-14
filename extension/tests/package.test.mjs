@@ -18,7 +18,7 @@ test("every local HTML resource exists", async () => {
 
 test("runtime JavaScript contains no remote-code execution primitives", async () => {
   const files = [
-    "background.js", "lib/api.js", "lib/config.js", "lib/extract-page.js",
+    "background.js", "lib/api.js", "lib/config.js", "lib/extract-page.js", "lib/select-region.js",
     "options/options.js", "popup/popup.js",
   ];
   for (const file of files) {

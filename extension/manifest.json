@@ -19,6 +19,7 @@
       "lib/config.js",
       "lib/api.js",
       "lib/extract-page.js",
+      "lib/select-region.js",
       "background.js"
     ]
   },

@@ -5,7 +5,8 @@ Effective September 14, 2026.
 Canvas Notes Web Clipper sends only the content a user explicitly chooses to
 clip to the Canvas Notes server that user configures. Depending on the selected
 command, that content is a page URL and title, selected text, extracted article
-or structured page details, a link, an image, or a visible-area screenshot. The configured server URL and Canvas Notes API token
+or structured page details, a link, an image, or a full or selected-area
+screenshot. The configured server URL and Canvas Notes API token
 are stored locally in Firefox; the token is transmitted only to that server for
 authentication and is not exposed to visited pages.
 

@@ -393,7 +393,9 @@ function canvasNotesExtractPage(testInput) {
   }
 
   function videoDecision(details) {
-    return isKnownVideoUrl(details.host, details.pathname) ||
+    const knownVideoUrl = isKnownVideoUrl(details.host, details.pathname);
+    if (details.contentFirstRecipe && !knownVideoUrl) return false;
+    return knownVideoUrl ||
       String(details.openGraphType || "").toLowerCase().startsWith("video") ||
       (!details.structuredAsArticle && details.hasVideoMetadata) ||
       details.prominentNativeVideo;
@@ -435,6 +437,7 @@ function canvasNotesExtractPage(testInput) {
   const isVideo = videoDecision({
     host,
     pathname: location.pathname,
+    contentFirstRecipe: ["github", "wikipedia", "stackexchange"].includes(domain?.id),
     openGraphType,
     structuredAsArticle,
     hasVideoMetadata:
