@@ -115,7 +115,8 @@ export default function Settings() {
   }
 
   return (
-    <div className="settings-page">
+    <main className="settings-surface">
+      <div className="settings-page">
       <header>
         <Link to="/" className="settings-back" title="Back to canvases">
           <Logo size={20} />
@@ -327,6 +328,7 @@ export default function Settings() {
           </p>
         )}
       </section>
-    </div>
+      </div>
+    </main>
   );
 }

@@ -1,13 +1,17 @@
 # Canvas Notes Web Clipper
 
-Save web pages, selected passages, simplified articles, links, videos, and
-images directly to the inbox of your self-hosted Canvas Notes installation.
+Save web pages, selected passages, extracted articles, links, videos, images,
+and visible-area screenshots directly to the inbox of your self-hosted Canvas Notes installation.
 
 Use the toolbar popup to preview the current page, add an optional note, and
 choose what to clip, or right-click a page, rich-text selection, link, or image
 for a one-step capture. YouTube
 links become Canvas Notes video cards automatically. Every capture lands safely
 in the inbox, ready to arrange on a canvas later.
+
+Article capture scores candidate content instead of trusting the largest page
+container, and understands structured recipe, product, and research-paper data
+plus focused layouts on Wikipedia, GitHub, Stack Exchange, Medium, and Substack.
 
 The extension connects only to the Canvas Notes server URL you configure. It
 sends data only after you invoke a clearly labeled clip command. It contains no

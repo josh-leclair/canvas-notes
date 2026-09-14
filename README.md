@@ -207,13 +207,19 @@ curl -X POST http://localhost:8080/api/capture \
   -d '{"text":"a thought","url":"https://example.com"}'
 ```
 
+Clients that attach commentary to a recognized media URL can include
+`"prefer_url_card": true` to preserve the URL's card type and store the text as
+its body. The default remains compatible with share sheets, where commentary
+plus a media URL is treated as a text note.
+
 Upload a photo, voice memo, or other file as multipart data:
 
 ```bash
 curl -X POST http://localhost:8080/api/capture/file \
   -H "Authorization: Bearer cnv_..." \
   -F file=@photo.png \
-  -F title="from my phone"
+  -F title="from my phone" \
+  -F text="optional note"
 ```
 
 Captured items land unplaced in the selected inbox. Images become image cards,

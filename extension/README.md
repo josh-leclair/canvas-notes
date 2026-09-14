@@ -1,12 +1,14 @@
 # Canvas Notes Web Clipper
 
 A Firefox 140+ desktop and Firefox 142+ Android extension that sends explicitly chosen pages, selections,
-simplified articles, links, and images to a self-hosted Canvas Notes inbox.
+extracted articles, screenshots, links, and images to a self-hosted Canvas Notes inbox.
 
 ## Features
 
-- Toolbar popup for page, rich selection, article, and video-page captures
+- Toolbar popup for page, rich selection, article, video-page, and visible-area screenshot captures
 - Optional note attached above the clipped content
+- Scored article extraction with structured recipes for recipes, products, papers,
+  Wikipedia, GitHub documents, Stack Exchange Q&A, Medium, and Substack
 - Right-click capture for pages, selected text, links, and images
 - `Ctrl+Shift+Y` page capture shortcut
 - Configurable self-hosted Canvas Notes URL and revocable API token

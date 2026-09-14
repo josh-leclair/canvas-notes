@@ -25,11 +25,21 @@ test("capture posts the documented JSON shape with bearer authentication", async
       headers: { "content-type": "application/json" },
     });
   });
-  const result = await api.capture(connection, { text: "Quote", url: "https://example.com", title: "Example" });
+  const result = await api.capture(connection, {
+    text: "Quote",
+    url: "https://example.com",
+    title: "Example",
+    preferUrlCard: true,
+  });
   assert.equal(result.id, "card-1");
   assert.equal(seen.url, "https://notes.example.com/api/capture");
   assert.equal(seen.init.headers.Authorization, "Bearer cnv_secret");
-  assert.deepEqual(JSON.parse(seen.init.body), { text: "Quote", url: "https://example.com", title: "Example" });
+  assert.deepEqual(JSON.parse(seen.init.body), {
+    text: "Quote",
+    url: "https://example.com",
+    title: "Example",
+    prefer_url_card: true,
+  });
   assert.equal(seen.init.credentials, "omit");
 });
 
@@ -52,10 +62,17 @@ test("image capture uses multipart without overriding its content type", async (
     seen = { url, init };
     return new Response(JSON.stringify({ id: "image-1", type: "image" }), { status: 201 });
   });
-  const result = await api.captureFile(connection, new Blob(["png"], { type: "image/png" }), "clip.png", "Clipped image");
+  const result = await api.captureFile(
+    connection,
+    new Blob(["png"], { type: "image/png" }),
+    "clip.png",
+    "Clipped image",
+    "Why this matters"
+  );
   assert.equal(result.type, "image");
   assert.equal(seen.url, "https://notes.example.com/api/capture/file");
   assert.ok(seen.init.body instanceof FormData);
   assert.equal(seen.init.headers.Authorization, "Bearer cnv_secret");
   assert.equal(seen.init.headers["Content-Type"], undefined);
+  assert.equal(seen.init.body.get("text"), "Why this matters");
 });

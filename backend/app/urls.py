@@ -41,7 +41,12 @@ def youtube_url(text: str | None) -> str | None:
     return None
 
 
-def card_shape_for(text: str | None, url: str | None = None) -> dict:
+def card_shape_for(
+    text: str | None,
+    url: str | None = None,
+    *,
+    prefer_url_card: bool = False,
+) -> dict:
     """Return {type, title, body, payload} for captured content.
 
     A bare URL becomes a link or youtube card. Text with a trailing URL (what
@@ -60,7 +65,11 @@ def card_shape_for(text: str | None, url: str | None = None) -> dict:
     # A shared song with commentary is still a note. Keeping the URL in its
     # body makes the source visible and lets the Spotify attachment detector
     # enrich it without turning the whole thought into a link preview.
-    if text and (spotify_url(url) or youtube_video_id(url)):
+    if (
+        text
+        and not prefer_url_card
+        and (spotify_url(url) or youtube_video_id(url))
+    ):
         return {
             "type": "text",
             "title": None,

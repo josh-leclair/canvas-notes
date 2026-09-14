@@ -36,7 +36,13 @@ async function harness() {
         return [{ result: { selection: "**Chosen words** with [context](https://example.com/context)" } }];
       },
     },
-    tabs: { async query() { return []; } },
+    tabs: {
+      async query() { return []; },
+      async captureVisibleTab(windowId, options) {
+        calls.push(["capture-visible-tab", windowId, options.format]);
+        return "data:image/png;base64,cG5n";
+      },
+    },
   };
   const context = vm.createContext({
     browser, CanvasNotes, URL, setTimeout() {}, globalThis: null,
@@ -86,4 +92,18 @@ test("image context menu requests and then drops exact image-origin access", asy
   assert.deepEqual(calls[0], ["permission", "https://cdn.example.com/*"]);
   assert.ok(calls.some((call) => Array.isArray(call) && call[0] === "capture-file"));
   assert.deepEqual(calls.at(-1), ["remove-permission", "https://cdn.example.com/*"]);
+});
+
+test("screenshot context menu captures the visible tab as an image card", async () => {
+  const { calls, onMenu } = await harness();
+  await onMenu(
+    { menuItemId: "canvas-notes-screenshot", pageUrl: "https://example.com/article" },
+    { id: 10, windowId: 4, title: "Example article" }
+  );
+  assert.ok(calls.some((call) => Array.isArray(call) && call[0] === "capture-visible-tab"));
+  const upload = calls.find((call) => Array.isArray(call) && call[0] === "capture-file");
+  assert.equal(upload[1], "image/png");
+  assert.match(upload[2], /^screenshot-.*\.png$/);
+  assert.equal(upload[3], "Screenshot of Example article");
+  assert.ok(!calls.some((call) => Array.isArray(call) && call[0] === "permission"));
 });

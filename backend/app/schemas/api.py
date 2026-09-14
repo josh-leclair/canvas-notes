@@ -304,6 +304,9 @@ class CaptureIn(BaseModel):
     text: str | None = None
     url: str | None = None
     title: str | None = None
+    # Browser clippers can attach a note without changing a recognised video
+    # URL into a generic text card. Share-sheet callers keep the old default.
+    prefer_url_card: bool = False
 
 
 class ApiTokenOut(BaseModel):

@@ -49,12 +49,13 @@ def test_capture_file_makes_an_image_card(client, admin, tmp_path, monkeypatch):
     resp = client.post(
         "/api/capture/file",
         files={"file": ("photo.png", b"png-bytes", "image/png")},
-        data={"title": "from my phone"},
+        data={"title": "from my phone", "text": "Keep for the mood board"},
     )
     assert resp.status_code == 201, resp.text
     card = resp.json()
     assert card["type"] == "image"
     assert card["title"] == "from my phone"
+    assert card["body"] == "Keep for the mood board"
     assert card["payload"]["image_mime"] == "image/png"
 
     file_id = card["payload"]["image_file_id"]
@@ -140,6 +141,14 @@ def test_youtube_share_with_comment_stays_a_text_card():
     shape = card_shape_for("This explains the idea", url)
     assert shape["type"] == "text"
     assert shape["body"] == f"This explains the idea\n\n{url}"
+
+
+def test_clipper_can_keep_a_video_card_when_adding_a_note():
+    url = "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
+    shape = card_shape_for("Watch this section", url, prefer_url_card=True)
+    assert shape["type"] == "youtube"
+    assert shape["body"] == "Watch this section"
+    assert shape["payload"]["url"] == url
 
 
 def test_api_token_auth_and_revocation(client, admin):

@@ -53,13 +53,21 @@ def capture(
     user: User = Depends(get_current_user),
     db: DbSession = Depends(get_db),
 ):
-    return capture_card(db, user, text=body.text, url=body.url, title=body.title)
+    return capture_card(
+        db,
+        user,
+        text=body.text,
+        url=body.url,
+        title=body.title,
+        prefer_url_card=body.prefer_url_card,
+    )
 
 
 @router.post("/capture/file", status_code=201, response_model=CardOut)
 def capture_file(
     file: UploadFile,
     title: str | None = Form(default=None),
+    text: str | None = Form(default=None),
     user: User = Depends(get_current_user),
     db: DbSession = Depends(get_db),
 ):
@@ -80,12 +88,14 @@ def capture_file(
 
     if mime in ALLOWED_IMAGE:
         card = capture_image_card(db, user, title=title)
+        card.body = (text or "").strip() or None
         file_id, path, total = store_upload(file, ALLOWED_IMAGE[mime], MAX_IMAGE_BYTES)
         attach_image_file(db, card, file_id, path, mime, total)
         return card
 
     if mime in ALLOWED_AUDIO:
         card = capture_audio_card(db, user, title=title)
+        card.body = (text or "").strip() or None
         file_id, path, total = store_upload(file, ALLOWED_AUDIO[mime], MAX_AUDIO_BYTES)
         attach_audio_file(db, card, file_id, path, mime, total)
         return card
@@ -96,6 +106,7 @@ def capture_file(
     # preview.
     name = safe_name(file.filename)
     card = capture_file_card(db, user, title=title)
+    card.body = (text or "").strip() or None
     file_id, path, total = store_upload(
         file, safe_extension(file.filename), MAX_FILE_BYTES
     )

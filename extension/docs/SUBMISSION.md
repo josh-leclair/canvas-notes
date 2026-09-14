@@ -2,7 +2,7 @@
 
 ## Prepared files
 
-- Upload package: `artifacts/canvas_notes_web_clipper-1.0.1.zip`
+- Upload package: `artifacts/canvas_notes_web_clipper-1.1.0.zip`
 - Source: this `extension/` directory, or a ZIP of it excluding `node_modules/`
   and `artifacts/`
 - Listing copy: `docs/listing.md`
@@ -15,7 +15,7 @@
 2. Provide reviewers with a temporary HTTPS Canvas Notes test deployment and a
    revocable `cnv_…` API token. Replace the placeholders in reviewer notes.
 3. Run `npm ci`, `npm test`, `npm run lint`, and `npm run build`.
-4. Confirm version `1.0.1` has not already been uploaded for the fixed add-on ID
+4. Confirm version `1.1.0` has not already been uploaded for the fixed add-on ID
    `{a65bfc59-e31c-4b51-83e9-3a8de0311050}`.
 
 ## Listed release on addons.mozilla.org

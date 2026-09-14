@@ -8,6 +8,7 @@
     selection: "canvas-notes-selection",
     link: "canvas-notes-link",
     image: "canvas-notes-image",
+    screenshot: "canvas-notes-screenshot",
   };
 
   async function configuredConnection() {
@@ -88,6 +89,19 @@
     );
   }
 
+  async function clipScreenshot(tab, connection) {
+    const dataUrl = await browser.tabs.captureVisibleTab(tab.windowId, { format: "png" });
+    const response = await fetch(dataUrl);
+    const blob = await response.blob();
+    const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
+    return CanvasNotes.captureFile(
+      connection,
+      blob,
+      `screenshot-${timestamp}.png`,
+      tab.title ? `Screenshot of ${tab.title}` : "Web page screenshot"
+    );
+  }
+
   async function handleMenu(info, tab) {
     if (!tab?.id) return;
     let imageOrigin = null;
@@ -115,6 +129,8 @@
         await CanvasNotes.capture(connection, { url: info.linkUrl });
       } else if (info.menuItemId === MENU.image) {
         await clipImage(info, tab, connection);
+      } else if (info.menuItemId === MENU.screenshot) {
+        await clipScreenshot(tab, connection);
       } else return;
       showBadge(tab.id, true, "Saved to the Canvas Notes inbox");
     } catch (error) {
@@ -134,6 +150,7 @@
       browser.contextMenus.create({ id: MENU.root, title: "Canvas Notes", contexts: ["page", "selection", "link", "image"] });
       browser.contextMenus.create({ id: MENU.page, parentId: MENU.root, title: "Clip page", contexts: ["page"] });
       browser.contextMenus.create({ id: MENU.article, parentId: MENU.root, title: "Clip simplified article", contexts: ["page"] });
+      browser.contextMenus.create({ id: MENU.screenshot, parentId: MENU.root, title: "Clip visible area as screenshot", contexts: ["page"] });
       browser.contextMenus.create({ id: MENU.selection, parentId: MENU.root, title: "Clip selection", contexts: ["selection"] });
       browser.contextMenus.create({ id: MENU.link, parentId: MENU.root, title: "Clip link", contexts: ["link"] });
       browser.contextMenus.create({ id: MENU.image, parentId: MENU.root, title: "Clip image", contexts: ["image"] });

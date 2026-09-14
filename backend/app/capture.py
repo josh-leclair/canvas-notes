@@ -25,11 +25,12 @@ def capture_card(
     url: str | None = None,
     title: str | None = None,
     extra_payload: dict | None = None,
+    prefer_url_card: bool = False,
 ) -> Card:
     """`extra_payload` carries provenance for captures that were not typed by
     a person — currently the split job, which stamps `generated_by` so a
     generated card stays identifiable after it is placed."""
-    shape = card_shape_for(text, url)
+    shape = card_shape_for(text, url, prefer_url_card=prefer_url_card)
     card = Card(
         owner_id=user.id,
         type=shape["type"],

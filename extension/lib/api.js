@@ -49,6 +49,7 @@
     if (clip.text) body.text = clip.text;
     if (clip.url) body.url = clip.url;
     if (clip.title) body.title = clip.title;
+    if (clip.preferUrlCard) body.prefer_url_card = true;
     return request(connection, "/api/capture", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -56,10 +57,11 @@
     });
   }
 
-  function captureFile(connection, blob, filename, title) {
+  function captureFile(connection, blob, filename, title, text) {
     const form = new FormData();
     form.append("file", blob, filename || "clipped-image");
     if (title) form.append("title", title);
+    if (text) form.append("text", text);
     return request(connection, "/api/capture/file", {
       method: "POST",
       body: form,
