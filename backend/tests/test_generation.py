@@ -1,8 +1,7 @@
-"""Splitting a card into inbox cards.
+"""LLM-powered card generation and formatting.
 
-The model itself is stubbed: what matters here is that its output lands
-unplaced, stamped, discardable as a batch, and out of the suggestion engine
-until a human places it.
+The model itself is stubbed so these tests cover queueing, persistence, access,
+and stale-write protection without needing a generation endpoint.
 """
 import uuid
 
@@ -63,6 +62,14 @@ def run_split(client, monkeypatch, card, cards=None, limit=3, hero=None):
     return resp.json()["batch_id"]
 
 
+def run_format(client, monkeypatch, card, formatted="## Tasks\n\n- [ ] Call Sam"):
+    resp = client.post(f"/api/cards/{card['id']}/format")
+    assert resp.status_code == 202, resp.text
+    monkeypatch.setattr(jobs, "format_note", lambda *a, **k: formatted)
+    assert jobs.run_one(["format_note"]) is True
+    return resp.json()["batch_id"]
+
+
 # --- gating ---------------------------------------------------------------
 
 
@@ -88,6 +95,24 @@ def test_short_cards_are_not_worth_splitting(client, admin):
     assert resp.json()["error"]["code"] == "too_short"
 
 
+def test_only_normal_notes_can_be_formatted(client, admin):
+    configure_generation(client)
+    canvas = client.post("/api/canvases", json={"name": "Board"}).json()
+    card = client.post(
+        "/api/cards",
+        json={
+            "type": "document",
+            "body": "Some document text",
+            "canvas_id": canvas["id"],
+            "x": 0,
+            "y": 0,
+        },
+    ).json()["card"]
+    resp = client.post(f"/api/cards/{card['id']}/format")
+    assert resp.status_code == 400
+    assert resp.json()["error"]["code"] == "text_card_required"
+
+
 def test_status_reports_the_configured_endpoint(client, admin):
     configure_generation(client)
     data = client.get("/api/ai/status").json()
@@ -95,6 +120,42 @@ def test_status_reports_the_configured_endpoint(client, admin):
     assert data["generation"]["model"] == "qwen3:4b"
     assert data["generation"]["api_key_set"] is False
     assert client.get("/api/search/status").json()["generation_configured"] is True
+
+
+# --- formatting -----------------------------------------------------------
+
+
+def test_format_updates_the_same_note_and_reports_it(client, admin, monkeypatch):
+    configure_generation(client)
+    canvas, card = canvas_with_card(client, body="tasks call Sam and send the brief")
+    batch_id = run_format(client, monkeypatch, card)
+
+    after = read_card(client, canvas["id"], card["id"])
+    assert after["body"] == "## Tasks\n\n- [ ] Call Sam"
+    assert after["title"] == card["title"]
+    assert after["payload"]["ai_format"]["batch_id"] == batch_id
+    status = client.get(f"/api/formats/{batch_id}").json()
+    assert status["status"] == "done"
+    assert status["card"]["id"] == card["id"]
+
+
+def test_format_does_not_overwrite_an_edit_made_while_queued(
+    client, admin, monkeypatch
+):
+    configure_generation(client)
+    canvas, card = canvas_with_card(client, body="original unformatted text")
+    resp = client.post(f"/api/cards/{card['id']}/format")
+    assert resp.status_code == 202
+    batch_id = resp.json()["batch_id"]
+    client.patch(f"/api/cards/{card['id']}", json={"body": "new human edit"})
+    monkeypatch.setattr(jobs, "format_note", lambda *a, **k: "- overwritten")
+    assert jobs.run_one(["format_note"]) is True
+
+    after = read_card(client, canvas["id"], card["id"])
+    assert after["body"] == "new human edit"
+    status = client.get(f"/api/formats/{batch_id}").json()
+    assert status["status"] == "done"
+    assert status["card"] is None
 
 
 # --- the split itself -----------------------------------------------------

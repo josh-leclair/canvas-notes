@@ -438,6 +438,13 @@ class BatchStatusOut(BaseModel):
     error: str | None = None
 
 
+class FormatStatusOut(BaseModel):
+    batch_id: uuid.UUID
+    status: str
+    card: CardOut | None = None
+    error: str | None = None
+
+
 class ComposeIn(BaseModel):
     """Turn a small, explicit set of cards into one placed document."""
 

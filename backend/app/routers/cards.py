@@ -1,4 +1,5 @@
 import base64
+import hashlib
 import re
 import uuid
 from datetime import datetime, timedelta, timezone
@@ -30,7 +31,12 @@ from app.document_export import (
     safe_filename,
 )
 from app.errors import ApiError, not_found
-from app.generate import DEFAULT_CARD_LIMIT, MIN_SPLIT_CHARS, splittable_text
+from app.generate import (
+    DEFAULT_CARD_LIMIT,
+    FORMAT_MAX_CHARS,
+    MIN_SPLIT_CHARS,
+    splittable_text,
+)
 from app.jobs import (
     enqueue,
     enqueue_embed_if_needed,
@@ -55,6 +61,7 @@ from app.schemas.api import (
     ComposeIn,
     ComposeOut,
     ComposeStatusOut,
+    FormatStatusOut,
     InboxOut,
     PlacementOut,
     PortalItemOut,
@@ -729,6 +736,74 @@ def split_card(
         },
     )
     return SplitOut(batch_id=batch_id, status="queued")
+
+
+@router.post("/cards/{card_id}/format", status_code=202, response_model=SplitOut)
+def format_card(
+    card_id: uuid.UUID,
+    user: User = Depends(get_current_user),
+    db: DbSession = Depends(get_db),
+):
+    """Queue content-aware Markdown formatting for one editable text note."""
+    card = get_editable_card(db, user, card_id)
+    if card.type != "text":
+        raise ApiError(
+            400,
+            "text_card_required",
+            "Only normal note cards can be formatted",
+        )
+    source = card.body or ""
+    if not source.strip():
+        raise ApiError(400, "empty_note", "This note has no text to format")
+    if len(source) > FORMAT_MAX_CHARS:
+        raise ApiError(
+            400,
+            "note_too_long",
+            f"Notes longer than {FORMAT_MAX_CHARS} characters cannot be formatted",
+        )
+    if not generation_available(get_ai_config(db)):
+        raise ApiError(
+            409, "generation_unavailable", "No generation endpoint is configured"
+        )
+
+    batch_id = uuid.uuid4()
+    enqueue(
+        db,
+        "format_note",
+        {
+            "card_id": str(card.id),
+            "user_id": str(user.id),
+            "batch_id": str(batch_id),
+            "source_hash": hashlib.sha256(source.encode("utf-8")).hexdigest(),
+        },
+    )
+    return SplitOut(batch_id=batch_id, status="queued")
+
+
+@router.get("/formats/{batch_id}", response_model=FormatStatusOut)
+def format_status(
+    batch_id: uuid.UUID,
+    user: User = Depends(get_current_user),
+    db: DbSession = Depends(get_db),
+):
+    job = db.scalar(
+        select(Job).where(
+            Job.kind == "format_note",
+            Job.payload["batch_id"].astext == str(batch_id),
+            Job.payload["user_id"].astext == str(user.id),
+        )
+    )
+    if job is None:
+        raise not_found()
+    card = db.get(Card, uuid.UUID(job.payload["card_id"]))
+    stamp = (card.payload.get("ai_format") or {}) if card is not None else {}
+    completed = card if stamp.get("batch_id") == str(batch_id) else None
+    return FormatStatusOut(
+        batch_id=batch_id,
+        status=job.status,
+        card=CardOut.model_validate(completed) if completed else None,
+        error=job.last_error,
+    )
 
 
 @router.post(

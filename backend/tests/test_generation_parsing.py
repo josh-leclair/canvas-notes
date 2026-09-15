@@ -12,6 +12,7 @@ from app.generate import (
     compose_document,
     document_source,
     parse_document_response,
+    parse_formatted_note,
     splittable_text,
 )
 
@@ -78,6 +79,10 @@ def test_bare_array_is_accepted():
 
 def test_unparseable_returns_none():
     assert _extract_json("I'm sorry, I can't do that.") is None
+
+
+def test_formatted_note_unwraps_a_markdown_fence():
+    assert parse_formatted_note("```markdown\n- one\n- two\n```") == "- one\n- two"
 
 
 def test_a_single_bad_entry_costs_one_card():
@@ -198,6 +203,28 @@ def test_the_request_carries_the_model_and_both_messages(monkeypatch):
         {"title": "A", "body": "b"},
         {"title": "B", "body": "c"},
     ]
+
+
+def test_format_note_requests_markdown_without_changing_the_split_prompt(monkeypatch):
+    from app import generate
+
+    sent = {}
+
+    def fake_post(url, json, headers, timeout):
+        sent.update(json)
+        return FakeResponse(content="## Tasks\n\n- [ ] Call Sam")
+
+    monkeypatch.setattr(generate.httpx, "post", fake_post)
+    result = generate.format_note("tasks call Sam", "Launch", _config())
+
+    assert result == "## Tasks\n\n- [ ] Call Sam"
+    assert "response_format" not in sent
+    assert "GitHub-flavored Markdown" in sent["messages"][0]["content"]
+    assert "formatting, not summarizing or rewriting" in sent["messages"][0]["content"]
+    user_prompt = sent["messages"][1]["content"]
+    assert "Card title (context only; do not repeat it): Launch" in user_prompt
+    assert "<note>\ntasks call Sam\n</note>" in user_prompt
+    assert "Return JSON only" in generate.SYSTEM_PROMPT
 
 
 def test_an_api_key_becomes_a_bearer_header(monkeypatch):

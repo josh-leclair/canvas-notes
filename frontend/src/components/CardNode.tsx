@@ -568,6 +568,7 @@ function CardNodeImpl({ id, data, selected }: NodeProps<CardNodeType>) {
   const setMenuOpenFor = useCanvasStore((s) => s.setMenuOpenFor);
   const generationAvailable = useCanvasStore((s) => s.generationAvailable);
   const splitCard = useCanvasStore((s) => s.splitCard);
+  const formatCard = useCanvasStore((s) => s.formatCard);
   const reportMemberHeight = useCanvasStore((s) => s.reportMemberHeight);
   const selection = useCanvasStore((s) => s.selection);
   const hasLayerPeer = useCanvasStore((s) =>
@@ -1289,6 +1290,20 @@ function CardNodeImpl({ id, data, selected }: NodeProps<CardNodeType>) {
                 Split into cards…
               </button>
             )}
+            {!readOnly &&
+              generationAvailable &&
+              card.type === "text" &&
+              !isHeading &&
+              !!card.body?.trim() && (
+                <button
+                  onClick={() => {
+                    closeMenu();
+                    formatCard(card.id);
+                  }}
+                >
+                  Format note with AI…
+                </button>
+              )}
             {!readOnly && card.type === "text" && (
               <button onClick={toggleHeading}>
                 {isHeading ? "Make a note" : "Make a heading"}

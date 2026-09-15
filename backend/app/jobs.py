@@ -5,9 +5,10 @@ kinds they support and never claim the rest, so transcription jobs can wait in
 the queue while only an unfurl-capable worker is running. Nothing here blocks
 the UI; failures retry three times, then park as errors.
 """
+import hashlib
+import json
 import logging
 import os
-import json
 import threading
 import uuid
 from datetime import datetime, timedelta, timezone
@@ -20,7 +21,13 @@ from app.config import settings
 from app.db import SessionLocal
 from app.embeddings import embed_text, embeddable_text
 from app.fetch import FetchBlocked, guarded_get
-from app.generate import compose_document, markdown_blocks, split_text, splittable_text
+from app.generate import (
+    compose_document,
+    format_note,
+    markdown_blocks,
+    split_text,
+    splittable_text,
+)
 from app.models import Canvas, Card, File, Job, Link, Placement, User
 from app.runtime_settings import AiConfig, get_ai_config
 from app.unfurl import parse_unfurl, youtube_video_id
@@ -154,7 +161,7 @@ def supported_kinds() -> list[str]:
     if config.embeddings_configured:
         kinds.append("embed")
     if generation_available(config):
-        kinds.extend(["split", "compose", "refresh_compose"])
+        kinds.extend(["split", "format_note", "compose", "refresh_compose"])
     return kinds
 
 
@@ -423,6 +430,50 @@ def handle_split(db: DbSession, payload: dict) -> None:
         )
 
 
+def handle_format_note(db: DbSession, payload: dict) -> None:
+    """Format a text note, provided it was not edited while the model ran."""
+    card = db.get(Card, uuid.UUID(payload["card_id"]))
+    user = db.get(User, uuid.UUID(payload["user_id"]))
+    if card is None or user is None or card.type != "text":
+        return
+
+    source = card.body or ""
+    source_hash = hashlib.sha256(source.encode("utf-8")).hexdigest()
+    # A delayed model response must never overwrite a newer human edit.
+    if not source.strip() or source_hash != payload.get("source_hash"):
+        return
+
+    config = get_ai_config(db)
+    old_spotify_url = spotify_url_for_card(card)
+    old_youtube_url = youtube_url_for_card(card)
+    formatted = format_note(source, card.title, config)
+    if not formatted:
+        log.info("format of card %s produced no usable Markdown", card.id)
+        return
+    # Check again after the model call for inline workers sharing a process.
+    db.refresh(card)
+    if card.body != source:
+        return
+
+    card.body = formatted
+    card.payload = {
+        **card.payload,
+        "ai_format": {
+            "model": config.chat_model,
+            "at": datetime.now(timezone.utc).isoformat(),
+            "batch_id": payload["batch_id"],
+        },
+    }
+    card.updated_at = datetime.now(timezone.utc)
+    # Imported lazily because the cards router imports this job module.
+    from app.routers.cards import sync_card_references
+
+    sync_card_references(db, user, card)
+    enqueue_spotify_if_needed(db, card, old_spotify_url)
+    enqueue_youtube_attachment_if_needed(db, card, old_youtube_url)
+    enqueue_embed_if_needed(db, card)
+
+
 def handle_compose(db: DbSession, payload: dict) -> None:
     """Create a document from a user-selected set of cards and place it."""
     user = db.get(User, uuid.UUID(payload["user_id"]))
@@ -687,6 +738,7 @@ HANDLERS = {
     "transcribe": handle_transcribe,
     "embed": handle_embed,
     "split": handle_split,
+    "format_note": handle_format_note,
     "compose": handle_compose,
     "refresh_compose": handle_refresh_compose,
 }

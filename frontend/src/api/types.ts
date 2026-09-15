@@ -64,6 +64,13 @@ export interface BatchStatus {
   error: string | null;
 }
 
+export interface FormatStatus {
+  batch_id: string;
+  status: "queued" | "running" | "done" | "error";
+  card: Card | null;
+  error: string | null;
+}
+
 export interface CompositionStatus {
   batch_id: string;
   status: "queued" | "running" | "done" | "error";

@@ -31,6 +31,7 @@ import type {
   CompositionStatus,
   DailyCardResult,
   FocusItem,
+  FormatStatus,
   Link,
   LinkType,
   Placement,
@@ -238,6 +239,7 @@ interface CanvasState {
   toggleFocus: (card: Card) => Promise<void>;
   reportMemberHeight: (placementId: string, height: number | null) => void;
   splitCard: (cardId: string) => Promise<void>;
+  formatCard: (cardId: string) => Promise<void>;
   composeCards: (
     cardIds: string[],
     position: { x: number; y: number }
@@ -696,6 +698,60 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
         }
       } catch {
         get().showToast("Lost track of that split. Check the inbox.");
+      }
+    };
+    window.setTimeout(poll, 2000);
+  },
+
+  formatCard: async (cardId) => {
+    let batchId: string;
+    try {
+      const started = await api.post<{ batch_id: string }>(
+        `/api/cards/${cardId}/format`
+      );
+      batchId = started.batch_id;
+    } catch (err) {
+      get().showToast(
+        err instanceof Error ? err.message : "Could not format that note"
+      );
+      return;
+    }
+
+    get().showToast("Formatting note…");
+    const deadline = Date.now() + 5 * 60 * 1000;
+    const poll = async () => {
+      try {
+        const status = await api.get<FormatStatus>(`/api/formats/${batchId}`);
+        if (status.status === "queued" || status.status === "running") {
+          if (Date.now() < deadline) window.setTimeout(poll, 2500);
+          else {
+            get().showToast(
+              "Formatting is taking a while; reload the canvas shortly."
+            );
+          }
+          return;
+        }
+        if (status.status === "error") {
+          get().showToast("The model could not format that note.");
+          return;
+        }
+        if (!status.card) {
+          get().showToast(
+            "The note changed or the model returned no usable formatting."
+          );
+          return;
+        }
+        await get().refreshCardFromServer(cardId, status.card);
+        const canvasId = get().canvasId;
+        if (canvasId) {
+          const detail = await api.get<CanvasDetail>(`/api/canvases/${canvasId}`);
+          set({ canvasLinks: detail.links });
+        }
+        get().showToast("Note formatted.");
+      } catch {
+        get().showToast(
+          "Lost track of that formatting job. Reload the canvas shortly."
+        );
       }
     };
     window.setTimeout(poll, 2000);
